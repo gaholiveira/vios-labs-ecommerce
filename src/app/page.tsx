@@ -1,17 +1,25 @@
 import AboutSection from '@/components/AboutSection';
 import ProductCard from '@/components/ProductCard';
 import { PRODUCTS } from '@/constants/products';
+import Image from 'next/image';
 
 export default function Home() {
   return (
     <main>
-      {/* Hero Section com Imagem de Fundo Total */}
-      <section 
-        className="relative h-screen w-full flex items-center justify-center bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/images/hero-foto.png')" }}
-      >
+      {/* Hero Section */}
+      <section className="relative h-screen w-full flex items-center justify-center overflow-hidden bg-brand-softblack">
+        {/* Usando o componente Image do Next.js para máxima performance */}
+        <Image
+          src="/images/hero-foto.jpg"
+          alt="Vios 2026 Hero"
+          fill // Faz a imagem preencher o container pai
+          priority // FORÇA o carregamento imediato (ignora o lazy loading)
+          quality={90} // Ajusta a compressão sem perder qualidade visual
+          className="object-cover object-center"
+        />
+
         {/* Overlay para escurecer a imagem e destacar o texto */}
-        <div className="absolute inset-0 bg-black/30" />
+        <div className="absolute inset-0 bg-black/30 z-[1]" />
 
         {/* Conteúdo do Banner */}
         <div className="relative z-10 text-center px-4">

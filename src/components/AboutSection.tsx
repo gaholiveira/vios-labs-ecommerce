@@ -15,8 +15,7 @@ export default function AboutSection() {
 
         {/* Texto de Apoio */}
         <p className="text-brand-softblack/70 text-sm md:text-base font-light leading-relaxed tracking-wide">
-          A Vios Labs nasceu da vontade de xxxxxxxxxxxxxxxxxxxxxxxxxx
-          xxxxxxxxxxxxxxxxxxxxxxxxxx
+          A VIOS LABS nasceu do desejo de simplificar a busca pelo bem-estar. Em um mundo de excessos, escolhemos a clareza. Nossos produtos unem ativos de alta pureza a uma estética que inspira calma e foco. Somos a ponte entre o cuidado que seu corpo exige e o estilo de vida que você merece. Essencial, transparente e eficiente.
         </p>
 
         {/* Link ou Botão discreto */}
