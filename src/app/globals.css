@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+@theme {
+  /* Definindo as tuas cores de marca no novo Tailwind v4 */
+  --color-brand-green: #0a3323;
+  --color-brand-offwhite: #f2f2f0;
+  --color-brand-softblack: #1a1a1a;
+
+  /* Sobreescrevendo as variáveis padrão do sistema */
+  --color-background: var(--color-brand-offwhite);
+  --color-foreground: var(--color-brand-softblack);
+}
+
+:root {
+  /* Garantindo que as variáveis nativas também usem a tua paleta */
+  --background: #f2f2f0;
+  --foreground: #1a1a1a;
+}
+
+/* Opcional: Se quiseres desativar o modo escuro automático para manter a identidade da marca */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #f2f2f0; /* Mantemos off-white para preservar o estilo Guday */
+    --foreground: #1a1a1a;
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', sans-serif; /* Uma fonte mais moderna que Arial para o estilo e-commerce */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
