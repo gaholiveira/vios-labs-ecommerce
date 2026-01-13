@@ -1,11 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link";
-
-// Forçar renderização dinâmica para permitir useSearchParams
-export const dynamic = "force-dynamic";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -13,15 +10,18 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (searchParams.get("registered") === "true") {
-      setSuccess(true);
-      // Remove o parâmetro da URL
-      router.replace("/login");
+    // Verificar search params apenas no cliente
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("registered") === "true") {
+        setSuccess(true);
+        // Remove o parâmetro da URL
+        router.replace("/login");
+      }
     }
-  }, [searchParams, router]);
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
