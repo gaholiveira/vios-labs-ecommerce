@@ -5,6 +5,10 @@ export interface Product {
   image: string;
   description: string;
   category: string;
+  badge?: 'bestseller' | 'novo' | 'vegano';
+  oldPrice?: number;
+  rating?: number;
+  reviews?: number;
 }
 
 export const PRODUCTS: Product[] = [

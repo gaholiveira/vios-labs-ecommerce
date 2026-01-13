@@ -1,35 +1,164 @@
-'use client';
-import Link from 'next/link'; // Importante para navegação rápida
-import { Product } from '@/constants/products';
-import { useCart } from '@/context/CartContext';
+"use client";
+import Link from "next/link";
+import { Product } from "@/constants/products";
+import { useCart } from "@/context/CartContext";
 
 export default function ProductCard({ product }: { product: Product }) {
   const { addToCart } = useCart();
+  const hasDiscount = product.oldPrice && product.oldPrice > product.price;
+
+  const getBadgeText = () => {
+    switch (product.badge) {
+      case "bestseller":
+        return "Bestseller";
+      case "novo":
+        return "Novo";
+      case "vegano":
+        return "Vegano";
+      default:
+        return null;
+    }
+  };
+
+  const getBadgeColor = () => {
+    switch (product.badge) {
+      case "bestseller":
+        return "bg-brand-green";
+      case "novo":
+        return "bg-brand-softblack";
+      case "vegano":
+        return "bg-brand-green/80";
+      default:
+        return "bg-brand-softblack";
+    }
+  };
+
+  const renderStars = (rating: number = 0) => {
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+    return (
+      <div className="flex items-center gap-0.5">
+        {[...Array(fullStars)].map((_, i) => (
+          <svg
+            key={`full-${i}`}
+            className="w-3 h-3 text-yellow-400 fill-current"
+            viewBox="0 0 20 20"
+          >
+            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+          </svg>
+        ))}
+        {hasHalfStar && (
+          <svg
+            className="w-3 h-3 text-yellow-400 fill-current"
+            viewBox="0 0 20 20"
+          >
+            <defs>
+              <linearGradient id="half">
+                <stop offset="50%" stopColor="currentColor" />
+                <stop offset="50%" stopColor="transparent" stopOpacity="1" />
+              </linearGradient>
+            </defs>
+            <path
+              fill="url(#half)"
+              d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"
+            />
+          </svg>
+        )}
+        {[...Array(emptyStars)].map((_, i) => (
+          <svg
+            key={`empty-${i}`}
+            className="w-3 h-3 text-gray-300 fill-current"
+            viewBox="0 0 20 20"
+          >
+            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+          </svg>
+        ))}
+      </div>
+    );
+  };
 
   return (
-    <div className="group flex flex-col items-center">
-      {/* Agora a imagem é um link */}
-      <Link href={`/produto/${product.id}`} className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden mb-4">
-        <img 
-          src={product.image} 
+    <div className="group flex flex-col">
+      {/* Container da Imagem com Badge e Overlay */}
+      <Link
+        href={`/produto/${product.id}`}
+        className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden mb-6"
+      >
+        <img
+          src={product.image}
           alt={product.name}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
+
+        {/* Badge */}
+        {product.badge && (
+          <div
+            className={`absolute top-3 left-3 ${getBadgeColor()} text-brand-offwhite px-3 py-1 text-[9px] uppercase tracking-wider font-medium z-10`}
+          >
+            {getBadgeText()}
+          </div>
+        )}
+
+        {/* Overlay no Hover com Texto "Ver Detalhes" */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+          <div className="bg-brand-offwhite px-6 py-3 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+            <span className="text-[10px] uppercase tracking-wider text-brand-softblack font-medium">
+              Ver Detalhes
+            </span>
+          </div>
+        </div>
       </Link>
-      
-      <Link href={`/produto/${product.id}`}>
-        <h3 className="text-sm uppercase tracking-wider font-light hover:text-gray-500 transition">
-          {product.name}
-        </h3>
-      </Link>
-      
-      <p className="text-sm mt-1">R$ {product.price.toFixed(2)}</p>
-      
-      <button 
-        onClick={() => addToCart(product)}
-        className="bg-brand-green text-brand-offwhite px-6 py-3 uppercase tracking-widest text-[10px]">
-        Compra Rápida +
-      </button>
+
+      {/* Informações do Produto */}
+      <div className="flex flex-col gap-3">
+        {/* Categoria */}
+        {product.category && (
+          <p className="text-[10px] uppercase tracking-[0.2em] text-brand-softblack/50 font-light">
+            {product.category}
+          </p>
+        )}
+
+        {/* Nome do Produto */}
+        <Link href={`/produto/${product.id}`}>
+          <h3 className="text-sm uppercase tracking-wider font-medium text-brand-softblack hover:text-brand-green transition-colors leading-tight">
+            {product.name}
+          </h3>
+        </Link>
+
+        {/* Rating e Reviews */}
+        {product.rating !== undefined && (
+          <div className="flex items-center gap-2">
+            {renderStars(product.rating)}
+            {product.reviews !== undefined && (
+              <span className="text-[10px] text-brand-softblack/50 font-light">
+                ({product.reviews})
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Preço */}
+        <div className="flex items-baseline gap-2">
+          <p className="text-base font-light text-brand-softblack">
+            R$ {product.price.toFixed(2).replace(".", ",")}
+          </p>
+          {hasDiscount && (
+            <p className="text-sm text-brand-softblack/40 line-through font-light">
+              R$ {product.oldPrice!.toFixed(2).replace(".", ",")}
+            </p>
+          )}
+        </div>
+
+        {/* Botão de Adicionar */}
+        <button
+          onClick={() => addToCart(product)}
+          className="bg-brand-green text-brand-offwhite px-6 py-3 uppercase tracking-widest text-[10px] font-medium hover:bg-brand-softblack transition-all duration-300 mt-2"
+        >
+          + Adicionar
+        </button>
+      </div>
     </div>
   );
 }

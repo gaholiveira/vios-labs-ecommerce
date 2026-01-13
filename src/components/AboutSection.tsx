@@ -21,7 +21,7 @@ export default function AboutSection() {
         {/* Link ou Botão discreto */}
         <div className="mt-10">
           <a 
-            href="#" 
+            href="/sobre" 
             className="text-brand-softblack text-[10px] uppercase tracking-[0.3em] font-medium border-b border-brand-green pb-2 hover:text-brand-green transition-colors"
           >
             Conheça a nossa história
