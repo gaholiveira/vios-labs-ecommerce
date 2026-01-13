@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { User } from "@supabase/supabase-js";
 
 export default function LoteZeroPage() {
@@ -16,7 +16,6 @@ export default function LoteZeroPage() {
   const [submitted, setSubmitted] = useState(false);
   const [alreadyVip, setAlreadyVip] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   // Verificar se usuário está logado
   useEffect(() => {
