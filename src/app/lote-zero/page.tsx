@@ -11,7 +11,6 @@ export default function LoteZeroPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const supabase = createClient();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,6 +19,9 @@ export default function LoteZeroPage() {
     setError(null);
 
     try {
+      // Criar cliente Supabase apenas quando necessário (client-side)
+      const supabase = createClient();
+      
       // Criar conta no Supabase
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,

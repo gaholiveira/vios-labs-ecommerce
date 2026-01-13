@@ -8,10 +8,10 @@ import { User } from '@supabase/supabase-js';
 export default function MobileMenu() {
   const { isMenuOpen, setIsMenuOpen } = useCart();
   const [user, setUser] = useState<User | null>(null);
-  const supabase = createClient();
 
   useEffect(() => {
     const getUser = async () => {
+      const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
     };
@@ -19,6 +19,7 @@ export default function MobileMenu() {
   }, [isMenuOpen]); // Atualiza sempre que o menu abrir
 
   const handleLogout = async () => {
+    const supabase = createClient();
     await supabase.auth.signOut();
     setUser(null);
     setIsMenuOpen(false);

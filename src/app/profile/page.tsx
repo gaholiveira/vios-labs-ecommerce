@@ -4,7 +4,6 @@ import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
 export default function ProfilePage() {
-  const supabase = createClient();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -18,6 +17,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     async function loadProfile() {
+      const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.push('/login');
@@ -40,11 +40,12 @@ export default function ProfilePage() {
       setLoading(false);
     }
     loadProfile();
-  }, [router, supabase]);
+  }, [router]);
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setUpdating(true);
+    const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     const { error } = await supabase
