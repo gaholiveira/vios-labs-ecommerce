@@ -1,5 +1,6 @@
 'use client';
 import { useParams } from 'next/navigation';
+import Image from 'next/image';
 import { PRODUCTS } from '@/constants/products';
 import { useCart } from '@/context/CartContext';
 
@@ -17,11 +18,15 @@ export default function ProductPage() {
   return (
     <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-2 gap-12">
       {/* Imagem do Produto */}
-      <div className="bg-gray-100 aspect-[3/4] overflow-hidden">
-        <img 
-          src={product.image} 
-          alt={product.name} 
-          className="w-full h-full object-cover"
+      <div className="relative bg-gray-100 aspect-[3/4] overflow-hidden">
+        <Image
+          src={product.image}
+          alt={product.name}
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className="object-cover"
+          priority
+          quality={90}
         />
       </div>
 

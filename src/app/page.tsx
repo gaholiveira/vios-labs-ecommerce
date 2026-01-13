@@ -1,7 +1,7 @@
-import AboutSection from '@/components/AboutSection';
-import ProductCard from '@/components/ProductCard';
-import { PRODUCTS } from '@/constants/products';
-import Image from 'next/image';
+import AboutSection from "@/components/AboutSection";
+import ProductCard from "@/components/ProductCard";
+import { PRODUCTS } from "@/constants/products";
+import Image from "next/image";
 
 export default function Home() {
   return (
@@ -12,9 +12,10 @@ export default function Home() {
         <Image
           src="/images/hero-foto.jpg"
           alt="Vios 2026 Hero"
-          fill // Faz a imagem preencher o container pai
-          priority // FORÇA o carregamento imediato (ignora o lazy loading)
-          quality={90} // Ajusta a compressão sem perder qualidade visual
+          fill
+          priority
+          quality={85}
+          sizes="100vw"
           className="object-cover object-center"
         />
 
@@ -46,7 +47,6 @@ export default function Home() {
 
       {/* 2. Seção Sobre (A que acabámos de criar) */}
       <AboutSection />
-
     </main>
   );
 }

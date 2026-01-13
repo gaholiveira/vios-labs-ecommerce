@@ -5,15 +5,16 @@ export default function SobrePage() {
   return (
     <main className="bg-brand-offwhite">
       {/* Hero Section */}
-      <section className="relative h-[60vh] w-full flex items-center justify-center overflow-hidden bg-brand-softblack">
+      <section className="relative h-[60vh] md:h-[70vh] w-full flex items-center justify-center overflow-hidden bg-brand-softblack">
         {/* Imagem de fundo */}
         <Image
           src="/images/fundadores.png"
           alt="Vios Labs História"
           fill
           priority
-          quality={90}
-          className="object-cover object-center"
+          quality={85}
+          sizes="100vw"
+          className="object-cover md:object-contain object-center"
         />
 
         {/* Overlay para escurecer a imagem e destacar o texto */}
@@ -214,11 +215,17 @@ export default function SobrePage() {
             </p>
 
             <p className="text-brand-softblack/60 text-sm font-light leading-relaxed text-left mt-4">
-            Como estudante de Biomedicina, minha prioridade é o rigor técnico. Cada ativo da VIOS passa pelo meu crivo e pela minha curadoria pessoal. Mas, para mim, a ciência só é completa quando aliada à beleza e à funcionalidade. Por isso, desenhei cada detalhe da identidade visual e da experiência VIOS para que ela seja o ponto alto do seu dia.
+              Como estudante de Biomedicina, minha prioridade é o rigor técnico.
+              Cada ativo da VIOS passa pelo meu crivo e pela minha curadoria
+              pessoal. Mas, para mim, a ciência só é completa quando aliada à
+              beleza e à funcionalidade. Por isso, desenhei cada detalhe da
+              identidade visual e da experiência VIOS para que ela seja o ponto
+              alto do seu dia.
             </p>
 
             <p className="text-brand-softblack/60 text-sm font-light leading-relaxed text-left mt-4">
-            Não sou apenas a fundadora; sou a curadora da sua nova jornada de bem-estar celular. Bem-vinda ao padrão VIOS.
+              Não sou apenas a fundadora; sou a curadora da sua nova jornada de
+              bem-estar celular. Bem-vinda ao padrão VIOS.
             </p>
           </div>
 
@@ -238,16 +245,31 @@ export default function SobrePage() {
               Co-Fundador & Diretor de Desenvolvimento
             </p>
             <p className="text-brand-softblack/60 text-sm font-light leading-relaxed text-left">
-              A VIOS nasceu do meu desejo de aplicar a precisão da tecnologia em um propósito que impactasse diretamente a vida das pessoas. Como desenvolvedor, sempre busquei transformar sistemas complexos em experiências simples e eficientes.
+              A VIOS nasceu do meu desejo de aplicar a precisão da tecnologia em
+              um propósito que impactasse diretamente a vida das pessoas. Como
+              desenvolvedor, sempre busquei transformar sistemas complexos em
+              experiências simples e eficientes.
             </p>
             <p className="text-brand-softblack/60 text-sm font-light leading-relaxed text-left mt-4">
-              Após anos imerso no universo do desenvolvimento e arquitetura de dados, entendi que a tecnologia no mercado de saúde não pode ser apenas funcional; ela precisa ser invisível, segura e inteligente. Percebi que faltava no mercado uma plataforma que respeitasse o tempo e a confiança do usuário, tratando cada dado e cada transação com o rigor que a ciência exige.
+              Após anos imerso no universo do desenvolvimento e arquitetura de
+              dados, entendi que a tecnologia no mercado de saúde não pode ser
+              apenas funcional; ela precisa ser invisível, segura e inteligente.
+              Percebi que faltava no mercado uma plataforma que respeitasse o
+              tempo e a confiança do usuário, tratando cada dado e cada
+              transação com o rigor que a ciência exige.
             </p>
             <p className="text-brand-softblack/60 text-sm font-light leading-relaxed text-left mt-4">
-              Como desenvolvedor da VIOS, minha prioridade é a inovação estrutural. Cada linha de código e cada processo digital passa pelo meu crivo técnico para garantir que a tecnologia seja o alicerce da nossa transparência. Para mim, o sistema só é completo quando aliado à segurança e à fluidez da experiência. Por isso, projetei a infraestrutura da VIOS para ser o suporte invisível da sua jornada de bem-estar. bem-estar.
+              Como desenvolvedor da VIOS, minha prioridade é a inovação
+              estrutural. Cada linha de código e cada processo digital passa
+              pelo meu crivo técnico para garantir que a tecnologia seja o
+              alicerce da nossa transparência. Para mim, o sistema só é completo
+              quando aliado à segurança e à fluidez da experiência. Por isso,
+              projetei a infraestrutura da VIOS para ser o suporte invisível da
+              sua jornada de bem-estar. bem-estar.
             </p>
             <p className="text-brand-softblack/60 text-sm font-light leading-relaxed text-left mt-4">
-              Não sou apenas o co-fundador; sou o arquiteto da tecnologia por trás da sua melhor versão. Bem-vindo à evolução digital da VIOS.
+              Não sou apenas o co-fundador; sou o arquiteto da tecnologia por
+              trás da sua melhor versão. Bem-vindo à evolução digital da VIOS.
             </p>
           </div>
         </div>

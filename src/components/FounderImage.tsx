@@ -25,9 +25,12 @@ export default function FounderImage({ src, alt, initials, objectPosition = 'cen
       src={src}
       alt={alt}
       fill
+      sizes="192px"
       className="object-cover"
       style={{ objectPosition }}
       onError={() => setImageError(true)}
+      loading="lazy"
+      quality={85}
     />
   );
 }

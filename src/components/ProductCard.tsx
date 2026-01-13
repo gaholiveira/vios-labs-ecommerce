@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { Product } from "@/constants/products";
 import { useCart } from "@/context/CartContext";
 
@@ -86,10 +87,14 @@ export default function ProductCard({ product }: { product: Product }) {
         href={`/produto/${product.id}`}
         className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden mb-6"
       >
-        <img
+        <Image
           src={product.image}
           alt={product.name}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          className="object-cover transition-transform duration-700 group-hover:scale-105"
+          loading="lazy"
+          quality={85}
         />
 
         {/* Badge */}
@@ -100,6 +105,15 @@ export default function ProductCard({ product }: { product: Product }) {
             {getBadgeText()}
           </div>
         )}
+
+        {/* Selo "Em Breve" - Faixa Verde */}
+        <div className="absolute top-0 left-0 right-0 bg-brand-green text-brand-offwhite py-2 z-10">
+          <div className="text-center">
+            <span className="text-[9px] uppercase tracking-[0.3em] font-medium">
+              Em Breve
+            </span>
+          </div>
+        </div>
 
         {/* Overlay no Hover com Texto "Ver Detalhes" */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
@@ -151,12 +165,13 @@ export default function ProductCard({ product }: { product: Product }) {
           )}
         </div>
 
-        {/* Botão de Adicionar */}
+        {/* Botão de Adicionar - Desabilitado quando "Em Breve" */}
         <button
           onClick={() => addToCart(product)}
-          className="bg-brand-green text-brand-offwhite px-6 py-3 uppercase tracking-widest text-[10px] font-medium hover:bg-brand-softblack transition-all duration-300 mt-2"
+          disabled
+          className="bg-gray-300 text-gray-500 px-6 py-3 uppercase tracking-widest text-[10px] font-medium cursor-not-allowed transition-all duration-300 mt-2"
         >
-          + Adicionar
+          Lançamento em breve
         </button>
       </div>
     </div>

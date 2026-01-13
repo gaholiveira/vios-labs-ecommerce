@@ -9,9 +9,13 @@ interface CartItem extends Product {
 interface CartContextType {
   cart: CartItem[];
   addToCart: (product: Product) => void;
+  removeFromCart: (productId: string) => void;
+  updateQuantity: (productId: string, quantity: number) => void;
+  clearCart: () => void;
   isOpen: boolean; // Estado para abrir/fechar
   setIsOpen: (open: boolean) => void;
   totalItems: number;
+  totalPrice: number;
   isMenuOpen: boolean;
   setIsMenuOpen: (open: boolean) => void;
   isSearchOpen: boolean;
@@ -39,10 +43,45 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setIsOpen(true); // Abre o carrinho automaticamente ao adicionar
   };
 
+  const removeFromCart = (productId: string) => {
+    setCart((prev) => prev.filter((item) => item.id !== productId));
+  };
+
+  const updateQuantity = (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeFromCart(productId);
+      return;
+    }
+    setCart((prev) =>
+      prev.map((item) =>
+        item.id === productId ? { ...item, quantity } : item
+      )
+    );
+  };
+
+  const clearCart = () => {
+    setCart([]);
+  };
+
   const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
+  const totalPrice = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, isOpen, setIsOpen, totalItems, isMenuOpen, setIsMenuOpen, isSearchOpen, setIsSearchOpen }}>
+    <CartContext.Provider value={{ 
+      cart, 
+      addToCart, 
+      removeFromCart,
+      updateQuantity,
+      clearCart,
+      isOpen, 
+      setIsOpen, 
+      totalItems,
+      totalPrice,
+      isMenuOpen, 
+      setIsMenuOpen, 
+      isSearchOpen, 
+      setIsSearchOpen 
+    }}>
       {children}
     </CartContext.Provider>
   );

@@ -1,17 +1,71 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { User } from "@supabase/supabase-js";
 
 export default function LoteZeroPage() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [alreadyVip, setAlreadyVip] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Verificar se usuário está logado
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          setUser(user);
+          setEmail(user.email || "");
+          
+          // Verificar se já está na lista VIP
+          try {
+            const { data: vipData } = await supabase
+              .from("vip_list")
+              .select("*")
+              .eq("user_id", user.id)
+              .single();
+            
+            if (vipData) {
+              setAlreadyVip(true);
+              setSubmitted(true);
+            }
+          } catch (vipErr) {
+            // Tabela não existe ou não está na lista - continua normalmente
+          }
+
+          // Buscar nome do perfil
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("id", user.id)
+            .single();
+
+          if (profileData?.full_name) {
+            setName(profileData.full_name);
+          } else if (user.user_metadata?.full_name) {
+            setName(user.user_metadata.full_name);
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao verificar autenticação:", err);
+      } finally {
+        setCheckingAuth(false);
+      }
+    }
+    checkAuth();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,10 +73,42 @@ export default function LoteZeroPage() {
     setError(null);
 
     try {
-      // Criar cliente Supabase apenas quando necessário (client-side)
       const supabase = createClient();
-      
-      // Criar conta no Supabase
+
+      // Se usuário já está logado, apenas adicionar à lista VIP
+      if (user) {
+        // Adicionar à lista VIP
+        try {
+          const { error: vipError } = await supabase
+            .from("vip_list")
+            .upsert({
+              email: user.email,
+              user_id: user.id,
+              full_name: name || user.user_metadata?.full_name || "",
+              created_at: new Date().toISOString(),
+            }, {
+              onConflict: "user_id"
+            });
+
+          if (vipError && !vipError.message.includes("duplicate") && !vipError.message.includes("relation")) {
+            console.error("Erro ao salvar na lista VIP:", vipError);
+          } else {
+            setAlreadyVip(true);
+            setSubmitted(true);
+            setLoading(false);
+            return;
+          }
+        } catch (vipErr) {
+          console.log("Tabela vip_list não encontrada (opcional)");
+        }
+
+        // Se chegou aqui, apenas confirma sucesso
+        setSubmitted(true);
+        setLoading(false);
+        return;
+      }
+
+      // Se não está logado, criar conta
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -30,7 +116,7 @@ export default function LoteZeroPage() {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             full_name: name,
-            vip_list: true, // Marcar como membro VIP
+            vip_list: true,
           },
         },
       });
@@ -41,41 +127,40 @@ export default function LoteZeroPage() {
         return;
       }
 
-      // Se o usuário foi criado, salvar perfil
+      // Criar perfil
       if (authData.user) {
-        // Criar ou atualizar perfil com nome completo
         const { error: profileError } = await supabase
           .from("profiles")
           .upsert({
             id: authData.user.id,
-            full_name: name,
+            full_name: name.trim(),
             updated_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+          }, {
+            onConflict: "id"
           });
 
         if (profileError) {
           console.error("Erro ao salvar perfil:", profileError);
-          // Não bloqueia o processo se houver erro no perfil
         }
 
-        // Salvar na lista VIP (opcional - apenas se a tabela existir)
-        // Para criar a tabela no Supabase, execute:
-        // CREATE TABLE vip_list (id uuid DEFAULT gen_random_uuid() PRIMARY KEY, email text, user_id uuid, full_name text, created_at timestamp);
+        // Adicionar à lista VIP
         try {
           const { error: vipError } = await supabase
             .from("vip_list")
-            .insert({
+            .upsert({
               email: email,
               user_id: authData.user.id,
               full_name: name,
               created_at: new Date().toISOString(),
+            }, {
+              onConflict: "user_id"
             });
 
-          // Ignora erro se a tabela não existir ou email duplicado
           if (vipError && !vipError.message.includes("duplicate") && !vipError.message.includes("relation")) {
             console.error("Erro ao salvar na lista VIP:", vipError);
           }
         } catch (vipErr) {
-          // Tabela vip_list não existe - não é crítico, continua o processo
           console.log("Tabela vip_list não encontrada (opcional)");
         }
       }
@@ -88,6 +173,22 @@ export default function LoteZeroPage() {
     }
   };
 
+  // Loading state
+  if (checkingAuth) {
+    return (
+      <main className="min-h-screen bg-brand-offwhite flex items-center justify-center">
+        <div className="text-center">
+          <svg className="animate-spin h-8 w-8 mx-auto text-brand-softblack mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="text-[10px] uppercase tracking-wider text-brand-softblack/60">A verificar...</p>
+        </div>
+      </main>
+    );
+  }
+
+  // Estado de sucesso
   if (submitted) {
     return (
       <main className="min-h-screen bg-brand-offwhite flex items-center justify-center px-6">
@@ -108,14 +209,21 @@ export default function LoteZeroPage() {
             </svg>
           </div>
           <h1 className="text-3xl md:text-4xl font-light uppercase tracking-tighter mb-6 text-brand-softblack">
-            Conta Criada com Sucesso!
+            {user ? (alreadyVip ? "Você já está na lista VIP!" : "Você está na lista VIP!") : "Conta Criada com Sucesso!"}
           </h1>
           <p className="text-brand-softblack/70 text-base font-light leading-relaxed mb-4">
-            Você está na lista VIP do Lote Zero e sua conta foi criada.
+            {user 
+              ? (alreadyVip 
+                  ? "Você já estava na lista VIP do Lote Zero. Fique atento ao seu e-mail para receber as novidades!"
+                  : "Você foi adicionado à lista VIP do Lote Zero. Fique atento ao seu e-mail!")
+              : "Você está na lista VIP do Lote Zero e sua conta foi criada."
+            }
           </p>
-          <p className="text-brand-softblack/60 text-sm font-light leading-relaxed mb-8">
-            Verifique seu e-mail para confirmar sua conta e começar a comprar.
-          </p>
+          {!user && (
+            <p className="text-brand-softblack/60 text-sm font-light leading-relaxed mb-8">
+              Verifique seu e-mail para confirmar sua conta e começar a comprar.
+            </p>
+          )}
           <div className="flex gap-4 justify-center flex-wrap">
             <a
               href="/"
@@ -123,12 +231,14 @@ export default function LoteZeroPage() {
             >
               Explorar Produtos
             </a>
-            <a
-              href="/login"
-              className="inline-block bg-brand-green text-brand-offwhite px-10 py-4 text-[10px] uppercase tracking-widest hover:bg-brand-green/90 transition-all font-medium"
-            >
-              Fazer Login
-            </a>
+            {!user && (
+              <a
+                href="/login"
+                className="inline-block bg-brand-green text-brand-offwhite px-10 py-4 text-[10px] uppercase tracking-widest hover:bg-brand-green/90 transition-all font-medium"
+              >
+                Fazer Login
+              </a>
+            )}
           </div>
         </div>
       </main>
@@ -144,7 +254,8 @@ export default function LoteZeroPage() {
           alt="Lote Zero VIP"
           fill
           priority
-          quality={90}
+          quality={85}
+          sizes="100vw"
           className="object-cover object-center"
         />
 
@@ -318,10 +429,13 @@ export default function LoteZeroPage() {
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-brand-offwhite text-3xl md:text-4xl font-light uppercase tracking-tighter leading-tight mb-6">
-              Crie sua Conta e Garanta Acesso VIP
+              {user ? "Garanta seu Acesso VIP" : "Crie sua Conta e Garanta Acesso VIP"}
             </h2>
             <p className="text-brand-offwhite/70 text-base font-light leading-relaxed">
-              Crie sua conta agora e tenha acesso prioritário ao Lote Zero
+              {user 
+                ? "Confirme sua entrada na lista VIP do Lote Zero"
+                : "Crie sua conta agora e tenha acesso prioritário ao Lote Zero"
+              }
             </p>
           </div>
 
@@ -332,6 +446,14 @@ export default function LoteZeroPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {user && (
+              <div className="mb-6 p-4 bg-brand-green/10 border border-brand-green/30 rounded-sm">
+                <p className="text-brand-offwhite text-sm text-center">
+                  Você está logado como <span className="font-medium">{user.email}</span>
+                </p>
+              </div>
+            )}
+
             <div>
               <label className="text-[10px] uppercase tracking-widest block mb-3 text-brand-offwhite/80">
                 Nome Completo
@@ -346,61 +468,73 @@ export default function LoteZeroPage() {
               />
             </div>
 
-            <div>
-              <label className="text-[10px] uppercase tracking-widest block mb-3 text-brand-offwhite/80">
-                E-mail
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-transparent border-b border-brand-offwhite/30 py-3 focus:border-brand-green outline-none transition text-brand-offwhite placeholder:text-brand-offwhite/40"
-                placeholder="seu@email.com"
-                required
-              />
-            </div>
+            {!user && (
+              <>
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest block mb-3 text-brand-offwhite/80">
+                    E-mail
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-transparent border-b border-brand-offwhite/30 py-3 focus:border-brand-green outline-none transition text-brand-offwhite placeholder:text-brand-offwhite/40"
+                    placeholder="seu@email.com"
+                    required
+                  />
+                </div>
 
-            <div>
-              <label className="text-[10px] uppercase tracking-widest block mb-3 text-brand-offwhite/80">
-                Palavra-passe
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-transparent border-b border-brand-offwhite/30 py-3 focus:border-brand-green outline-none transition text-brand-offwhite placeholder:text-brand-offwhite/40"
-                placeholder="Mínimo 6 caracteres"
-                minLength={6}
-                required
-              />
-              <p className="text-[9px] text-brand-offwhite/50 mt-2">
-                Sua senha deve ter pelo menos 6 caracteres
-              </p>
-            </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest block mb-3 text-brand-offwhite/80">
+                    Palavra-passe
+                  </label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-transparent border-b border-brand-offwhite/30 py-3 focus:border-brand-green outline-none transition text-brand-offwhite placeholder:text-brand-offwhite/40"
+                    placeholder="Mínimo 6 caracteres"
+                    minLength={6}
+                    required
+                  />
+                  <p className="text-[9px] text-brand-offwhite/50 mt-2">
+                    Sua senha deve ter pelo menos 6 caracteres
+                  </p>
+                </div>
+              </>
+            )}
 
             <button
               type="submit"
               disabled={loading}
               className="w-full bg-brand-green text-brand-offwhite py-4 uppercase text-[10px] tracking-[0.2em] mt-8 hover:bg-brand-green/90 transition disabled:opacity-50 font-medium"
             >
-              {loading ? "A criar conta..." : "Criar Conta e Garantir Acesso VIP"}
+              {loading 
+                ? (user ? "A adicionar à lista VIP..." : "A criar conta...") 
+                : (user ? "Confirmar Entrada na Lista VIP" : "Criar Conta e Garantir Acesso VIP")
+              }
             </button>
 
             <p className="text-center text-[9px] uppercase tracking-wider text-brand-offwhite/50 mt-6">
-              Ao criar sua conta, você automaticamente entra na lista VIP do Lote Zero
+              {user 
+                ? "Ao confirmar, você será adicionado à lista VIP do Lote Zero"
+                : "Ao criar sua conta, você automaticamente entra na lista VIP do Lote Zero"
+              }
             </p>
 
-            <div className="pt-6 border-t border-brand-offwhite/10">
-              <p className="text-center text-[10px] uppercase tracking-wider text-brand-offwhite/60 mb-3">
-                Já tem conta?
-              </p>
-              <a
-                href="/login"
-                className="block text-center text-brand-offwhite text-sm font-light hover:text-brand-green transition underline"
-              >
-                Fazer Login
-              </a>
-            </div>
+            {!user && (
+              <div className="pt-6 border-t border-brand-offwhite/10">
+                <p className="text-center text-[10px] uppercase tracking-wider text-brand-offwhite/60 mb-3">
+                  Já tem conta?
+                </p>
+                <a
+                  href="/login"
+                  className="block text-center text-brand-offwhite text-sm font-light hover:text-brand-green transition underline"
+                >
+                  Fazer Login
+                </a>
+              </div>
+            )}
           </form>
         </div>
       </section>
