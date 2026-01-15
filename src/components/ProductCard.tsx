@@ -1,51 +1,36 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
+import { memo } from "react";
 import { Product } from "@/constants/products";
 import { useCart } from "@/context/CartContext";
+import { formatPrice } from "@/utils/format";
 
-export default function ProductCard({ product }: { product: Product }) {
+const BADGE_CONFIG = {
+  bestseller: { text: "Bestseller", color: "bg-brand-green" },
+  novo: { text: "Novo", color: "bg-brand-softblack" },
+  vegano: { text: "Vegano", color: "bg-brand-green/80" },
+} as const;
+
+function ProductCard({ product }: { product: Product }) {
   const { addToCart } = useCart();
   const hasDiscount = product.oldPrice && product.oldPrice > product.price;
-
-  const getBadgeText = () => {
-    switch (product.badge) {
-      case "bestseller":
-        return "Bestseller";
-      case "novo":
-        return "Novo";
-      case "vegano":
-        return "Vegano";
-      default:
-        return null;
-    }
-  };
-
-  const getBadgeColor = () => {
-    switch (product.badge) {
-      case "bestseller":
-        return "bg-brand-green";
-      case "novo":
-        return "bg-brand-softblack";
-      case "vegano":
-        return "bg-brand-green/80";
-      default:
-        return "bg-brand-softblack";
-    }
-  };
+  const badgeConfig = product.badge ? BADGE_CONFIG[product.badge] : null;
 
   const renderStars = (rating: number = 0) => {
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 >= 0.5;
     const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+    const starId = `half-star-${product.id}`;
 
     return (
-      <div className="flex items-center gap-0.5">
-        {[...Array(fullStars)].map((_, i) => (
+      <div className="flex items-center gap-0.5" role="img" aria-label={`Avaliação: ${rating} de 5 estrelas`}>
+        {Array.from({ length: fullStars }, (_, i) => (
           <svg
             key={`full-${i}`}
             className="w-3 h-3 text-yellow-400 fill-current"
             viewBox="0 0 20 20"
+            aria-hidden="true"
           >
             <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
           </svg>
@@ -54,24 +39,26 @@ export default function ProductCard({ product }: { product: Product }) {
           <svg
             className="w-3 h-3 text-yellow-400 fill-current"
             viewBox="0 0 20 20"
+            aria-hidden="true"
           >
             <defs>
-              <linearGradient id="half">
+              <linearGradient id={starId}>
                 <stop offset="50%" stopColor="currentColor" />
                 <stop offset="50%" stopColor="transparent" stopOpacity="1" />
               </linearGradient>
             </defs>
             <path
-              fill="url(#half)"
+              fill={`url(#${starId})`}
               d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"
             />
           </svg>
         )}
-        {[...Array(emptyStars)].map((_, i) => (
+        {Array.from({ length: emptyStars }, (_, i) => (
           <svg
             key={`empty-${i}`}
             className="w-3 h-3 text-gray-300 fill-current"
             viewBox="0 0 20 20"
+            aria-hidden="true"
           >
             <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
           </svg>
@@ -98,11 +85,11 @@ export default function ProductCard({ product }: { product: Product }) {
         />
 
         {/* Badge */}
-        {product.badge && (
+        {badgeConfig && (
           <div
-            className={`absolute top-3 left-3 ${getBadgeColor()} text-brand-offwhite px-3 py-1 text-[9px] uppercase tracking-wider font-medium z-10`}
+            className={`absolute top-3 left-3 ${badgeConfig.color} text-brand-offwhite px-3 py-1 text-[9px] uppercase tracking-wider font-medium z-10`}
           >
-            {getBadgeText()}
+            {badgeConfig.text}
           </div>
         )}
 
@@ -156,11 +143,11 @@ export default function ProductCard({ product }: { product: Product }) {
         {/* Preço */}
         <div className="flex items-baseline gap-2">
           <p className="text-base font-light text-brand-softblack">
-            R$ {product.price.toFixed(2).replace(".", ",")}
+            {formatPrice(product.price)}
           </p>
-          {hasDiscount && (
+          {hasDiscount && product.oldPrice && (
             <p className="text-sm text-brand-softblack/40 line-through font-light">
-              R$ {product.oldPrice!.toFixed(2).replace(".", ",")}
+              {formatPrice(product.oldPrice)}
             </p>
           )}
         </div>
@@ -177,3 +164,5 @@ export default function ProductCard({ product }: { product: Product }) {
     </div>
   );
 }
+
+export default memo(ProductCard);

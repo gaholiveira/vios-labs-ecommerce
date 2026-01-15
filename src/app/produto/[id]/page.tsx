@@ -3,6 +3,7 @@ import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { PRODUCTS } from '@/constants/products';
 import { useCart } from '@/context/CartContext';
+import { formatPrice } from '@/utils/format';
 
 export default function ProductPage() {
   const params = useParams();
@@ -35,7 +36,7 @@ export default function ProductPage() {
         <h1 className="text-3xl font-light uppercase tracking-widest mb-4">
           {product.name}
         </h1>
-        <p className="text-xl mb-6">R$ {product.price.toFixed(2)}</p>
+        <p className="text-xl mb-6">{formatPrice(product.price)}</p>
         
         <div className="border-t border-b py-6 mb-8 text-gray-600 font-light leading-relaxed">
           {product.description}

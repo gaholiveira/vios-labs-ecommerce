@@ -1,6 +1,7 @@
 // src/components/Navbar.tsx
 'use client';
 import { useCart } from '@/context/CartContext';
+import Link from 'next/link';
 
 export default function Navbar() {
   const { totalItems, setIsOpen, setIsMenuOpen, setIsSearchOpen } = useCart();
@@ -15,6 +16,8 @@ export default function Navbar() {
           <button 
             onClick={() => setIsMenuOpen(true)} 
             className="flex flex-col space-y-1.5 w-6 group"
+            aria-label="Abrir menu de navegação"
+            aria-expanded={false}
           >
             <span className="h-0.5 w-full bg-brand-softblack transition-all group-hover:w-4"></span>
             <span className="h-0.5 w-full bg-brand-softblack"></span>
@@ -34,15 +37,20 @@ export default function Navbar() {
         </div>
 
         {/* LOGO CENTRAL */}
-        <div className="text-xl font-extralight tracking-[0.4em] uppercase cursor-pointer absolute left-1/2 -translate-x-1/2">
+        <Link 
+          href="/"
+          className="text-xl font-extralight tracking-[0.4em] uppercase cursor-pointer absolute left-1/2 -translate-x-1/2 hover:opacity-70 transition-opacity"
+          aria-label="Ir para página inicial"
+        >
           VIOS
-        </div>
+        </Link>
 
         {/* LADO DIREITO: Carrinho */}
         <div className="flex-1 flex justify-end">
           <button 
             onClick={() => setIsOpen(true)}
             className="text-[10px] uppercase tracking-[0.2em] font-medium hover:opacity-50 transition-opacity"
+            aria-label={`Abrir carrinho com ${totalItems} item${totalItems !== 1 ? 's' : ''}`}
           >
             Carrinho ({totalItems})
           </button>

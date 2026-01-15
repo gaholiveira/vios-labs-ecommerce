@@ -1,8 +1,9 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
+import { formatPrice } from '@/utils/format';
 
 export default function CartDrawer() {
   const { cart, isOpen, setIsOpen, removeFromCart, updateQuantity, totalPrice } = useCart();
@@ -19,13 +20,13 @@ export default function CartDrawer() {
     };
   }, [isOpen]);
 
-  const handleQuantityChange = (productId: string, newQuantity: number) => {
+  const handleQuantityChange = useCallback((productId: string, newQuantity: number) => {
     if (newQuantity < 1) {
       removeFromCart(productId);
     } else {
       updateQuantity(productId, newQuantity);
     }
-  };
+  }, [removeFromCart, updateQuantity]);
 
   return (
     <>
@@ -130,7 +131,7 @@ export default function CartDrawer() {
                         </Link>
                         
                         <p className="text-xs text-gray-500 mt-1">
-                          R$ {item.price.toFixed(2).replace('.', ',')}
+                          {formatPrice(item.price)}
                         </p>
 
                         {/* Controles de Quantidade */}
@@ -173,7 +174,7 @@ export default function CartDrawer() {
 
                         {/* Total do Item */}
                         <p className="text-sm font-semibold text-brand-softblack mt-2">
-                          R$ {itemTotal.toFixed(2).replace('.', ',')}
+                          {formatPrice(itemTotal)}
                         </p>
                       </div>
                     </div>
@@ -190,7 +191,7 @@ export default function CartDrawer() {
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm uppercase tracking-wider text-gray-600">Subtotal</span>
                   <span className="text-lg font-semibold text-brand-softblack">
-                    R$ {totalPrice.toFixed(2).replace('.', ',')}
+                    {formatPrice(totalPrice)}
                   </span>
                 </div>
                 <p className="text-[10px] text-gray-500 uppercase tracking-wider">
