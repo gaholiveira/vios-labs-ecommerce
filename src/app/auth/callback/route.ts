@@ -7,13 +7,16 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get('type') // 'recovery' para password reset, 'signup' para registro
   const next = searchParams.get('next') ?? '/'
 
+  // Log para debug
+  console.log('Callback recebido:', { code: code ? 'presente' : 'ausente', type, next })
+
   if (code) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error) {
-      // Se for password reset, redirecionar para página de redefinição
-      if (type === 'recovery') {
+      // Se for password reset (type=recovery) OU next=/reset-password, redirecionar para reset-password
+      if (type === 'recovery' || next === '/reset-password') {
         return NextResponse.redirect(`${origin}/reset-password`)
       }
       
@@ -26,7 +29,7 @@ export async function GET(request: NextRequest) {
     const errorMessage = error?.message || 'Erro ao autenticar'
     
     // Se for password reset e houver erro, redirecionar para forgot-password
-    if (type === 'recovery') {
+    if (type === 'recovery' || next === '/reset-password') {
       return NextResponse.redirect(
         `${origin}/forgot-password?error=${encodeURIComponent(errorMessage)}`
       )
