@@ -11,14 +11,24 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    // Detectar erros de autenticação na URL (vindos do Supabase quando o callback falha)
+    // Detectar códigos de autenticação e erros na URL
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
+      const code = params.get("code");
       const error = params.get("error");
       const errorCode = params.get("error_code");
       const errorDescription = params.get("error_description");
 
-      // Se há erros relacionados a OTP expirado ou acesso negado (password reset)
+      // PRIORIDADE 1: Se há um código na URL (Supabase enviou para home ao invés de /auth/callback)
+      // Redirecionar para /auth/callback preservando todos os parâmetros
+      if (code) {
+        const currentUrl = new URL(window.location.href);
+        const callbackUrl = `/auth/callback${currentUrl.search}`;
+        router.replace(callbackUrl);
+        return;
+      }
+
+      // PRIORIDADE 2: Se há erros relacionados a OTP expirado ou acesso negado (password reset)
       if (error === "access_denied" && errorCode === "otp_expired") {
         // Redirecionar para forgot-password com mensagem amigável
         const message = "Link de redefinição de senha expirado ou inválido. Por favor, solicite um novo link.";
