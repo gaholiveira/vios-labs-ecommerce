@@ -42,11 +42,15 @@ export async function middleware(request: NextRequest) {
   }
 
   // Se o usuário está logado e tenta acessar login/register/forgot-password, redirecionar para home
+  // EXCETO /reset-password que pode ser acessado durante o fluxo de redefinição
   if (user && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register' || request.nextUrl.pathname === '/forgot-password')) {
     const url = request.nextUrl.clone()
     url.pathname = '/'
     return NextResponse.redirect(url)
   }
+
+  // Permitir acesso a /reset-password mesmo com sessão ativa (necessário para fluxo de redefinição)
+  // O próprio componente reset-password vai validar se a sessão é válida para reset
 
   return supabaseResponse
 }

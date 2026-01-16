@@ -2,30 +2,53 @@ import { createClient } from '@/utils/supabase/server'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url)
+  const requestUrl = new URL(request.url)
+  const searchParams = requestUrl.searchParams
   const code = searchParams.get('code')
   const type = searchParams.get('type') // 'recovery' para password reset, 'signup' para registro
   const next = searchParams.get('next') ?? '/'
+  const origin = requestUrl.origin
 
-  // Log para debug
-  console.log('Callback recebido:', { code: code ? 'presente' : 'ausente', type, next })
+  // Log para debug (apenas em desenvolvimento)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔐 Callback recebido:', { 
+      code: code ? 'presente' : 'ausente', 
+      type, 
+      next,
+      fullUrl: requestUrl.toString()
+    })
+  }
 
   if (code) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error) {
-      // Se for password reset (type=recovery) OU next=/reset-password, redirecionar para reset-password
-      if (type === 'recovery' || next === '/reset-password') {
+      // PRIORIDADE 1: Se for password reset (type=recovery), SEMPRE redirecionar para reset-password
+      if (type === 'recovery') {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Sessão de recovery criada. Redirecionando para /reset-password')
+        }
+        return NextResponse.redirect(`${origin}/reset-password`)
+      }
+      
+      // PRIORIDADE 2: Se next=/reset-password, também redirecionar
+      if (next === '/reset-password') {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Next=/reset-password detectado. Redirecionando para /reset-password')
+        }
         return NextResponse.redirect(`${origin}/reset-password`)
       }
       
       // Sucesso: redirecionar para a página desejada
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Sessão criada. Redirecionando para:', next)
+      }
       return NextResponse.redirect(`${origin}${next}`)
     }
     
     // Erro: redirecionar para login com mensagem de erro
-    console.error('Erro ao trocar código por sessão:', error)
+    console.error('❌ Erro ao trocar código por sessão:', error)
     const errorMessage = error?.message || 'Erro ao autenticar'
     
     // Se for password reset e houver erro, redirecionar para forgot-password
@@ -41,5 +64,8 @@ export async function GET(request: NextRequest) {
   }
 
   // Sem código: redirecionar para login
+  if (process.env.NODE_ENV === 'development') {
+    console.warn('⚠️ Callback sem código. Redirecionando para login.')
+  }
   return NextResponse.redirect(`${origin}/login?error=no-code`)
 }

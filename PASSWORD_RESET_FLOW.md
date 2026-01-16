@@ -83,35 +83,43 @@ if (!user) {
 
 ### ❌ **Problema: Redireciona para home (`/`) ao invés de `/reset-password`**
 
-**Causa Possível 1:** O parâmetro `type` não está sendo passado pelo Supabase
+**Causa Possível 1:** ⚠️ **Site URL no Supabase está configurado como home**
 
-**Solução:** O callback também verifica `next=/reset-password` como fallback:
+**Este é o problema mais comum!** Se o **Site URL** no Supabase Dashboard estiver configurado como `https://vioslabs.com.br` (apenas o domínio), o Supabase pode ignorar o `redirectTo` e usar o Site URL como fallback.
+
+**Solução:**
+1. Acesse **Supabase Dashboard** → **Authentication** → **URL Configuration**
+2. Verifique o campo **Site URL**:
+   - ✅ **DEVE SER:** `https://vioslabs.com.br` (apenas o domínio, sem `/` no final)
+   - ❌ **NÃO DEVE SER:** `https://vioslabs.com.br/` (com `/`)
+3. Se estiver configurado incorretamente, altere para o domínio base
+
+**Causa Possível 2:** O `redirectTo` não está nas Redirect URLs
+
+**Verificar:** O `redirectTo` deve ser:
+```typescript
+redirectTo: `${window.location.origin}/auth/callback?type=recovery&next=/reset-password`
+```
+
+**Solução:** Adicione no **Supabase Dashboard** → **Authentication** → **URL Configuration** → **Redirect URLs**:
+```
+https://vioslabs.com.br/auth/callback
+https://vioslabs.com.br/auth/callback?*
+https://vioslabs.com.br/reset-password
+```
+
+**Causa Possível 3:** O parâmetro `type` não está sendo passado
+
+**Solução:** O callback verifica tanto `type=recovery` quanto `next=/reset-password`:
 ```typescript
 if (type === 'recovery' || next === '/reset-password') {
   return NextResponse.redirect(`${origin}/reset-password`)
 }
 ```
 
-**Causa Possível 2:** O `redirectTo` está errado
+**Causa Possível 4:** Middleware bloqueando o acesso
 
-**Verificar:** O `redirectTo` deve ser:
-```typescript
-redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`
-```
-
-**Não deve ser:**
-```typescript
-redirectTo: `${window.location.origin}/reset-password` // ❌ ERRADO
-```
-
-**Causa Possível 3:** URL não está nas Redirect URLs permitidas
-
-**Solução:** Adicione no Supabase Dashboard:
-```
-https://vioslabs.com.br/auth/callback
-https://vioslabs.com.br/auth/callback?next=*
-https://vioslabs.com.br/reset-password
-```
+**Solução:** O middleware foi ajustado para permitir `/reset-password` mesmo com sessão ativa.
 
 ### ❌ **Problema: "Link inválido ou expirado"**
 
@@ -133,21 +141,42 @@ https://vioslabs.com.br/reset-password
 
 ## 📝 URLs no Supabase Dashboard
 
-### **Redirect URLs (obrigatórias para password reset):**
+### **1. Site URL (Configuração Principal):**
 
+Acesse: **Supabase Dashboard** → **Authentication** → **URL Configuration**
+
+```
+Site URL: https://vioslabs.com.br
+```
+
+⚠️ **IMPORTANTE:**
+- Use **apenas o domínio** (sem `/` no final)
+- **NÃO** use `https://vioslabs.com.br/` (com `/`)
+- Se o Site URL estiver errado, o Supabase pode ignorar o `redirectTo` e redirecionar para home
+
+### **2. Redirect URLs (Permitir redirecionamentos específicos):**
+
+Na mesma seção, adicione em **Redirect URLs**:
+
+**Produção:**
 ```
 https://vioslabs.com.br/auth/callback
-https://vioslabs.com.br/auth/callback?next=*
-https://vioslabs.com.br/auth/callback?type=recovery
+https://vioslabs.com.br/auth/callback?*
 https://vioslabs.com.br/reset-password
+https://vioslabs.com.br/login
+https://vioslabs.com.br/register
 ```
 
-**Para desenvolvimento:**
+**Para desenvolvimento (localhost):**
 ```
 http://localhost:3000/auth/callback
-http://localhost:3000/auth/callback?next=*
+http://localhost:3000/auth/callback?*
 http://localhost:3000/reset-password
+http://localhost:3000/login
+http://localhost:3000/register
 ```
+
+💡 **Dica:** Você pode usar wildcards (`*`) para permitir qualquer query parameter na URL do callback.
 
 ---
 
