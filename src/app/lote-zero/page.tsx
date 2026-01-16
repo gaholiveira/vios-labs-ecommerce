@@ -4,6 +4,7 @@ import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { User } from "@supabase/supabase-js";
+import { formatDatabaseError, logDatabaseError } from "@/utils/errorHandler";
 
 export default function LoteZeroPage() {
   const [email, setEmail] = useState("");
@@ -90,7 +91,7 @@ export default function LoteZeroPage() {
             });
 
           if (vipError && !vipError.message.includes("duplicate") && !vipError.message.includes("relation")) {
-            console.error("Erro ao salvar na lista VIP:", vipError);
+            logDatabaseError('Inserção na lista VIP (usuário logado)', vipError);
           } else {
             setAlreadyVip(true);
             setSubmitted(true);
@@ -121,26 +122,42 @@ export default function LoteZeroPage() {
       });
 
       if (authError) {
-        setError(authError.message);
+        logDatabaseError('Criação de usuário (Auth - Lote Zero)', authError);
+        const errorMessage = formatDatabaseError(authError);
+        setError(errorMessage);
         setLoading(false);
         return;
       }
 
-      // Criar perfil
+      // Verificar se o usuário foi criado
+      if (!authData.user) {
+        setError('Não foi possível criar a conta. Tente novamente.');
+        setLoading(false);
+        return;
+      }
+
+      // Criar/atualizar perfil
+      // O trigger do banco cria o perfil automaticamente, mas vamos garantir que os dados estejam completos
       if (authData.user) {
+        // Aguardar um pouco para o trigger do banco processar
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         const { error: profileError } = await supabase
           .from("profiles")
           .upsert({
             id: authData.user.id,
             full_name: name.trim(),
+            address_country: "Brasil",
             updated_at: new Date().toISOString(),
-            created_at: new Date().toISOString(),
           }, {
             onConflict: "id"
           });
 
         if (profileError) {
-          console.error("Erro ao salvar perfil:", profileError);
+          logDatabaseError('Atualização de perfil (Lote Zero)', profileError);
+          // Não bloqueia o processo, mas mostra aviso
+          const errorMessage = formatDatabaseError(profileError);
+          setError(`Aviso: ${errorMessage}. O perfil será atualizado quando você acessar sua conta.`);
         }
 
         // Adicionar à lista VIP
@@ -157,7 +174,7 @@ export default function LoteZeroPage() {
             });
 
           if (vipError && !vipError.message.includes("duplicate") && !vipError.message.includes("relation")) {
-            console.error("Erro ao salvar na lista VIP:", vipError);
+            logDatabaseError('Inserção na lista VIP (novo usuário)', vipError);
           }
         } catch (vipErr) {
           console.log("Tabela vip_list não encontrada (opcional)");
@@ -167,7 +184,9 @@ export default function LoteZeroPage() {
       setLoading(false);
       setSubmitted(true);
     } catch (err) {
-      setError("Ocorreu um erro inesperado. Tente novamente.");
+      logDatabaseError('Exceção ao processar inscrição (Lote Zero)', err);
+      const errorMessage = formatDatabaseError(err);
+      setError(errorMessage);
       setLoading(false);
     }
   };

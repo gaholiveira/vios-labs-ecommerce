@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import { formatDatabaseError, logDatabaseError } from "@/utils/errorHandler";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -9,6 +10,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -17,8 +20,28 @@ export default function LoginPage() {
       const params = new URLSearchParams(window.location.search);
       if (params.get("registered") === "true") {
         setSuccess(true);
-        // Remove o parâmetro da URL
-        router.replace("/login");
+        setSuccessMessage("Conta criada com sucesso! Verifique seu e-mail para confirmar.");
+        // Remove o parâmetro da URL após alguns segundos
+        setTimeout(() => {
+          router.replace("/login");
+        }, 5000);
+      }
+      if (params.get("password-reset") === "true") {
+        setSuccess(true);
+        setSuccessMessage("Senha redefinida com sucesso! Você já pode fazer login.");
+        // Remove o parâmetro da URL após alguns segundos
+        setTimeout(() => {
+          router.replace("/login");
+        }, 5000);
+      }
+      if (params.get("error")) {
+        const errorMsg = params.get("message") || params.get("error");
+        setError(errorMsg || "Erro de autenticação");
+      }
+      const redirect = params.get("redirect");
+      if (redirect) {
+        // Salvar redirect para usar após login
+        sessionStorage.setItem("redirect", redirect);
       }
     }
   }, [router]);
@@ -26,19 +49,39 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const supabase = createClient();
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      alert(error.message);
+      if (authError) {
+        logDatabaseError('Login', authError);
+        const errorMessage = formatDatabaseError(authError);
+        setError(errorMessage);
+        setLoading(false);
+        return;
+      }
+
+      if (data.user) {
+        // Verificar se há redirect salvo
+        const redirect = sessionStorage.getItem("redirect");
+        if (redirect) {
+          sessionStorage.removeItem("redirect");
+          router.push(redirect);
+        } else {
+          router.push("/");
+        }
+        router.refresh();
+      }
+    } catch (err) {
+      logDatabaseError('Exceção ao fazer login', err);
+      const errorMessage = formatDatabaseError(err);
+      setError(errorMessage);
       setLoading(false);
-    } else {
-      router.push("/");
-      router.refresh();
     }
   };
 
@@ -66,9 +109,15 @@ export default function LoginPage() {
                 />
               </svg>
               <span>
-                Conta criada com sucesso! Verifique seu e-mail para confirmar.
+                {successMessage || "Conta criada com sucesso! Verifique seu e-mail para confirmar."}
               </span>
             </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 text-red-600 text-sm text-center rounded-sm">
+            {error}
           </div>
         )}
 
@@ -104,17 +153,24 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* 3. O LINK QUE FALTAVA */}
-        <div className="mt-8 text-center">
-          <p className="text-[10px] uppercase tracking-widest opacity-60 text-brand-softblack">
-            Ainda não tem conta?
-          </p>
+        <div className="mt-8 text-center space-y-3">
           <Link
-            href="/register"
-            className="inline-block mt-2 text-[10px] uppercase tracking-widest font-bold border-b border-brand-green pb-1 hover:text-brand-green transition-colors"
+            href="/forgot-password"
+            className="block text-[10px] uppercase tracking-widest opacity-60 text-brand-softblack hover:opacity-100 transition-opacity"
           >
-            Criar conta agora
+            Esqueci minha senha
           </Link>
+          <div>
+            <p className="text-[10px] uppercase tracking-widest opacity-60 text-brand-softblack">
+              Ainda não tem conta?
+            </p>
+            <Link
+              href="/register"
+              className="inline-block mt-2 text-[10px] uppercase tracking-widest font-bold border-b border-brand-green pb-1 hover:text-brand-green transition-colors"
+            >
+              Criar conta agora
+            </Link>
+          </div>
         </div>
       </div>
     </div>

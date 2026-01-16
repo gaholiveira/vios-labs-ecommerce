@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
+import { formatDatabaseError, logDatabaseError } from "@/utils/errorHandler";
 
 interface FormErrors {
   full_name?: string;
@@ -108,6 +109,7 @@ export default function ProfilePage() {
             id: user.id,
             full_name: userMetadata.full_name || "",
             phone: userMetadata.phone || null,
+            address_country: "Brasil",
             updated_at: new Date().toISOString(),
             created_at: new Date().toISOString(),
           };
@@ -194,17 +196,22 @@ export default function ProfilePage() {
         address_street: profile.address_street.trim(),
         address_city: profile.address_city.trim(),
         address_postcode: profile.address_postcode.replace(/\D/g, ""),
+        address_country: "Brasil",
         updated_at: new Date().toISOString(),
       });
 
       if (updateError) {
-        setError(updateError.message || "Erro ao atualizar perfil");
+        logDatabaseError('Atualização de perfil', updateError);
+        const errorMessage = formatDatabaseError(updateError);
+        setError(errorMessage);
       } else {
         setSuccess(true);
         setTimeout(() => setSuccess(false), 5000);
       }
     } catch (err) {
-      setError("Ocorreu um erro inesperado. Tente novamente.");
+      logDatabaseError('Exceção ao atualizar perfil', err);
+      const errorMessage = formatDatabaseError(err);
+      setError(errorMessage);
     } finally {
       setUpdating(false);
     }

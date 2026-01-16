@@ -1,13 +1,17 @@
 -- ============================================
--- SETUP COMPLETO DO BANCO DE DADOS - VIOS LABS
+-- SETUP COMPLETO DO BANCO DE DADOS - VIOS LABS V2 (FINAL)
+-- Sistema de Autenticação Otimizado
 -- ============================================
 -- Execute este script no SQL Editor do Supabase
+-- Este script é idempotente (pode ser executado múltiplas vezes)
+-- Garante que todas as colunas existem antes de criar triggers
 -- ============================================
 
 -- ============================================
--- 1. TABELA PROFILES (Perfis de Usuários)
+-- 0. GARANTIR QUE A TABELA PROFILES TEM TODAS AS COLUNAS
 -- ============================================
 
+-- Criar tabela se não existir
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name TEXT,
@@ -20,11 +24,64 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
--- Índices para melhor performance
+-- Adicionar colunas que podem não existir (se a tabela já existir)
+DO $$ 
+BEGIN
+  -- Adicionar colunas se não existirem
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND table_name = 'profiles' 
+    AND column_name = 'created_at'
+  ) THEN
+    ALTER TABLE public.profiles ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND table_name = 'profiles' 
+    AND column_name = 'updated_at'
+  ) THEN
+    ALTER TABLE public.profiles ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND table_name = 'profiles' 
+    AND column_name = 'address_country'
+  ) THEN
+    ALTER TABLE public.profiles ADD COLUMN address_country TEXT DEFAULT 'Brasil';
+  END IF;
+END $$;
+
+-- Atualizar valores NULL para created_at e updated_at (se existirem registros antigos)
+UPDATE public.profiles 
+SET created_at = TIMEZONE('utc'::text, NOW())
+WHERE created_at IS NULL;
+
+UPDATE public.profiles 
+SET updated_at = TIMEZONE('utc'::text, NOW())
+WHERE updated_at IS NULL;
+
+UPDATE public.profiles 
+SET address_country = 'Brasil' 
+WHERE address_country IS NULL OR address_country = 'Portugal';
+
+-- ============================================
+-- 1. ÍNDICES PARA PROFILES
+-- ============================================
+
 CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON public.profiles(id);
 CREATE INDEX IF NOT EXISTS idx_profiles_phone ON public.profiles(phone) WHERE phone IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_profiles_created_at ON public.profiles(created_at DESC);
 
--- Trigger para atualizar updated_at automaticamente
+-- ============================================
+-- 2. FUNÇÃO E TRIGGER PARA UPDATED_AT
+-- ============================================
+
+-- Função para atualizar updated_at
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -41,7 +98,7 @@ CREATE TRIGGER set_updated_at_profiles
   EXECUTE FUNCTION public.handle_updated_at();
 
 -- ============================================
--- 2. TABELA VIP_LIST (Lista VIP - Lote Zero)
+-- 3. TABELA VIP_LIST (Lista VIP - Lote Zero)
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS public.vip_list (
@@ -52,13 +109,26 @@ CREATE TABLE IF NOT EXISTS public.vip_list (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
+-- Garantir que created_at existe
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND table_name = 'vip_list' 
+    AND column_name = 'created_at'
+  ) THEN
+    ALTER TABLE public.vip_list ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL;
+  END IF;
+END $$;
+
 -- Índices para melhor performance
 CREATE INDEX IF NOT EXISTS idx_vip_list_user_id ON public.vip_list(user_id);
 CREATE INDEX IF NOT EXISTS idx_vip_list_email ON public.vip_list(email);
 CREATE INDEX IF NOT EXISTS idx_vip_list_created_at ON public.vip_list(created_at DESC);
 
 -- ============================================
--- 3. TABELA ORDERS (Pedidos)
+-- 4. TABELA ORDERS (Pedidos)
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS public.orders (
@@ -69,6 +139,28 @@ CREATE TABLE IF NOT EXISTS public.orders (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
+
+-- Garantir que created_at e updated_at existem
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND table_name = 'orders' 
+    AND column_name = 'created_at'
+  ) THEN
+    ALTER TABLE public.orders ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND table_name = 'orders' 
+    AND column_name = 'updated_at'
+  ) THEN
+    ALTER TABLE public.orders ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL;
+  END IF;
+END $$;
 
 -- Índices para melhor performance
 CREATE INDEX IF NOT EXISTS idx_orders_user_id ON public.orders(user_id);
@@ -83,7 +175,7 @@ CREATE TRIGGER set_updated_at_orders
   EXECUTE FUNCTION public.handle_updated_at();
 
 -- ============================================
--- 4. TABELA ORDER_ITEMS (Itens dos Pedidos)
+-- 5. TABELA ORDER_ITEMS (Itens dos Pedidos)
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS public.order_items (
@@ -96,12 +188,25 @@ CREATE TABLE IF NOT EXISTS public.order_items (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
+-- Garantir que created_at existe
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND table_name = 'order_items' 
+    AND column_name = 'created_at'
+  ) THEN
+    ALTER TABLE public.order_items ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL;
+  END IF;
+END $$;
+
 -- Índices para melhor performance
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON public.order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON public.order_items(product_id);
 
 -- ============================================
--- 5. ROW LEVEL SECURITY (RLS) - SEGURANÇA
+-- 6. ROW LEVEL SECURITY (RLS) - SEGURANÇA
 -- ============================================
 
 -- Habilitar RLS em todas as tabelas
@@ -111,7 +216,7 @@ ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 
 -- ============================================
--- 6. POLÍTICAS RLS PARA PROFILES
+-- 7. POLÍTICAS RLS PARA PROFILES
 -- ============================================
 
 -- Remover políticas existentes antes de criar (evita duplicação)
@@ -139,7 +244,7 @@ CREATE POLICY "Users can update own profile"
   WITH CHECK (auth.uid() = id);
 
 -- ============================================
--- 7. POLÍTICAS RLS PARA VIP_LIST
+-- 8. POLÍTICAS RLS PARA VIP_LIST
 -- ============================================
 
 -- Remover políticas existentes antes de criar
@@ -167,15 +272,14 @@ CREATE POLICY "Users can update own VIP entry"
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
--- Permitir que usuários autenticados vejam se estão na lista (para verificação)
--- Mas apenas sua própria entrada
+-- Permitir que usuários autenticados vejam se estão na lista
 CREATE POLICY "Authenticated users can check VIP status"
   ON public.vip_list
   FOR SELECT
   USING (auth.uid() IS NOT NULL AND auth.uid() = user_id);
 
 -- ============================================
--- 8. POLÍTICAS RLS PARA ORDERS
+-- 9. POLÍTICAS RLS PARA ORDERS
 -- ============================================
 
 -- Remover políticas existentes antes de criar
@@ -203,7 +307,7 @@ CREATE POLICY "Users can update own pending orders"
   WITH CHECK (auth.uid() = user_id);
 
 -- ============================================
--- 9. POLÍTICAS RLS PARA ORDER_ITEMS
+-- 10. POLÍTICAS RLS PARA ORDER_ITEMS
 -- ============================================
 
 -- Remover políticas existentes antes de criar
@@ -235,10 +339,11 @@ CREATE POLICY "Users can insert own order items"
   );
 
 -- ============================================
--- 10. FUNÇÃO PARA CRIAR PERFIL AUTOMATICAMENTE
+-- 11. FUNÇÃO PARA CRIAR PERFIL AUTOMATICAMENTE
 -- ============================================
 
 -- Função que cria um perfil automaticamente quando um usuário é criado
+-- IMPORTANTE: Esta função só será criada APÓS garantir que a tabela profiles existe com todas as colunas
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -248,8 +353,8 @@ BEGIN
     COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
     NULLIF(NEW.raw_user_meta_data->>'phone', ''),
     COALESCE(NEW.raw_user_meta_data->>'address_country', 'Brasil'),
-    NOW(),
-    NOW()
+    TIMEZONE('utc'::text, NOW()),
+    TIMEZONE('utc'::text, NOW())
   )
   ON CONFLICT (id) DO NOTHING; -- Evita erro se o perfil já existir
   RETURN NEW;
@@ -257,6 +362,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Trigger que executa a função quando um novo usuário é criado
+-- IMPORTANTE: Criado DEPOIS da função e DEPOIS de garantir que a tabela existe
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
@@ -264,7 +370,7 @@ CREATE TRIGGER on_auth_user_created
   EXECUTE FUNCTION public.handle_new_user();
 
 -- ============================================
--- 11. COMENTÁRIOS NAS TABELAS (Documentação)
+-- 12. COMENTÁRIOS NAS TABELAS (Documentação)
 -- ============================================
 
 COMMENT ON TABLE public.profiles IS 'Perfis de usuários com informações pessoais e endereço';
@@ -273,37 +379,53 @@ COMMENT ON TABLE public.orders IS 'Pedidos realizados pelos usuários';
 COMMENT ON TABLE public.order_items IS 'Itens individuais de cada pedido';
 
 -- ============================================
--- FIM DO SCRIPT
--- ============================================
--- 6. ATUALIZAR COLUNA address_country (se já existir)
+-- 13. VERIFICAÇÃO FINAL
 -- ============================================
 
--- Adicionar coluna address_country se não existir
+-- Verificar se tudo está configurado corretamente
 DO $$ 
 BEGIN
+  -- Verificar se a tabela profiles tem todas as colunas necessárias
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns 
     WHERE table_schema = 'public' 
     AND table_name = 'profiles' 
-    AND column_name = 'address_country'
+    AND column_name = 'created_at'
   ) THEN
-    ALTER TABLE public.profiles ADD COLUMN address_country TEXT DEFAULT 'Brasil';
+    RAISE EXCEPTION 'Erro: Coluna created_at não existe na tabela profiles';
   END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND table_name = 'profiles' 
+    AND column_name = 'updated_at'
+  ) THEN
+    RAISE EXCEPTION 'Erro: Coluna updated_at não existe na tabela profiles';
+  END IF;
+
+  -- Verificar se o trigger existe
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger 
+    WHERE tgname = 'on_auth_user_created'
+  ) THEN
+    RAISE WARNING 'Aviso: Trigger on_auth_user_created não foi criado';
+  END IF;
+
+  RAISE NOTICE '✓ Configuração do banco de dados concluída com sucesso!';
 END $$;
 
--- Atualizar registros existentes que possam ter "Portugal" para "Brasil"
-UPDATE public.profiles 
-SET address_country = 'Brasil' 
-WHERE address_country IS NULL OR address_country = 'Portugal';
-
+-- ============================================
+-- FIM DO SCRIPT
 -- ============================================
 -- 
 -- PRÓXIMOS PASSOS:
 -- 1. Execute este script no SQL Editor do Supabase
--- 2. Verifique se todas as tabelas foram criadas corretamente
+-- 2. Verifique se não há erros (deve mostrar mensagem de sucesso)
 -- 3. Teste as políticas RLS criando um usuário de teste
 -- 4. Configure as variáveis de ambiente no Vercel:
 --    - NEXT_PUBLIC_SUPABASE_URL
 --    - NEXT_PUBLIC_SUPABASE_ANON_KEY
+-- 5. Execute o middleware para refresh automático de sessão
 -- 
 -- ============================================

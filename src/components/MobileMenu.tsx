@@ -31,8 +31,8 @@ export default function MobileMenu() {
       setLoading(true);
       try {
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        setUser(user);
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
       } catch (error) {
         console.error('Erro ao carregar usuário:', error);
       } finally {
@@ -46,8 +46,8 @@ export default function MobileMenu() {
     setLoggingOut(true);
     try {
       const supabase = createClient();
-      await supabase.auth.signOut();
-      setUser(null);
+    await supabase.auth.signOut();
+    setUser(null);
       setIsMenuOpen(false);
       router.push('/');
       router.refresh();
@@ -111,7 +111,7 @@ export default function MobileMenu() {
               </svg>
             </button>
           </div>
-          
+
           {/* Navegação Principal */}
           <nav className="flex-1">
             <ul className="flex flex-col space-y-2">
@@ -168,38 +168,38 @@ export default function MobileMenu() {
               </div>
             ) : !user ? (
               /* Usuário não logado */
-              <div className="flex flex-col space-y-4">
+    <div className="flex flex-col space-y-4">
                 <Link 
                   href="/login" 
                   onClick={handleLinkClick}
                   className="flex items-center space-x-4 py-3 px-2 text-brand-softblack hover:bg-gray-50 rounded-sm transition-colors group"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 group-hover:text-brand-green transition-colors">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                  </svg>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+        </svg>
                   <span className="text-[10px] uppercase tracking-[0.3em] font-medium">
                     Entrar na Conta
                   </span>
-                </Link>
-                
-                <Link 
-                  href="/register" 
+      </Link>
+      
+      <Link 
+        href="/register" 
                   onClick={handleLinkClick}
                   className="text-[10px] uppercase tracking-[0.3em] font-light opacity-60 ml-9 hover:opacity-100 transition-opacity"
-                >
-                  Criar nova conta
-                </Link>
-              </div>
-            ) : (
+      >
+        Criar nova conta
+      </Link>
+    </div>
+  ) : (
               /* Usuário logado */
-              <div className="space-y-4">
+    <div className="space-y-4">
                 <div className="pb-4 border-b border-gray-100">
                   <p className="text-[8px] uppercase tracking-widest opacity-50 mb-2">
                     Sessão iniciada como:
                   </p>
-                  <p className="text-[10px] uppercase tracking-widest font-medium text-brand-softblack truncate">
-                    {user.email}
-                  </p>
+      <p className="text-[10px] uppercase tracking-widest font-medium text-brand-softblack truncate">
+        {user.email}
+      </p>
                 </div>
                 
                 <Link 
@@ -211,10 +211,10 @@ export default function MobileMenu() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
                   </svg>
                   <span>Editar Perfil / Endereço</span>
-                </Link>
+      </Link>
                 
-                <button 
-                  onClick={handleLogout}
+      <button 
+        onClick={handleLogout}
                   disabled={loggingOut}
                   className="flex items-center space-x-4 py-3 px-2 w-full text-[10px] uppercase tracking-[0.3em] font-medium text-red-600 hover:bg-red-50 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -234,12 +234,12 @@ export default function MobileMenu() {
                       <span>Sair da Conta</span>
                     </>
                   )}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </>
-  );
+      </button>
+    </div>
+  )}
+</div>
+</div>
+</div>
+</>
+);
 }

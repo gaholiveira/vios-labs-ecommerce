@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { formatDatabaseError, logDatabaseError } from '@/utils/errorHandler';
 
 interface FormErrors {
   full_name?: string;
@@ -124,57 +125,84 @@ export default function RegisterPage() {
       });
 
       if (authError) {
-        setError(authError.message);
+        logDatabaseError('Criação de usuário (Auth)', authError);
+        const errorMessage = formatDatabaseError(authError);
+        
+        // Se a mensagem for genérica, tentar obter mais detalhes
+        if (errorMessage.includes('Database error') || !authError.message) {
+          console.warn('⚠️ Erro genérico detectado. Verificando estrutura do erro:');
+          console.warn('authError:', JSON.stringify(authError, null, 2));
+          console.warn('authData:', JSON.stringify(authData, null, 2));
+        }
+        
+        setError(errorMessage);
         setLoading(false);
         return;
       }
 
-      // Criar perfil na tabela profiles
+      // Verificar se o usuário foi criado
+      if (!authData.user) {
+        setError('Não foi possível criar a conta. Tente novamente.');
+        setLoading(false);
+        return;
+      }
+
+      // Criar/atualizar perfil na tabela profiles
+      // O trigger do banco cria o perfil automaticamente, mas vamos garantir que os dados estejam completos
       if (authData.user) {
-        const phoneNumbers = formData.phone.replace(/\D/g, '');
+        const phoneNumbers = formData.phone.replace(/\D/g, '') || null;
         
-        // Tentar criar o perfil
+        // Aguardar um pouco para o trigger do banco processar
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Verificar se o perfil existe e atualizar com os dados completos
         const { error: profileError } = await supabase
           .from('profiles')
           .upsert({
             id: authData.user.id,
             full_name: formData.full_name.trim(),
-            phone: phoneNumbers || null,
+            phone: phoneNumbers,
+            address_country: "Brasil",
             updated_at: new Date().toISOString(),
-            created_at: new Date().toISOString(),
           }, {
             onConflict: 'id'
           });
 
-        // Se houver erro, tentar novamente após um delay
+        // Se houver erro, tentar novamente após um delay maior
         if (profileError) {
-          console.error('Erro ao criar perfil (primeira tentativa):', profileError);
+          logDatabaseError('Atualização de perfil (primeira tentativa)', profileError);
           
-          // Aguardar e tentar novamente
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          // Aguardar mais tempo e tentar novamente
+          await new Promise(resolve => setTimeout(resolve, 1500));
           
           const { error: retryError } = await supabase
             .from('profiles')
             .upsert({
               id: authData.user.id,
               full_name: formData.full_name.trim(),
-              phone: phoneNumbers || null,
+              phone: phoneNumbers,
+              address_country: "Brasil",
               updated_at: new Date().toISOString(),
-              created_at: new Date().toISOString(),
             }, {
               onConflict: 'id'
             });
 
           if (retryError) {
-            console.error('Erro ao criar perfil (segunda tentativa):', retryError);
-            // Mesmo com erro, continua o processo - o perfil será criado quando o usuário acessar a página de perfil
+            logDatabaseError('Atualização de perfil (segunda tentativa)', retryError);
+            // Mostrar erro ao usuário se a segunda tentativa também falhar
+            const errorMessage = formatDatabaseError(retryError);
+            setError(`Aviso: ${errorMessage}. O perfil será atualizado quando você acessar sua conta.`);
+            // Não bloqueia o processo - o perfil foi criado pelo trigger e pode ser atualizado depois
           }
         }
       }
 
+      // Sucesso - redirecionar para login
       router.push('/login?registered=true');
     } catch (err) {
-      setError('Ocorreu um erro inesperado. Tente novamente.');
+      logDatabaseError('Exceção ao criar conta', err);
+      const errorMessage = formatDatabaseError(err);
+      setError(errorMessage);
       setLoading(false);
     }
   };

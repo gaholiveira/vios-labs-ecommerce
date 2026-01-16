@@ -1,7 +1,9 @@
 -- ============================================
--- SETUP COMPLETO DO BANCO DE DADOS - VIOS LABS
+-- SETUP COMPLETO DO BANCO DE DADOS - VIOS LABS V2
+-- Sistema de Autenticação Otimizado
 -- ============================================
 -- Execute este script no SQL Editor do Supabase
+-- Este script é idempotente (pode ser executado múltiplas vezes)
 -- ============================================
 
 -- ============================================
@@ -23,6 +25,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- Índices para melhor performance
 CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON public.profiles(id);
 CREATE INDEX IF NOT EXISTS idx_profiles_phone ON public.profiles(phone) WHERE phone IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_profiles_created_at ON public.profiles(created_at DESC);
 
 -- Trigger para atualizar updated_at automaticamente
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
@@ -168,7 +171,6 @@ CREATE POLICY "Users can update own VIP entry"
   WITH CHECK (auth.uid() = user_id);
 
 -- Permitir que usuários autenticados vejam se estão na lista (para verificação)
--- Mas apenas sua própria entrada
 CREATE POLICY "Authenticated users can check VIP status"
   ON public.vip_list
   FOR SELECT
@@ -264,18 +266,7 @@ CREATE TRIGGER on_auth_user_created
   EXECUTE FUNCTION public.handle_new_user();
 
 -- ============================================
--- 11. COMENTÁRIOS NAS TABELAS (Documentação)
--- ============================================
-
-COMMENT ON TABLE public.profiles IS 'Perfis de usuários com informações pessoais e endereço';
-COMMENT ON TABLE public.vip_list IS 'Lista VIP para acesso ao Lote Zero';
-COMMENT ON TABLE public.orders IS 'Pedidos realizados pelos usuários';
-COMMENT ON TABLE public.order_items IS 'Itens individuais de cada pedido';
-
--- ============================================
--- FIM DO SCRIPT
--- ============================================
--- 6. ATUALIZAR COLUNA address_country (se já existir)
+-- 11. ATUALIZAR COLUNA address_country (se já existir)
 -- ============================================
 
 -- Adicionar coluna address_country se não existir
@@ -297,6 +288,17 @@ SET address_country = 'Brasil'
 WHERE address_country IS NULL OR address_country = 'Portugal';
 
 -- ============================================
+-- 12. COMENTÁRIOS NAS TABELAS (Documentação)
+-- ============================================
+
+COMMENT ON TABLE public.profiles IS 'Perfis de usuários com informações pessoais e endereço';
+COMMENT ON TABLE public.vip_list IS 'Lista VIP para acesso ao Lote Zero';
+COMMENT ON TABLE public.orders IS 'Pedidos realizados pelos usuários';
+COMMENT ON TABLE public.order_items IS 'Itens individuais de cada pedido';
+
+-- ============================================
+-- FIM DO SCRIPT
+-- ============================================
 -- 
 -- PRÓXIMOS PASSOS:
 -- 1. Execute este script no SQL Editor do Supabase
@@ -305,5 +307,6 @@ WHERE address_country IS NULL OR address_country = 'Portugal';
 -- 4. Configure as variáveis de ambiente no Vercel:
 --    - NEXT_PUBLIC_SUPABASE_URL
 --    - NEXT_PUBLIC_SUPABASE_ANON_KEY
+-- 5. Execute o middleware para refresh automático de sessão
 -- 
 -- ============================================
