@@ -13,12 +13,15 @@ export default function ForgotPasswordPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Verificar se há erro na URL (vindo do callback)
+    // Verificar se há erro na URL (vindo do callback ou home page)
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const errorParam = params.get("error");
       if (errorParam) {
-        setError(decodeURIComponent(errorParam));
+        const decodedError = decodeURIComponent(errorParam);
+        setError(decodedError);
+        // Limpar a URL após capturar o erro
+        window.history.replaceState({}, "", "/forgot-password");
       }
     }
   }, []);

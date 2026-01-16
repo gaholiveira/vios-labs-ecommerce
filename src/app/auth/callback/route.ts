@@ -7,6 +7,9 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const type = searchParams.get('type') // 'recovery' para password reset, 'signup' para registro
   const next = searchParams.get('next') ?? '/'
+  const error = searchParams.get('error') // Erros do Supabase
+  const errorCode = searchParams.get('error_code')
+  const errorDescription = searchParams.get('error_description')
   const origin = requestUrl.origin
 
   // Log para debug (apenas em desenvolvimento)
@@ -15,8 +18,40 @@ export async function GET(request: NextRequest) {
       code: code ? 'presente' : 'ausente', 
       type, 
       next,
+      error,
+      errorCode,
       fullUrl: requestUrl.toString()
     })
+  }
+
+  // Se há erros do Supabase (link expirado, inválido, etc.)
+  if (error || errorCode) {
+    const isRecovery = type === 'recovery' || next === '/reset-password'
+    
+    // Mensagem amigável baseada no erro
+    let errorMessage = 'Erro ao processar o link de redefinição de senha.'
+    if (errorCode === 'otp_expired') {
+      errorMessage = 'Link de redefinição de senha expirado ou inválido. Por favor, solicite um novo link.'
+    } else if (error === 'access_denied') {
+      errorMessage = 'Acesso negado. O link pode ter expirado ou já foi usado.'
+    } else if (errorDescription) {
+      errorMessage = decodeURIComponent(errorDescription).replace(/\+/g, ' ')
+    }
+
+    // Se for password reset, redirecionar para forgot-password
+    if (isRecovery) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('❌ Erro no callback de recovery:', { error, errorCode, errorDescription })
+      }
+      return NextResponse.redirect(
+        `${origin}/forgot-password?error=${encodeURIComponent(errorMessage)}`
+      )
+    }
+
+    // Outros erros: redirecionar para login
+    return NextResponse.redirect(
+      `${origin}/login?error=auth-error&message=${encodeURIComponent(errorMessage)}`
+    )
   }
 
   if (code) {

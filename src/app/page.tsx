@@ -1,9 +1,39 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import AboutSection from "@/components/AboutSection";
 import ProductCard from "@/components/ProductCard";
 import { PRODUCTS } from "@/constants/products";
 import Image from "next/image";
 
 export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Detectar erros de autenticação na URL (vindos do Supabase quando o callback falha)
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const error = params.get("error");
+      const errorCode = params.get("error_code");
+      const errorDescription = params.get("error_description");
+
+      // Se há erros relacionados a OTP expirado ou acesso negado (password reset)
+      if (error === "access_denied" && errorCode === "otp_expired") {
+        // Redirecionar para forgot-password com mensagem amigável
+        const message = "Link de redefinição de senha expirado ou inválido. Por favor, solicite um novo link.";
+        router.replace(`/forgot-password?error=${encodeURIComponent(message)}`);
+        return;
+      }
+
+      // Se há outros erros de autenticação na URL, limpar a URL
+      if (error || errorCode) {
+        // Limpar a URL sem recarregar a página
+        window.history.replaceState({}, "", "/");
+      }
+    }
+  }, [router]);
+
   return (
     <main>
       {/* Hero Section */}

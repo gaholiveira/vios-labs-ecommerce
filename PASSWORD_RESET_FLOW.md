@@ -121,14 +121,28 @@ if (type === 'recovery' || next === '/reset-password') {
 
 **Solução:** O middleware foi ajustado para permitir `/reset-password` mesmo com sessão ativa.
 
-### ❌ **Problema: "Link inválido ou expirado"**
+### ❌ **Problema: "Link inválido ou expirado" (otp_expired)**
 
 **Causa:** O código do email expirou ou já foi usado
 
-**Solução:**
+**Sintomas:**
+- URL: `https://vioslabs.com.br/?error=access_denied&error_code=otp_expired`
+- Redireciona para home ao invés de `/reset-password`
+
+**Solução Implementada:**
+1. ✅ A home page (`page.tsx`) detecta erros de autenticação e redireciona para `/forgot-password`
+2. ✅ O callback handler (`/auth/callback/route.ts`) captura erros e redireciona apropriadamente
+3. ✅ Mensagens amigáveis explicando o problema
+
+**Para o Usuário:**
 1. Solicite um novo link de redefinição
-2. Use o link imediatamente após receber
+2. Use o link imediatamente após receber (dentro de 1 hora)
 3. Links de password reset expiram em 1 hora (padrão do Supabase)
+4. Cada link só pode ser usado uma vez
+
+**Se o problema persistir:**
+- Verifique se `https://vioslabs.com.br/auth/callback` está nas **Redirect URLs** do Supabase
+- Verifique se o **Site URL** está configurado corretamente
 
 ### ❌ **Problema: Callback não está processando o código**
 
