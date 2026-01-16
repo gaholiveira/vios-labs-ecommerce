@@ -11,7 +11,10 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string }>({});
+  const [errors, setErrors] = useState<{
+    password?: string;
+    confirmPassword?: string;
+  }>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
@@ -21,13 +24,20 @@ export default function ResetPasswordPage() {
     async function checkAuth() {
       try {
         const supabase = createClient();
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser();
+
         if (authError || !user) {
-          setError("Link inválido ou expirado. Solicite um novo link de redefinição.");
+          setError(
+            "Link inválido ou expirado. Solicite um novo link de redefinição."
+          );
         }
       } catch (err) {
-        setError("Erro ao verificar autenticação. Solicite um novo link de redefinição.");
+        setError(
+          "Erro ao verificar autenticação. Solicite um novo link de redefinição."
+        );
       }
     }
     checkAuth();
@@ -39,13 +49,13 @@ export default function ResetPasswordPage() {
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumber = /[0-9]/.test(password);
-    
+
     return {
       valid: minLength && hasUpperCase && hasLowerCase && hasNumber,
       minLength,
       hasUpperCase,
       hasLowerCase,
-      hasNumber
+      hasNumber,
     };
   };
 
@@ -82,23 +92,34 @@ export default function ResetPasswordPage() {
       });
 
       if (updateError) {
-        logDatabaseError('Atualização de senha', updateError);
+        logDatabaseError("Atualização de senha", updateError);
         const errorMessage = formatDatabaseError(updateError);
         setError(errorMessage);
         setLoading(false);
         return;
       }
 
-      // Sucesso
+      // Sucesso - verificar se o usuário está logado automaticamente
+      // O Supabase mantém a sessão após updateUser, então o usuário já está logado
+      const {
+        data: { user: updatedUser },
+      } = await supabase.auth.getUser();
+
       setSuccess(true);
       setLoading(false);
 
-      // Redirecionar para login após 3 segundos
-      setTimeout(() => {
-        router.push("/login?password-reset=true");
-      }, 3000);
+      // Se o usuário está logado (o que é esperado após updateUser)
+      // Não redirecionar automaticamente, deixar o usuário escolher
+      // A mensagem de sucesso já indica que ele está logado
+
+      // Se por algum motivo não estiver logado, redirecionar para login
+      if (!updatedUser) {
+        setTimeout(() => {
+          router.push("/login?password-reset=true");
+        }, 3000);
+      }
     } catch (err) {
-      logDatabaseError('Exceção ao redefinir senha', err);
+      logDatabaseError("Exceção ao redefinir senha", err);
       const errorMessage = formatDatabaseError(err);
       setError(errorMessage);
       setLoading(false);
@@ -113,30 +134,52 @@ export default function ResetPasswordPage() {
         <h2 className="text-2xl font-light uppercase tracking-[0.3em] text-center mb-4 text-brand-softblack">
           Nova Senha
         </h2>
-        
+
         <p className="text-[10px] uppercase tracking-wider text-center mb-8 opacity-60 text-brand-softblack">
           Digite sua nova senha
         </p>
 
         {success && (
-          <div className="mb-6 p-4 bg-brand-green/10 border border-brand-green/30 text-brand-green text-sm text-center rounded-sm">
-            <div className="flex items-center justify-center gap-2">
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+          <div className="space-y-6">
+            <div className="p-6 bg-brand-green/10 border border-brand-green/30 text-brand-green text-center rounded-sm">
+              <div className="flex flex-col items-center justify-center gap-3">
+                <svg
+                  className="w-8 h-8"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">
+                    Senha redefinida com sucesso!
+                  </p>
+                  <p className="text-xs opacity-80">
+                    Você já está logado na sua conta. Pode continuar navegando.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <Link
+                href="/profile"
+                className="w-full bg-brand-green text-brand-offwhite py-4 uppercase text-[10px] tracking-[0.2em] hover:opacity-90 transition text-center font-medium"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-              <span>
-                Senha redefinida com sucesso! Redirecionando para o login...
-              </span>
+                Ver Meu Perfil
+              </Link>
+              <Link
+                href="/"
+                className="w-full border border-brand-green text-brand-green py-4 uppercase text-[10px] tracking-[0.2em] hover:bg-brand-green/5 transition text-center"
+              >
+                Ir para a Home
+              </Link>
             </div>
           </div>
         )}
@@ -147,7 +190,7 @@ export default function ResetPasswordPage() {
           </div>
         )}
 
-        {!success ? (
+        {!success && (
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Nova Senha */}
             <div>
@@ -179,35 +222,87 @@ export default function ResetPasswordPage() {
                   aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                 >
                   {showPassword ? (
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                      />
                     </svg>
                   ) : (
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                      />
                     </svg>
                   )}
                 </button>
               </div>
               {errors.password && (
-                <p className="text-[10px] text-red-500 mt-1">{errors.password}</p>
+                <p className="text-[10px] text-red-500 mt-1">
+                  {errors.password}
+                </p>
               )}
               {password && (
                 <div className="mt-2 space-y-1">
                   <div className="flex items-center gap-2 text-[9px]">
-                    <span className={passwordValidation.minLength ? "text-green-600" : "text-gray-400"}>
-                      {passwordValidation.minLength ? "✓" : "○"} Mínimo 8 caracteres
+                    <span
+                      className={
+                        passwordValidation.minLength
+                          ? "text-green-600"
+                          : "text-gray-400"
+                      }
+                    >
+                      {passwordValidation.minLength ? "✓" : "○"} Mínimo 8
+                      caracteres
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-[9px]">
-                    <span className={passwordValidation.hasUpperCase && passwordValidation.hasLowerCase ? "text-green-600" : "text-gray-400"}>
-                      {passwordValidation.hasUpperCase && passwordValidation.hasLowerCase ? "✓" : "○"} Letras maiúsculas e minúsculas
+                    <span
+                      className={
+                        passwordValidation.hasUpperCase &&
+                        passwordValidation.hasLowerCase
+                          ? "text-green-600"
+                          : "text-gray-400"
+                      }
+                    >
+                      {passwordValidation.hasUpperCase &&
+                      passwordValidation.hasLowerCase
+                        ? "✓"
+                        : "○"}{" "}
+                      Letras maiúsculas e minúsculas
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-[9px]">
-                    <span className={passwordValidation.hasNumber ? "text-green-600" : "text-gray-400"}>
-                      {passwordValidation.hasNumber ? "✓" : "○"} Pelo menos um número
+                    <span
+                      className={
+                        passwordValidation.hasNumber
+                          ? "text-green-600"
+                          : "text-gray-400"
+                      }
+                    >
+                      {passwordValidation.hasNumber ? "✓" : "○"} Pelo menos um
+                      número
                     </span>
                   </div>
                 </div>
@@ -241,25 +336,56 @@ export default function ResetPasswordPage() {
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-brand-softblack transition"
-                  aria-label={showConfirmPassword ? "Ocultar senha" : "Mostrar senha"}
+                  aria-label={
+                    showConfirmPassword ? "Ocultar senha" : "Mostrar senha"
+                  }
                 >
                   {showConfirmPassword ? (
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                      />
                     </svg>
                   ) : (
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                      />
                     </svg>
                   )}
                 </button>
               </div>
               {errors.confirmPassword && (
-                <p className="text-[10px] text-red-500 mt-1">{errors.confirmPassword}</p>
+                <p className="text-[10px] text-red-500 mt-1">
+                  {errors.confirmPassword}
+                </p>
               )}
               {confirmPassword && password === confirmPassword && (
-                <p className="text-[10px] text-green-600 mt-1">✓ Senhas coincidem</p>
+                <p className="text-[10px] text-green-600 mt-1">
+                  ✓ Senhas coincidem
+                </p>
               )}
             </div>
 
@@ -297,28 +423,18 @@ export default function ResetPasswordPage() {
               )}
             </button>
           </form>
-        ) : (
-          <div className="text-center">
-            <p className="text-sm text-brand-softblack/70 mb-4">
-              Sua senha foi redefinida com sucesso!
-            </p>
+        )}
+
+        {!success && (
+          <div className="mt-8 text-center">
             <Link
               href="/login"
-              className="inline-block text-[10px] uppercase tracking-widest font-bold border-b border-brand-green pb-1 hover:text-brand-green transition-colors"
+              className="block text-[10px] uppercase tracking-widest opacity-60 text-brand-softblack hover:opacity-100 transition-opacity"
             >
-              Ir para o login →
+              ← Voltar para o login
             </Link>
           </div>
         )}
-
-        <div className="mt-8 text-center">
-          <Link
-            href="/login"
-            className="block text-[10px] uppercase tracking-widest opacity-60 text-brand-softblack hover:opacity-100 transition-opacity"
-          >
-            ← Voltar para o login
-          </Link>
-        </div>
       </div>
     </div>
   );
