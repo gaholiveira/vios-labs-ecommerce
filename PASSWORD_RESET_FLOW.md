@@ -83,9 +83,24 @@ if (!user) {
 
 ### ❌ **Problema: Redireciona para home (`/`) ao invés de `/reset-password`**
 
-**Causa Possível 1:** ⚠️ **Site URL no Supabase está configurado como home**
+**Causa Possível 1:** ⚠️ **Incompatibilidade entre URL com `www` e sem `www`**
 
-**Este é o problema mais comum!** Se o **Site URL** no Supabase Dashboard estiver configurado como `https://vioslabs.com.br` (apenas o domínio), o Supabase pode ignorar o `redirectTo` e usar o Site URL como fallback.
+**Este é um problema muito comum!** Se o usuário acessar o site com `www.vioslabs.com.br`, mas o **Site URL** no Supabase estiver configurado como `https://vioslabs.com.br` (sem `www`), o Supabase pode rejeitar o `redirectTo` e usar o Site URL como fallback.
+
+**Solução Implementada:**
+- O código agora normaliza o `redirectTo` para sempre remover `www.`, garantindo correspondência com o Site URL do Supabase.
+- Se o usuário acessar com `www`, o código remove `www.` antes de enviar para o Supabase.
+
+**Solução Alternativa (no Supabase):**
+Você pode adicionar URLs com `www` nas **Redirect URLs**:
+```
+https://www.vioslabs.com.br/auth/callback
+https://www.vioslabs.com.br/auth/callback?*
+```
+
+**Causa Possível 2:** ⚠️ **Site URL no Supabase está configurado incorretamente**
+
+Se o **Site URL** no Supabase Dashboard estiver configurado incorretamente, o Supabase pode ignorar o `redirectTo` e usar o Site URL como fallback.
 
 **Solução:**
 1. Acesse **Supabase Dashboard** → **Authentication** → **URL Configuration**
@@ -172,7 +187,7 @@ Site URL: https://vioslabs.com.br
 
 Na mesma seção, adicione em **Redirect URLs**:
 
-**Produção:**
+**Produção (sem www):**
 ```
 https://vioslabs.com.br/auth/callback
 https://vioslabs.com.br/auth/callback?*
@@ -180,6 +195,15 @@ https://vioslabs.com.br/reset-password
 https://vioslabs.com.br/login
 https://vioslabs.com.br/register
 ```
+
+**Produção (com www) - OPCIONAL (se quiser suportar ambos):**
+```
+https://www.vioslabs.com.br/auth/callback
+https://www.vioslabs.com.br/auth/callback?*
+https://www.vioslabs.com.br/reset-password
+```
+
+💡 **Nota:** O código já normaliza para remover `www.` automaticamente, então essas URLs com `www` são opcionais. Mas adicioná-las garante compatibilidade total.
 
 **Para desenvolvimento (localhost):**
 ```

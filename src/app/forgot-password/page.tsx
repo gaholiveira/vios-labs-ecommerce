@@ -34,8 +34,17 @@ export default function ForgotPasswordPage() {
 
     try {
       const supabase = createClient();
+      
+      // Normalizar a URL para garantir que corresponde às configurações do Supabase
+      // Remove 'www.' se presente, pois o Site URL está configurado sem www no Supabase
+      let baseUrl = window.location.origin;
+      // Remove www. do domínio para corresponder ao Site URL do Supabase (https://vioslabs.com.br)
+      if (baseUrl.includes('www.')) {
+        baseUrl = baseUrl.replace('www.', '');
+      }
+      
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback?type=recovery&next=/reset-password`,
+        redirectTo: `${baseUrl}/auth/callback?type=recovery&next=/reset-password`,
       });
 
       if (resetError) {
