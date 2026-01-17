@@ -32,3 +32,19 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Otimização LCP: Prevenir layout shift na Hero Section */
+section[class*="h-screen"] {
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Esconder scrollbar no carrossel mobile */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE e Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari e Opera */
+}

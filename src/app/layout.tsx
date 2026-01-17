@@ -5,6 +5,8 @@ import './globals.css';
 import Footer from '@/components/Footer';
 import MobileMenu from '@/components/MobileMenu';
 import SearchOverlay from '@/components/SearchOverlay';
+import SmoothScrolling from '@/components/SmoothScrolling';
+import ToastContainer from '@/components/ToastContainer';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -26,15 +28,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" href="/favicon.ico" />
       </head>
       <body className="antialiased bg-white">
-        <CartProvider>
-          <Navbar />
-          <MobileMenu />
-          <SearchOverlay />
-          <CartDrawer />
-          {/* O children é onde o conteúdo da page.tsx será injetado */}
-          {children}
-          <Footer />
-        </CartProvider>
+        <SmoothScrolling>
+          <CartProvider>
+            <Navbar />
+            <MobileMenu />
+            <SearchOverlay />
+            <CartDrawer />
+            <ToastContainer />
+            {/* O children é onde o conteúdo da page.tsx será injetado */}
+            {children}
+            <Footer />
+          </CartProvider>
+        </SmoothScrolling>
       </body>
     </html>
   );

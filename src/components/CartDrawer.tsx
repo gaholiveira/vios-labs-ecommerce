@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
@@ -29,25 +30,31 @@ export default function CartDrawer() {
   }, [removeFromCart, updateQuantity]);
 
   return (
-    <>
-      {/* Overlay Escuro */}
-      <div 
-        className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 ${
-          isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
-        }`}
-        onClick={() => setIsOpen(false)}
-        aria-hidden="true"
-      />
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop Escuro com Blur */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60]"
+            onClick={() => setIsOpen(false)}
+            aria-hidden="true"
+          />
 
-      {/* Painel Lateral */}
-      <div 
-        className={`fixed right-0 top-0 h-full w-full max-w-md bg-white z-[70] shadow-2xl transition-transform duration-300 ease-out ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Carrinho de compras"
-      >
+          {/* Painel Lateral com Animação */}
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+            className="fixed right-0 top-0 h-full w-full max-w-[400px] bg-white z-[70] shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Carrinho de compras"
+          >
         <div className="h-full flex flex-col">
           {/* Header */}
           <div className="flex justify-between items-center p-6 border-b border-gray-200">
@@ -217,7 +224,9 @@ export default function CartDrawer() {
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
     </>
+      )}
+    </AnimatePresence>
   );
 }

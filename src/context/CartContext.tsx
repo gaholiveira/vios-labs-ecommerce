@@ -20,6 +20,9 @@ interface CartContextType {
   setIsMenuOpen: (open: boolean) => void;
   isSearchOpen: boolean;
   setIsSearchOpen: (open: boolean) => void;
+  toastMessage: string | null;
+  showToast: (message: string) => void;
+  hideToast: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -29,15 +32,26 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false); // Começa fechado
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = useCallback((message: string) => {
+    setToastMessage(message);
+  }, []);
+
+  const hideToast = useCallback(() => {
+    setToastMessage(null);
+  }, []);
 
   const addToCart = useCallback((product: Product) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
       if (existing) {
+        setToastMessage(`${product.name} adicionado novamente ao carrinho`);
         return prev.map((item) =>
           item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
         );
       }
+      setToastMessage(`${product.name} adicionado ao carrinho`);
       return [...prev, { ...product, quantity: 1 }];
     });
     setIsOpen(true); // Abre o carrinho automaticamente ao adicionar
@@ -87,7 +101,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       isMenuOpen, 
       setIsMenuOpen, 
       isSearchOpen, 
-      setIsSearchOpen 
+      setIsSearchOpen,
+      toastMessage,
+      showToast,
+      hideToast
     }}>
       {children}
     </CartContext.Provider>

@@ -1,53 +1,62 @@
-'use client';
-import { useParams } from 'next/navigation';
-import Image from 'next/image';
-import { PRODUCTS } from '@/constants/products';
-import { useCart } from '@/context/CartContext';
-import { formatPrice } from '@/utils/format';
+import { Metadata } from "next";
+import { PRODUCTS } from "@/constants/products";
+import ProductPageContent from "@/components/ProductPageContent";
 
-export default function ProductPage() {
-  const params = useParams();
-  const { addToCart } = useCart();
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
 
-  // Procurar o produto correspondente ao ID na URL
-  const product = PRODUCTS.find((p) => p.id === params.id);
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params;
+  const product = PRODUCTS.find((p) => p.id === id);
+
+  if (!product) {
+    return {
+      title: "Produto não encontrado | VIOS",
+      description: "Produto não encontrado",
+    };
+  }
+
+  // Construir URL absoluta da imagem
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://vioslabs.com.br";
+  const imageUrl = `${baseUrl}${product.image}`;
+
+  const title = `VIOS | ${product.name}`;
+  const description = `Compre ${product.name}. ${product.description}`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      locale: "pt_BR",
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: product.name,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [imageUrl],
+    },
+  };
+}
+
+export default async function ProductPage({ params }: PageProps) {
+  const { id } = await params;
+  const product = PRODUCTS.find((p) => p.id === id);
 
   if (!product) {
     return <div className="p-20 text-center">Produto não encontrado.</div>;
   }
 
-  return (
-    <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-2 gap-12">
-      {/* Imagem do Produto */}
-      <div className="relative bg-gray-100 aspect-[3/4] overflow-hidden">
-        <Image
-          src={product.image}
-          alt={product.name}
-          fill
-          sizes="(max-width: 768px) 100vw, 50vw"
-          className="object-cover"
-          priority
-          quality={90}
-        />
-      </div>
-
-      {/* Detalhes */}
-      <div className="flex flex-col justify-center">
-        <h1 className="text-3xl font-light uppercase tracking-widest mb-4">
-          {product.name}
-        </h1>
-        <p className="text-xl mb-6">{formatPrice(product.price)}</p>
-        
-        <div className="border-t border-b py-6 mb-8 text-gray-600 font-light leading-relaxed">
-          {product.description}
-        </div>
-
-        <button 
-          onClick={() => addToCart(product)}
-          className="bg-brand-green text-brand-offwhite px-6 py-3 uppercase tracking-widest text-[10px]">
-          Adicionar ao Carrinho
-        </button>
-      </div>
-    </div>
-  );
+  return <ProductPageContent product={product} />;
 }

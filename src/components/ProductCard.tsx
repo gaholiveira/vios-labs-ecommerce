@@ -123,7 +123,7 @@ function ProductCard({ product }: { product: Product }) {
 
         {/* Nome do Produto */}
         <Link href={`/produto/${product.id}`}>
-          <h3 className="text-sm uppercase tracking-wider font-medium text-brand-softblack hover:text-brand-green transition-colors leading-tight">
+          <h3 className="text-xs sm:text-sm uppercase tracking-wider font-medium text-brand-softblack hover:text-brand-green transition-colors leading-tight">
             {product.name}
           </h3>
         </Link>
@@ -156,7 +156,8 @@ function ProductCard({ product }: { product: Product }) {
         <button
           onClick={() => addToCart(product)}
           disabled
-          className="bg-gray-300 text-gray-500 px-6 py-3 uppercase tracking-widest text-[10px] font-medium cursor-not-allowed transition-all duration-300 mt-2"
+          className="border border-gray-300 rounded-sm bg-gray-300 text-gray-500 px-6 py-3 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium cursor-not-allowed transition-all duration-300 mt-2"
+          aria-disabled="true"
         >
           Lançamento em breve
         </button>

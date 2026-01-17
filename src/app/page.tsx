@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AboutSection from "@/components/AboutSection";
 import ProductCard from "@/components/ProductCard";
+import FadeInStagger from "@/components/FadeInStagger";
 import { PRODUCTS } from "@/constants/products";
 import Image from "next/image";
 
@@ -54,9 +55,11 @@ export default function Home() {
           alt="Vios 2026 Hero"
           fill
           priority
-          quality={85}
+          quality={90}
           sizes="100vw"
           className="object-cover object-center"
+          placeholder="blur"
+          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWEREiMxUf/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
         />
 
         {/* Overlay para escurecer a imagem e destacar o texto */}
@@ -70,7 +73,7 @@ export default function Home() {
           <h1 className="text-5xl md:text-7xl font-extralight mb-8 uppercase tracking-tighter text-brand-offwhite">
             Vios 2026
           </h1>
-          <button className="border border-brand-offwhite px-10 py-4 text-[10px] uppercase tracking-widest text-brand-offwhite hover:bg-brand-offwhite hover:text-brand-softblack transition-all font-medium">
+          <button className="border border-brand-offwhite rounded-sm px-10 py-4 min-h-[44px] text-xs uppercase tracking-[0.2em] text-brand-offwhite active:bg-brand-green/80 active:text-brand-offwhite active:border-brand-green md:hover:bg-brand-green md:hover:text-brand-offwhite md:hover:border-brand-green transition-all duration-500 ease-out md:transform md:hover:scale-105 font-medium">
             Explorar Loja
           </button>
         </div>
@@ -78,9 +81,11 @@ export default function Home() {
 
       {/* Grid de Produtos */}
       <section className="max-w-7xl mx-auto px-6 py-24">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-16">
-          {PRODUCTS.map((product) => (
-            <ProductCard key={product.id} product={product} />
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-x-10 sm:gap-y-16">
+          {PRODUCTS.map((product, index) => (
+            <FadeInStagger key={product.id} index={index}>
+              <ProductCard product={product} />
+            </FadeInStagger>
           ))}
         </div>
       </section>

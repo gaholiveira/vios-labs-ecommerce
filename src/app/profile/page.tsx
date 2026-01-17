@@ -8,6 +8,7 @@ interface FormErrors {
   full_name?: string;
   phone?: string;
   address_street?: string;
+  address_district?: string;
   address_city?: string;
   address_postcode?: string;
 }
@@ -23,6 +24,7 @@ export default function ProfilePage() {
     full_name: "",
     phone: "",
     address_street: "",
+    address_district: "",
     address_city: "",
     address_postcode: "",
   });
@@ -64,6 +66,10 @@ export default function ProfilePage() {
 
     if (profile.address_street && profile.address_street.trim().length < 5) {
       newErrors.address_street = "Endereço muito curto";
+    }
+
+    if (profile.address_district && profile.address_district.trim().length < 2) {
+      newErrors.address_district = "Bairro inválido";
     }
 
     if (profile.address_city && profile.address_city.trim().length < 2) {
@@ -127,6 +133,7 @@ export default function ProfilePage() {
             full_name: newProfile.full_name || "",
             phone: newProfile.phone ? formatPhone(newProfile.phone) : "",
             address_street: "",
+            address_district: "",
             address_city: "",
             address_postcode: "",
           });
@@ -143,6 +150,7 @@ export default function ProfilePage() {
             full_name: profileData.full_name || "",
             phone: formattedPhone,
             address_street: profileData.address_street || "",
+            address_district: profileData.address_district || "",
             address_city: profileData.address_city || "",
             address_postcode: formattedPostcode,
           });
@@ -153,6 +161,7 @@ export default function ProfilePage() {
             full_name: userMetadata.full_name || "",
             phone: userMetadata.phone ? formatPhone(userMetadata.phone) : "",
             address_street: "",
+            address_district: "",
             address_city: "",
             address_postcode: "",
           });
@@ -194,6 +203,7 @@ export default function ProfilePage() {
         full_name: profile.full_name.trim(),
         phone: profile.phone.replace(/\D/g, ""),
         address_street: profile.address_street.trim(),
+        address_district: profile.address_district.trim(),
         address_city: profile.address_city.trim(),
         address_postcode: profile.address_postcode.replace(/\D/g, ""),
         address_country: "Brasil",
@@ -379,6 +389,37 @@ export default function ProfilePage() {
                 {errors.address_street && (
                   <p className="text-[10px] text-red-500 mt-1">
                     {errors.address_street}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex flex-col">
+                <label
+                  htmlFor="address_district"
+                  className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium"
+                >
+                  Bairro
+                </label>
+                <input
+                  id="address_district"
+                  type="text"
+                  className={`w-full bg-transparent border-b py-2 focus:outline-none transition text-brand-softblack placeholder:text-gray-400 ${
+                    errors.address_district
+                      ? "border-red-400 focus:border-red-500"
+                      : "border-gray-300 focus:border-brand-green"
+                  }`}
+                  value={profile.address_district}
+                  onChange={(e) => {
+                    setProfile({ ...profile, address_district: e.target.value });
+                    if (errors.address_district) {
+                      setErrors({ ...errors, address_district: undefined });
+                    }
+                  }}
+                  placeholder="Bairro"
+                />
+                {errors.address_district && (
+                  <p className="text-[10px] text-red-500 mt-1">
+                    {errors.address_district}
                   </p>
                 )}
               </div>
