@@ -7,9 +7,11 @@ import ProductCard from "@/components/ProductCard";
 import FadeInStagger from "@/components/FadeInStagger";
 import { PRODUCTS } from "@/constants/products";
 import Image from "next/image";
+import { useMobileViewportHeight } from "@/hooks/useMobileViewportHeight";
 
 export default function Home() {
   const router = useRouter();
+  const viewportHeight = useMobileViewportHeight();
 
   useEffect(() => {
     // Detectar códigos de autenticação e erros na URL
@@ -48,7 +50,12 @@ export default function Home() {
   return (
     <main>
       {/* Hero Section */}
-      <section className="relative h-[100svh] w-full flex items-center justify-center overflow-hidden bg-brand-softblack">
+      <section 
+        className="relative w-full flex items-center justify-center overflow-hidden bg-brand-softblack"
+        style={{ 
+          height: viewportHeight ? `${viewportHeight}px` : '100svh' 
+        }}
+      >
         {/* Usando o componente Image do Next.js para máxima performance */}
         <div className="absolute inset-0 transform-gpu will-change-transform">
           <Image

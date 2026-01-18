@@ -5,8 +5,10 @@ import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { User } from "@supabase/supabase-js";
 import { formatDatabaseError, logDatabaseError } from "@/utils/errorHandler";
+import { useMobileViewportHeight } from "@/hooks/useMobileViewportHeight";
 
 export default function LoteZeroPage() {
+  const viewportHeight = useMobileViewportHeight();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -266,7 +268,12 @@ export default function LoteZeroPage() {
   return (
     <main className="bg-brand-offwhite">
       {/* Hero Section */}
-      <section className="relative h-[100svh] w-full flex items-center justify-center overflow-hidden bg-brand-softblack">
+      <section 
+        className="relative w-full flex items-center justify-center overflow-hidden bg-brand-softblack"
+        style={{ 
+          height: viewportHeight ? `${viewportHeight}px` : '100svh' 
+        }}
+      >
         <div className="absolute inset-0 transform-gpu will-change-transform">
           <Image
             src="/images/hero-foto.jpg"
