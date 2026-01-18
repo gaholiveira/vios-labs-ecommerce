@@ -48,19 +48,21 @@ export default function Home() {
   return (
     <main>
       {/* Hero Section */}
-      <section className="relative h-screen w-full flex items-center justify-center overflow-hidden bg-brand-softblack">
+      <section className="relative h-[100svh] w-full flex items-center justify-center overflow-hidden bg-brand-softblack">
         {/* Usando o componente Image do Next.js para máxima performance */}
-        <Image
-          src="/images/hero-foto.jpg"
-          alt="Vios 2026 Hero"
-          fill
-          priority
-          quality={90}
-          sizes="100vw"
-          className="object-cover object-center"
-          placeholder="blur"
-          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWEREiMxUf/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-        />
+        <div className="absolute inset-0 transform-gpu will-change-transform">
+          <Image
+            src="/images/hero-foto.jpg"
+            alt="Vios 2026 Hero"
+            fill
+            priority
+            quality={90}
+            sizes="100vw"
+            className="object-cover object-center"
+            placeholder="blur"
+            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWEREiMxUf/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+          />
+        </div>
 
         {/* Overlay para escurecer a imagem e destacar o texto */}
         <div className="absolute inset-0 bg-black/30 z-[1]" />
@@ -83,7 +85,11 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-6 py-24">
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-x-10 sm:gap-y-16">
           {PRODUCTS.map((product, index) => (
-            <FadeInStagger key={product.id} index={index}>
+            <FadeInStagger 
+              key={product.id} 
+              index={index}
+              className={index === PRODUCTS.length - 1 ? "col-span-2 lg:col-span-1" : ""}
+            >
               <ProductCard product={product} />
             </FadeInStagger>
           ))}

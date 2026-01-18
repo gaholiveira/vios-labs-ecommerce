@@ -5,14 +5,17 @@ import { motion } from "framer-motion";
 interface FadeInStaggerProps {
   children: React.ReactNode;
   index?: number;
+  className?: string;
 }
 
 export default function FadeInStagger({
   children,
   index = 0,
+  className = "",
 }: FadeInStaggerProps) {
   return (
     <motion.div
+      className={className}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{

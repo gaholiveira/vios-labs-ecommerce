@@ -50,7 +50,7 @@ export default function KeyIngredients({ ingredients }: KeyIngredientsProps) {
           {ingredients.map((ingredient, index) => (
             <div
               key={index}
-              className="flex-shrink-0 w-48 flex flex-col items-center text-center p-6 bg-gray-50 border border-gray-200 rounded-sm"
+              className="flex-shrink-0 w-48 flex flex-col items-center text-center p-6 bg-gray-50 border border-gray-200 rounded-sm last:mr-6"
             >
               {/* Ícone Abstrato - Circle com Textura */}
               <div className="w-16 h-16 rounded-full bg-brand-green/10 border border-brand-green/20 mb-4 flex items-center justify-center relative overflow-hidden">

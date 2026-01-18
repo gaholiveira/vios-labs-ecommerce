@@ -5,17 +5,19 @@ export default function SobrePage() {
   return (
     <main className="bg-brand-offwhite">
       {/* Hero Section */}
-      <section className="relative h-[60vh] md:h-[70vh] w-full flex items-center justify-center overflow-hidden bg-brand-softblack">
+      <section className="relative h-[60svh] md:h-[70svh] w-full flex items-center justify-center overflow-hidden bg-brand-softblack">
         {/* Imagem de fundo */}
-        <Image
-          src="/images/fundadores.png"
-          alt="Vios Labs História"
-          fill
-          priority
-          quality={85}
-          sizes="100vw"
-          className="object-cover md:object-contain object-center"
-        />
+        <div className="absolute inset-0 transform-gpu will-change-transform">
+          <Image
+            src="/images/fundadores.png"
+            alt="Vios Labs História"
+            fill
+            priority
+            quality={85}
+            sizes="100vw"
+            className="object-cover md:object-contain object-center"
+          />
+        </div>
 
         {/* Overlay para escurecer a imagem e destacar o texto */}
         <div className="absolute inset-0 bg-black/30 z-[1]" />

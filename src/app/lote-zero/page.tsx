@@ -266,16 +266,18 @@ export default function LoteZeroPage() {
   return (
     <main className="bg-brand-offwhite">
       {/* Hero Section */}
-      <section className="relative h-screen w-full flex items-center justify-center overflow-hidden bg-brand-softblack">
-        <Image
-          src="/images/hero-foto.jpg"
-          alt="Lote Zero VIP"
-          fill
-          priority
-          quality={85}
-          sizes="100vw"
-          className="object-cover object-center"
-        />
+      <section className="relative h-[100svh] w-full flex items-center justify-center overflow-hidden bg-brand-softblack">
+        <div className="absolute inset-0 transform-gpu will-change-transform">
+          <Image
+            src="/images/hero-foto.jpg"
+            alt="Lote Zero VIP"
+            fill
+            priority
+            quality={85}
+            sizes="100vw"
+            className="object-cover object-center"
+          />
+        </div>
 
         <div className="absolute inset-0 bg-black/40 z-[1]" />
 
