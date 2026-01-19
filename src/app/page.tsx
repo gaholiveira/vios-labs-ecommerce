@@ -82,14 +82,22 @@ export default function Home() {
           <h1 className="text-5xl md:text-7xl font-extralight mb-8 uppercase tracking-tighter text-brand-offwhite">
             Vios 2026
           </h1>
-          <button className="border border-brand-offwhite rounded-sm px-10 py-4 min-h-[44px] text-xs uppercase tracking-[0.2em] text-brand-offwhite active:bg-brand-green/80 active:text-brand-offwhite active:border-brand-green md:hover:bg-brand-green md:hover:text-brand-offwhite md:hover:border-brand-green transition-all duration-500 ease-out md:transform md:hover:scale-105 font-medium">
+          <button 
+            onClick={() => {
+              const productsSection = document.getElementById('produtos');
+              if (productsSection) {
+                productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }}
+            className="border border-brand-offwhite rounded-sm px-10 py-4 min-h-[44px] text-xs uppercase tracking-[0.2em] text-brand-offwhite active:bg-brand-green/80 active:text-brand-offwhite active:border-brand-green md:hover:bg-brand-green md:hover:text-brand-offwhite md:hover:border-brand-green transition-all duration-500 ease-out md:transform md:hover:scale-105 font-medium"
+          >
             Explorar Loja
           </button>
         </div>
       </section>
 
       {/* Grid de Produtos */}
-      <section className="max-w-7xl mx-auto px-6 py-24">
+      <section id="produtos" className="max-w-7xl mx-auto px-6 py-24">
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-x-10 sm:gap-y-16">
           {PRODUCTS.map((product, index) => (
             <FadeInStagger 
