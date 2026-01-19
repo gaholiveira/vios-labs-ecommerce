@@ -30,17 +30,6 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'pt_BR',
   },
-  icons: {
-    icon: '/icon.png',
-    shortcut: '/icon.png',
-    apple: '/apple-icon.png',
-    other: [
-      {
-        rel: 'apple-touch-icon-precomposed',
-        url: '/apple-touch-icon-precomposed.png',
-      },
-    ],
-  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
