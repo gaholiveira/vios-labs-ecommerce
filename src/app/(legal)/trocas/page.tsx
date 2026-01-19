@@ -8,164 +8,110 @@ export const metadata: Metadata = {
 export default function TrocasPage() {
   return (
     <main className="bg-brand-offwhite min-h-screen">
-      <div className="max-w-4xl mx-auto px-6 py-16 md:py-24">
-        <h1 className="text-3xl md:text-4xl font-light uppercase tracking-tighter mb-8 text-brand-softblack">
-          Envios e Devoluções
+      <div className="max-w-3xl mx-auto px-6 py-20">
+        {/* Título Principal */}
+        <h1 className="text-3xl md:text-4xl font-light mb-12 text-[#082f1e]">
+          Política de Envios, Trocas e Reembolso - VIOS
         </h1>
         
-        <div className="text-sm md:text-base font-light text-brand-softblack/80 leading-relaxed space-y-6">
+        <div className="text-base text-stone-600 leading-relaxed space-y-4">
+          {/* Introdução */}
+          <p>
+            Na VIOS, buscamos a excelência desde a formulação até a entrega. Abaixo, detalhamos nossas diretrizes para garantir uma experiência transparente e segura.
+          </p>
+
+          {/* Seção 1 */}
           <section>
-            <h2 className="text-xl font-medium uppercase tracking-[0.1em] mb-4 text-brand-softblack mt-8">
+            <h2 className="text-xl font-bold mt-10 mb-4 text-[#082f1e]">
               1. Política de Envios
             </h2>
-            <h3 className="text-lg font-medium uppercase tracking-[0.05em] mb-3 text-brand-softblack mt-6">
-              Prazo de Envio
-            </h3>
-            <p>
-              Todos os pedidos são processados em até 2 dias úteis após a confirmação do pagamento. 
-              O prazo de entrega varia conforme a localidade e modalidade de frete escolhida.
-            </p>
-            <h3 className="text-lg font-medium uppercase tracking-[0.05em] mb-3 text-brand-softblack mt-6">
-              Opções de Frete
-            </h3>
-            <ul className="list-disc pl-6 mt-4 space-y-2">
-              <li>PAC: 10 a 15 dias úteis (em média)</li>
-              <li>SEDEX: 5 a 7 dias úteis (em média)</li>
-              <li>Frete Expresso: 2 a 3 dias úteis (quando disponível)</li>
-            </ul>
-            <p className="mt-4">
-              O prazo de entrega começa a contar após a postagem do pedido no correio/transportadora. 
-              Você receberá um código de rastreamento por e-mail assim que o pedido for enviado.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-medium uppercase tracking-[0.1em] mb-4 text-brand-softblack mt-8">
-              2. Cobertura de Entrega
-            </h2>
-            <p>
-              Atualmente realizamos entregas para todo o território nacional. 
-              Para cidades do interior, o prazo pode ser ligeiramente superior ao informado.
-            </p>
-            <p className="mt-4">
-              Em caso de endereço inválido ou incompleto, entraremos em contato para confirmação. 
-              Pedidos não entregues por endereço incorreto podem retornar para nossa central, 
-              ocasionando atraso na entrega ou necessidade de novo envio com custo adicional.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-medium uppercase tracking-[0.1em] mb-4 text-brand-softblack mt-8">
-              3. Política de Troca e Devolução
-            </h2>
-            <h3 className="text-lg font-medium uppercase tracking-[0.05em] mb-3 text-brand-softblack mt-6">
-              Prazo para Solicitação
-            </h3>
-            <p>
-              Você tem até 7 (sete) dias corridos, a contar da data de recebimento do produto, 
-              para solicitar a troca ou devolução, conforme estabelecido no Código de Defesa do Consumidor (CDC).
-            </p>
-            <h3 className="text-lg font-medium uppercase tracking-[0.05em] mb-3 text-brand-softblack mt-6">
-              Condições para Troca/Devolução
-            </h3>
-            <ul className="list-disc pl-6 mt-4 space-y-2">
-              <li>Produto deve estar na embalagem original, sem uso</li>
-              <li>Selos de segurança e lacres intactos</li>
-              <li>Nota fiscal e etiquetas anexadas</li>
-              <li>Produto não pode ter sinais de uso ou manipulação indevida</li>
+            <ul className="list-disc list-inside space-y-2 ml-4">
+              <li>
+                <strong>Processamento:</strong> Após a confirmação do pagamento, seu pedido é preparado para envio em até 24 a 48 horas úteis.
+              </li>
+              <li>
+                <strong>Prazos:</strong> O prazo de entrega varia conforme a região e a modalidade de frete escolhida no checkout. Esse prazo passa a contar a partir da postagem do produto.
+              </li>
+              <li>
+                <strong>Rastreamento:</strong> Você receberá um código de rastreio por e-mail para acompanhar cada etapa do trajeto.
+              </li>
+              <li>
+                <strong>Lote Zero:</strong> Devido à exclusividade e alta demanda do Lote Zero, os prazos podem sofrer pequenas variações, as quais serão comunicadas prontamente.
+              </li>
             </ul>
           </section>
 
+          {/* Seção 2 - Direito de Arrependimento */}
           <section>
-            <h2 className="text-xl font-medium uppercase tracking-[0.1em] mb-4 text-brand-softblack mt-8">
-              4. Processo de Troca
+            <h2 className="text-xl font-bold mt-10 mb-4 text-[#082f1e]">
+              2. Direito de Arrependimento (Devolução)
             </h2>
-            <p>
-              Para solicitar uma troca:
+            <p className="mb-4">
+              Conforme o Artigo 49 do Código de Defesa do Consumidor, você tem o direito de desistir da compra em até 7 (sete) dias corridos após o recebimento.
             </p>
-            <ol className="list-decimal pl-6 mt-4 space-y-2">
-              <li>Entre em contato através do e-mail: atendimento@vioslabs.com.br</li>
-              <li>Informe o número do pedido e o motivo da troca</li>
-              <li>Nossa equipe enviará as instruções para envio do produto</li>
-              <li>Após recebermos e analisarmos o produto, enviaremos o item substituto</li>
-            </ol>
-            <p className="mt-4">
-              O frete de retorno será por conta do cliente, exceto em casos de defeito ou erro nosso.
-            </p>
+            
+            {/* Box de Alerta - Condição Crucial */}
+            <div className="bg-stone-50 p-4 border-l-2 border-[#082f1e] my-6">
+              <p className="font-semibold mb-2 text-[#082f1e]">Condição Crucial:</p>
+              <p>
+                Por se tratar de suplementos alimentares, a devolução só será aceita se o produto estiver com o lacre original intacto e na embalagem original. Produtos com lacres rompidos ou danificados não serão aceitos por razões de segurança sanitária e integridade do produto.
+              </p>
+            </div>
           </section>
 
+          {/* Seção 3 */}
           <section>
-            <h2 className="text-xl font-medium uppercase tracking-[0.1em] mb-4 text-brand-softblack mt-8">
-              5. Processo de Devolução e Reembolso
+            <h2 className="text-xl font-bold mt-10 mb-4 text-[#082f1e]">
+              3. Trocas por Defeito ou Avaria
             </h2>
-            <p>
-              Para solicitar uma devolução e reembolso:
+            <p className="mb-4">
+              Caso o seu produto chegue com a embalagem danificada ou qualquer defeito de fabricação:
             </p>
-            <ol className="list-decimal pl-6 mt-4 space-y-2">
-              <li>Entre em contato através do e-mail: atendimento@vioslabs.com.br</li>
-              <li>Informe o número do pedido e o motivo da devolução</li>
-              <li>Nossa equipe enviará as instruções para envio do produto</li>
-              <li>Após recebermos e confirmarmos o produto, processaremos o reembolso</li>
-            </ol>
-            <h3 className="text-lg font-medium uppercase tracking-[0.05em] mb-3 text-brand-softblack mt-6">
-              Prazo de Reembolso
-            </h3>
-            <p>
-              O reembolso será processado em até 14 dias úteis após o recebimento e análise do produto. 
-              O valor será devolvido na mesma forma de pagamento utilizada na compra:
-            </p>
-            <ul className="list-disc pl-6 mt-4 space-y-2">
-              <li>Cartão de crédito: estorno na fatura do cartão (próxima fatura ou fatura seguinte)</li>
-              <li>Boleto/PIX: reembolso na conta bancária informada</li>
+            <ul className="list-disc list-inside space-y-2 ml-4">
+              <li>
+                Envie uma foto ou vídeo do produto para{' '}
+                <a 
+                  href="mailto:suporte@vioslabs.com.br"
+                  className="text-[#082f1e] hover:underline transition"
+                >
+                  suporte@vioslabs.com.br
+                </a>
+                {' '}em até 30 dias após o recebimento.
+              </li>
+              <li>
+                A VIOS arcará com todos os custos de frete para a troca por um novo item do mesmo lote.
+              </li>
             </ul>
           </section>
 
+          {/* Seção 4 */}
           <section>
-            <h2 className="text-xl font-medium uppercase tracking-[0.1em] mb-4 text-brand-softblack mt-8">
-              6. Produtos com Defeito
+            <h2 className="text-xl font-bold mt-10 mb-4 text-[#082f1e]">
+              4. Política de Reembolso
             </h2>
-            <p>
-              Caso receba um produto com defeito ou danificado durante o transporte:
+            <p className="mb-4">
+              O reembolso será processado assim que o produto retornar ao nosso centro de distribuição e passar pela conferência do lacre:
             </p>
-            <ul className="list-disc pl-6 mt-4 space-y-2">
-              <li>Entre em contato imediatamente através do e-mail: atendimento@vioslabs.com.br</li>
-              <li>Envie fotos do produto e da embalagem</li>
-              <li>Nossa equipe avaliará e providenciará a troca ou reembolso</li>
-              <li>O frete de retorno será por nossa conta</li>
+            <ul className="list-disc list-inside space-y-2 ml-4">
+              <li>
+                <strong>Cartão de Crédito:</strong> O estorno será solicitado à operadora (Stripe) e poderá aparecer em até duas faturas subsequentes, dependendo do fechamento do seu cartão.
+              </li>
+              <li>
+                <strong>Pix:</strong> O reembolso será realizado na mesma conta de origem em até 3 dias úteis.
+              </li>
+              <li>
+                <strong>Frete:</strong> No caso de arrependimento (sem defeito), o valor do frete de envio não é reembolsável, conforme a legislação vigente.
+              </li>
             </ul>
           </section>
 
+          {/* Seção 5 */}
           <section>
-            <h2 className="text-xl font-medium uppercase tracking-[0.1em] mb-4 text-brand-softblack mt-8">
-              7. Itens Não Trocos ou Devolvidos
+            <h2 className="text-xl font-bold mt-10 mb-4 text-[#082f1e]">
+              5. Pedidos Não Entregues
             </h2>
             <p>
-              Por questões de higiene e segurança, não aceitamos troca ou devolução de:
-            </p>
-            <ul className="list-disc pl-6 mt-4 space-y-2">
-              <li>Produtos com lacres violados</li>
-              <li>Produtos fora da embalagem original</li>
-              <li>Produtos sem nota fiscal</li>
-              <li>Produtos fora do prazo de 7 dias</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-medium uppercase tracking-[0.1em] mb-4 text-brand-softblack mt-8">
-              8. Contato
-            </h2>
-            <p>
-              Para dúvidas, solicitações de troca ou devolução, entre em contato:
-            </p>
-            <ul className="list-none pl-0 mt-4 space-y-2">
-              <li className="font-medium">E-mail: atendimento@vioslabs.com.br</li>
-              <li>Horário de atendimento: Segunda a Sexta, das 9h às 18h</li>
-            </ul>
-          </section>
-
-          <section className="pt-8 border-t border-gray-200 mt-12">
-            <p className="text-xs text-brand-softblack/60 italic">
-              Última atualização: Janeiro 2026
+              Caso o pedido retorne por erro de endereço cadastrado pelo cliente ou por repetidas tentativas de entrega sem sucesso, o custo de reenvio será de responsabilidade do comprador.
             </p>
           </section>
         </div>

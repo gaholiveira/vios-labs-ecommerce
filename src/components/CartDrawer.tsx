@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { formatPrice } from '@/utils/format';
+import ShippingMeter from '@/components/cart/ShippingMeter';
 
 export default function CartDrawer() {
   const { cart, isOpen, setIsOpen, removeFromCart, updateQuantity, totalPrice } = useCart();
@@ -149,6 +150,9 @@ export default function CartDrawer() {
               </div>
             ) : (
               <div className="space-y-4">
+                {/* Shipping Meter - Incentivo de Frete Grátis */}
+                <ShippingMeter currentSubtotal={totalPrice} />
+                
                 {cart.map((item) => {
                   const itemTotal = item.price * item.quantity;
                   return (

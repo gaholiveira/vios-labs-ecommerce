@@ -28,9 +28,41 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: 'Inter', sans-serif; /* Uma fonte mais moderna que Arial para o estilo e-commerce */
+  /* A fonte Inter é injetada automaticamente pelo next/font via className no layout.tsx */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Cursor - Esconder cursor padrão em desktop */
+@media (min-width: 1024px) {
+  html,
+  body,
+  a,
+  button,
+  select,
+  textarea {
+    cursor: none !important;
+  }
+  
+  /* Exceção: Restaurar cursor nativo em inputs e textareas para precisão de texto */
+  input,
+  textarea,
+  [contenteditable="true"] {
+    cursor: text !important;
+  }
+}
+
+/* Em telas touch (mobile), manter cursor padrão */
+@media (max-width: 1023px) {
+  html,
+  body,
+  a,
+  button,
+  input,
+  select,
+  textarea {
+    cursor: auto !important;
+  }
 }
 
 /* Otimização LCP: Prevenir layout shift na Hero Section */

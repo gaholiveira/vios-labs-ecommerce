@@ -1,8 +1,12 @@
 import Link from 'next/link';
 
-export default function Footer() {
+interface FooterProps {
+  className?: string;
+}
+
+export default function Footer({ className = '' }: FooterProps) {
   return (
-    <footer className="bg-brand-softblack text-brand-offwhite py-16 px-6">
+    <footer className={`bg-brand-softblack text-brand-offwhite py-16 px-6 ${className}`}>
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
         <div>
           <h4 className="text-[10px] uppercase tracking-[0.3em] mb-6 font-bold">Menu</h4>
@@ -45,16 +49,42 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Informações Fiscais */}
-      <div className="max-w-7xl mx-auto mt-8 pt-6 border-t border-brand-offwhite/10">
-        <div className="text-[10px] text-gray-400 text-center space-y-2">
-          <p>© 2026 VIOS LABS. Todos os direitos reservados.</p>
-          <p className="uppercase tracking-[0.1em]">
-            CNPJ: 00.000.000/0001-00
-          </p>
-          <p className="font-light">
-            Endereço Fiscal: Rua Exemplo, 123 - Centro, São Paulo - SP, CEP 00000-000
-          </p>
+      {/* Copyright */}
+      <div className="max-w-7xl mx-auto mt-8 pt-6 border-t border-white/10">
+        <p className="text-[10px] text-white/40 text-center font-light">
+          © 2026 VIOS LABS. Todos os direitos reservados.
+        </p>
+      </div>
+
+      {/* Dados Legais Obrigatórios - Stripe */}
+      <div className="max-w-7xl mx-auto mt-6 pt-6 border-t border-white/10 py-6">
+        {/* Desktop: Linha única com separadores */}
+        <div className="hidden md:block">
+          <div className="text-[10px] font-mono text-white/40 text-center leading-relaxed">
+            <span>Isadora Matos Ferreira LTDA</span>
+            <span className="mx-2">•</span>
+            <span>CNPJ: 62.463.131/0001-62</span>
+            <span className="mx-2">•</span>
+            <span>Rua Cassiano Ricardo, 441 - Nova Franca, Franca - SP, CEP 14409-214</span>
+            <span className="mx-2">•</span>
+            <span>atendimento@vioslabs.com.br</span>
+            <span className="mx-2">|</span>
+            <span>(11) 95213-6713</span>
+          </div>
+        </div>
+
+        {/* Mobile: Linhas quebradas e centralizadas */}
+        <div className="md:hidden">
+          <div className="text-[10px] font-mono text-white/40 text-center space-y-2 leading-relaxed">
+            <p>Isadora Matos Ferreira LTDA</p>
+            <p>CNPJ: 62.463.131/0001-62</p>
+            <p>Rua Cassiano Ricardo, 441 - Nova Franca, Franca - SP, CEP 14409-214</p>
+            <p>
+              <span>atendimento@vioslabs.com.br</span>
+              <span className="mx-2">|</span>
+              <span>(11) 95213-6713</span>
+            </p>
+          </div>
         </div>
       </div>
     </footer>
