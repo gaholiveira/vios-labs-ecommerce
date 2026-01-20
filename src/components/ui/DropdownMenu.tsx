@@ -1,0 +1,142 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/utils/supabase/client';
+
+interface DropdownMenuItem {
+  label?: string;
+  href?: string;
+  onClick?: () => void;
+  icon?: React.ReactNode;
+  separator?: boolean;
+}
+
+interface DropdownMenuProps {
+  children: React.ReactNode;
+  items: DropdownMenuItem[];
+  align?: 'left' | 'right';
+}
+
+export default function DropdownMenu({ 
+  children, 
+  items, 
+  align = 'right' 
+}: DropdownMenuProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/');
+    router.refresh();
+  };
+
+  const handleItemClick = async (item: DropdownMenuItem) => {
+    // Se for "Sair", fazer logout e não navegar
+    if (item.label === 'Sair') {
+      await handleLogout();
+      setIsOpen(false);
+      return;
+    }
+
+    // Não processar items sem label (separadores já foram tratados)
+    if (!item.label) {
+      return;
+    }
+
+    if (item.onClick) {
+      item.onClick();
+    }
+    
+    if (item.href) {
+      router.push(item.href);
+    }
+    
+    setIsOpen(false);
+  };
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="focus:outline-none focus:ring-2 focus:ring-brand-green/20 rounded-full transition-opacity hover:opacity-80"
+        aria-expanded={isOpen}
+        aria-haspopup="true"
+      >
+        {children}
+      </button>
+
+      {isOpen && (
+        <>
+          {/* Overlay para fechar ao clicar fora */}
+          <div
+            className="fixed inset-0 z-10"
+            onClick={() => setIsOpen(false)}
+          />
+
+          {/* Menu Dropdown */}
+          <div
+            className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} top-full mt-2 z-20 w-56 bg-white rounded-sm shadow-lg border border-gray-200 py-2`}
+            role="menu"
+          >
+            {items.map((item, index) => {
+              if (item.separator) {
+                return (
+                  <div
+                    key={`separator-${index}`}
+                    className="my-1 border-t border-gray-100"
+                  />
+                );
+              }
+
+              const handleClick = () => {
+                handleItemClick(item);
+              };
+
+              // Pular items sem label (exceto separadores que já foram tratados)
+              if (!item.label) {
+                return null;
+              }
+
+              return (
+                <button
+                  key={index}
+                  onClick={handleClick}
+                  className="w-full flex items-center space-x-3 px-4 py-2.5 text-left text-xs uppercase tracking-[0.2em] font-light text-brand-softblack hover:bg-gray-50 transition-colors"
+                  role="menuitem"
+                >
+                  {item.icon && (
+                    <span className="w-4 h-4 flex-shrink-0 text-gray-400">
+                      {item.icon}
+                    </span>
+                  )}
+                  <span className={item.icon ? '' : 'pl-7'}>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

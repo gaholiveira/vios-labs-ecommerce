@@ -3,13 +3,16 @@ import { useEffect, useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Lock } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { formatPrice } from '@/utils/format';
 import ShippingMeter from '@/components/cart/ShippingMeter';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function CartDrawer() {
   const { cart, isOpen, setIsOpen, removeFromCart, updateQuantity, totalPrice } = useCart();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const { user } = useAuth(); // Obter usuário atual (pode ser null para guests)
 
   // Prevenir scroll quando carrinho está aberto
   useEffect(() => {
@@ -31,12 +34,10 @@ export default function CartDrawer() {
     }
   }, [removeFromCart, updateQuantity]);
 
-  const handleCheckout = useCallback(async () => {
-    if (cart.length === 0 || isLoading) return;
-
-    setIsLoading(true);
-
+  const handleCheckout = async () => {
     try {
+      setIsCheckingOut(true);
+      
       // Preparar itens para a API
       const items = cart.map((item) => ({
         id: item.id,
@@ -46,34 +47,48 @@ export default function CartDrawer() {
         image: item.image,
       }));
 
-      // Fazer POST para a API de checkout
+      // Preparar dados do usuário (se logado) ou null para guest checkout
+      const checkoutData = {
+        items,
+        userId: user?.id || null,
+        customerEmail: user?.email || null,
+      };
+
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify(checkoutData),
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Erro ao processar checkout');
-      }
 
       const data = await response.json();
 
-      // Redirecionar para o checkout do Stripe
+      if (!response.ok) {
+        // Erro retornado pela API
+        const errorMessage = data.error || 'Erro ao processar checkout';
+        console.error('Erro ao criar sessão:', errorMessage);
+        alert(`Erro ao processar checkout: ${errorMessage}`);
+        setIsCheckingOut(false);
+        return;
+      }
+
       if (data.url) {
-        window.location.href = data.url;
+        window.location.href = data.url; // Redireciona para o Stripe
       } else {
-        throw new Error('URL de checkout não retornada');
+        // Sem URL retornada (erro inesperado)
+        const errorMessage = data.error || 'Não foi possível criar a sessão de checkout';
+        console.error('Erro ao criar sessão:', errorMessage);
+        alert(`Erro: ${errorMessage}. Por favor, tente novamente.`);
+        setIsCheckingOut(false);
       }
     } catch (error: any) {
-      console.error('Erro ao processar checkout:', error);
-      alert(error.message || 'Erro ao processar checkout. Tente novamente.');
-      setIsLoading(false);
+      // Erro de rede ou outro erro não tratado
+      console.error('Erro no checkout:', error);
+      alert('Erro ao conectar com o servidor. Verifique sua conexão e tente novamente.');
+      setIsCheckingOut(false);
     }
-  }, [cart, isLoading]);
+  };
 
   return (
     <AnimatePresence>
@@ -257,10 +272,10 @@ export default function CartDrawer() {
               
               <button
                 onClick={handleCheckout}
-                disabled={isLoading}
+                disabled={isCheckingOut || cart.length === 0}
                 className="w-full bg-brand-green text-brand-offwhite py-4 uppercase tracking-widest text-[10px] text-center hover:bg-brand-green/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-h-[44px] active:opacity-70"
               >
-                {isLoading ? (
+                {isCheckingOut ? (
                   <>
                     <svg
                       className="animate-spin h-4 w-4 text-brand-offwhite"
@@ -285,7 +300,10 @@ export default function CartDrawer() {
                     <span>Processando...</span>
                   </>
                 ) : (
-                  'Finalizar Compra'
+                  <>
+                    <Lock className="w-4 h-4" />
+                    <span>Finalizar Compra</span>
+                  </>
                 )}
               </button>
               

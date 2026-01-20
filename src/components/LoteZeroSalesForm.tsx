@@ -62,14 +62,14 @@ export default function LoteZeroSalesForm({
             return;
           }
 
-          // Atualizar perfil com WhatsApp se fornecido
-          if (whatsapp) {
+          // Atualizar perfil com dados se fornecido
+          if (name || email) {
             await supabase
               .from("profiles")
               .upsert({
                 id: user.id,
-                phone: whatsapp,
-                updated_at: new Date().toISOString(),
+                full_name: name?.trim() || undefined,
+                email: email || user.email || undefined,
               }, {
                 onConflict: "id"
               });
@@ -123,9 +123,7 @@ export default function LoteZeroSalesForm({
           .upsert({
             id: authData.user.id,
             full_name: name.trim(),
-            phone: whatsapp || null,
-            address_country: "Brasil",
-            updated_at: new Date().toISOString(),
+            email: email || authData.user.email || null,
           }, {
             onConflict: "id"
           });

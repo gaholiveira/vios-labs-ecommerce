@@ -1,90 +1,32 @@
-"use client";
-import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
-import { useRouter } from "next/navigation";
-import { formatDatabaseError, logDatabaseError } from "@/utils/errorHandler";
-
-interface FormErrors {
-  full_name?: string;
-  phone?: string;
-  address_street?: string;
-  address_district?: string;
-  address_city?: string;
-  address_postcode?: string;
-}
+'use client';
+import { useEffect, useState, useRef } from 'react';
+import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
+import { formatDatabaseError, logDatabaseError } from '@/utils/errorHandler';
+import Image from 'next/image';
+import { Lock } from 'lucide-react';
 
 export default function ProfilePage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [errors, setErrors] = useState<FormErrors>({});
   const [profile, setProfile] = useState({
-    full_name: "",
-    phone: "",
-    address_street: "",
-    address_district: "",
-    address_city: "",
-    address_postcode: "",
+    full_name: '',
+    avatar_url: '',
+    email: '',
   });
+  const [fullNameError, setFullNameError] = useState<string | null>(null);
 
-  // Máscara de telefone
-  const formatPhone = (value: string | null | undefined) => {
-    if (!value) return "";
-    const numbers = value.toString().replace(/\D/g, "");
-    if (numbers.length <= 10) {
-      return numbers
-        .replace(/(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3")
-        .replace(/-$/, "");
-    }
-    return numbers
-      .replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3")
-      .replace(/-$/, "");
-  };
-
-  // Máscara de CEP
-  const formatPostcode = (value: string | null | undefined) => {
-    if (!value) return "";
-    const numbers = value.toString().replace(/\D/g, "");
-    return numbers.replace(/(\d{5})(\d{0,3})/, "$1-$2").replace(/-$/, "");
-  };
-
-  // Validação de campos
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!profile.full_name.trim()) {
-      newErrors.full_name = "Nome completo é obrigatório";
-    } else if (profile.full_name.trim().length < 3) {
-      newErrors.full_name = "Nome deve ter pelo menos 3 caracteres";
-    }
-
-    if (profile.phone && profile.phone.replace(/\D/g, "").length < 10) {
-      newErrors.phone = "Telefone inválido";
-    }
-
-    if (profile.address_street && profile.address_street.trim().length < 5) {
-      newErrors.address_street = "Endereço muito curto";
-    }
-
-    if (profile.address_district && profile.address_district.trim().length < 2) {
-      newErrors.address_district = "Bairro inválido";
-    }
-
-    if (profile.address_city && profile.address_city.trim().length < 2) {
-      newErrors.address_city = "Cidade inválida";
-    }
-
-    if (profile.address_postcode) {
-      const postcodeNumbers = profile.address_postcode.replace(/\D/g, "");
-      if (postcodeNumbers.length !== 8) {
-        newErrors.address_postcode = "CEP deve ter 8 dígitos";
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  // Função para obter iniciais do nome
+  const getInitials = (name: string): string => {
+    if (!name) return 'U';
+    const parts = name.trim().split(' ');
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
   useEffect(() => {
@@ -96,78 +38,44 @@ export default function ProfilePage() {
         } = await supabase.auth.getUser();
 
         if (!user) {
-          router.push("/login");
+          router.push('/login');
           return;
         }
 
         // Buscar perfil na tabela profiles
         const { data: profileData, error: profileError } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
           .single();
 
-        // Se não encontrar perfil, criar um com dados dos metadados do usuário
-        if (profileError && profileError.code === "PGRST116") {
-          // Perfil não existe, criar com dados dos metadados
+        if (profileError && profileError.code === 'PGRST116') {
+          // Perfil não existe, usar dados dos metadados
           const userMetadata = user.user_metadata || {};
-          const newProfile = {
-            id: user.id,
-            full_name: userMetadata.full_name || "",
-            phone: userMetadata.phone || null,
-            address_country: "Brasil",
-            updated_at: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-          };
-
-          const { error: createError } = await supabase
-            .from("profiles")
-            .insert(newProfile);
-
-          if (createError) {
-            console.error("Erro ao criar perfil:", createError);
-          }
-
-          // Usar dados criados
           setProfile({
-            full_name: newProfile.full_name || "",
-            phone: newProfile.phone ? formatPhone(newProfile.phone) : "",
-            address_street: "",
-            address_district: "",
-            address_city: "",
-            address_postcode: "",
+            full_name: userMetadata.full_name || '',
+            avatar_url: userMetadata.avatar_url || '',
+            email: user.email || '',
           });
         } else if (profileData) {
-          // Perfil existe, formatar dados
-          const formattedPhone = profileData.phone
-            ? formatPhone(profileData.phone)
-            : "";
-          const formattedPostcode = profileData.address_postcode
-            ? formatPostcode(profileData.address_postcode)
-            : "";
-
+          // Perfil existe, usar dados
           setProfile({
-            full_name: profileData.full_name || "",
-            phone: formattedPhone,
-            address_street: profileData.address_street || "",
-            address_district: profileData.address_district || "",
-            address_city: profileData.address_city || "",
-            address_postcode: formattedPostcode,
+            full_name: profileData.full_name || '',
+            avatar_url: profileData.avatar_url || '',
+            email: profileData.email || user.email || '',
           });
         } else {
-          // Fallback: usar dados dos metadados do usuário
+          // Fallback: usar dados dos metadados
           const userMetadata = user.user_metadata || {};
           setProfile({
-            full_name: userMetadata.full_name || "",
-            phone: userMetadata.phone ? formatPhone(userMetadata.phone) : "",
-            address_street: "",
-            address_district: "",
-            address_city: "",
-            address_postcode: "",
+            full_name: userMetadata.full_name || '',
+            avatar_url: userMetadata.avatar_url || '',
+            email: user.email || '',
           });
         }
       } catch (err) {
-        console.error("Erro ao carregar perfil:", err);
+        console.error('Erro ao carregar perfil:', err);
+        setError('Erro ao carregar dados do perfil');
       } finally {
         setLoading(false);
       }
@@ -175,12 +83,157 @@ export default function ProfilePage() {
     loadProfile();
   }, [router]);
 
+  // Função para fazer upload do avatar
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de arquivo
+    if (!file.type.startsWith('image/')) {
+      setError('Por favor, selecione uma imagem válida (JPG, PNG, etc.)');
+      return;
+    }
+
+    // Validar tamanho (max 2MB) com mensagem detalhada
+    const maxSize = 2 * 1024 * 1024; // 2MB em bytes
+    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+    
+    if (file.size > maxSize) {
+      setError(`A imagem é muito grande (${fileSizeMB} MB). O tamanho máximo permitido é 2 MB. Por favor, reduza o tamanho da imagem.`);
+      return;
+    }
+
+    // Validar tamanho mínimo (100KB)
+    const minSize = 100 * 1024; // 100KB
+    if (file.size < minSize) {
+      setError('A imagem é muito pequena. Selecione uma imagem maior que 100 KB.');
+      return;
+    }
+
+    setUploadingAvatar(true);
+    setError(null);
+
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setError('Usuário não autenticado');
+        setUploadingAvatar(false);
+        return;
+      }
+
+      // Gerar nome único para o arquivo
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      // IMPORTANTE: Não incluir 'avatars/' no filePath, pois o Supabase já adiciona o nome do bucket
+      // O caminho deve ser apenas: {userId}/{fileName}
+      const filePath = `${user.id}/${fileName}`;
+
+      // Fazer upload para o Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true,
+        });
+
+      if (uploadError) {
+        logDatabaseError('Upload de avatar', uploadError);
+        console.error('Detalhes do erro de upload:', {
+          message: uploadError.message,
+          name: uploadError.name,
+          fileSize: file.size,
+          fileName: file.name,
+          fileType: file.type,
+          fileSizeMB: fileSizeMB,
+        });
+        
+        // Mensagem de erro específica baseada no código do erro
+        let errorMessage = 'Erro ao fazer upload da imagem';
+        
+        if (uploadError.message) {
+          const msg = uploadError.message.toLowerCase();
+          
+          // Tratar erros comuns do Storage
+          if (msg.includes('new row violates row-level security') || msg.includes('row-level security')) {
+            errorMessage = 'Erro de permissão. Verifique se o bucket está configurado corretamente e as políticas RLS estão ativas.';
+          } else if (msg.includes('bucket not found')) {
+            errorMessage = 'Bucket de avatares não encontrado. Verifique se o bucket "avatars" foi criado no Storage.';
+          } else if (msg.includes('the resource already exists') || msg.includes('already exists')) {
+            // Tentar novamente com upsert (que já está ativo)
+            errorMessage = 'Erro ao substituir imagem. Tente novamente.';
+          } else if (msg.includes('file too large') || msg.includes('size limit') || msg.includes('exceeds')) {
+            errorMessage = `A imagem é muito grande (${fileSizeMB} MB). Reduza o tamanho para menos de 2 MB.`;
+          } else if (msg.includes('invalid file type') || msg.includes('mime type')) {
+            errorMessage = 'Tipo de arquivo não permitido. Use apenas imagens (JPG, PNG, etc.).';
+          } else if (msg.includes('permission denied') || msg.includes('forbidden')) {
+            errorMessage = 'Permissão negada. Verifique se você está logado e se as políticas do Storage estão configuradas.';
+          } else {
+            // Usar a mensagem formatada do erro ou a mensagem original
+            const formattedError = formatDatabaseError(uploadError);
+            errorMessage = formattedError || `Erro ao fazer upload: ${uploadError.message}`;
+          }
+        }
+        
+        setError(errorMessage);
+        setUploadingAvatar(false);
+        return;
+      }
+
+      // Obter URL pública da imagem
+      // IMPORTANTE: Usar o mesmo filePath (sem 'avatars/' no início)
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('avatars').getPublicUrl(filePath);
+
+      // Atualizar perfil com a nova URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          avatar_url: publicUrl,
+        })
+        .eq('id', user.id);
+
+      if (updateError) {
+        logDatabaseError('Atualização de avatar', updateError);
+        setError('Erro ao atualizar avatar');
+        setUploadingAvatar(false);
+        return;
+      }
+
+      // Atualizar estado local
+      setProfile({ ...profile, avatar_url: publicUrl });
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      logDatabaseError('Exceção ao fazer upload de avatar', err);
+      setError('Erro ao processar imagem');
+    } finally {
+      setUploadingAvatar(false);
+      // Limpar input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(false);
+    setFullNameError(null);
 
-    if (!validateForm()) {
+    // Validação
+    if (!profile.full_name.trim()) {
+      setFullNameError('Nome completo é obrigatório');
+      return;
+    }
+
+    if (profile.full_name.trim().length < 3) {
+      setFullNameError('Nome deve ter pelo menos 3 caracteres');
       return;
     }
 
@@ -193,22 +246,19 @@ export default function ProfilePage() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        setError("Usuário não autenticado");
+        setError('Usuário não autenticado');
         setUpdating(false);
         return;
       }
 
-      const { error: updateError } = await supabase.from("profiles").upsert({
-        id: user.id,
-        full_name: profile.full_name.trim(),
-        phone: profile.phone.replace(/\D/g, ""),
-        address_street: profile.address_street.trim(),
-        address_district: profile.address_district.trim(),
-        address_city: profile.address_city.trim(),
-        address_postcode: profile.address_postcode.replace(/\D/g, ""),
-        address_country: "Brasil",
-        updated_at: new Date().toISOString(),
-      });
+      // Atualizar apenas full_name, avatar_url e updated_at (via trigger)
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: profile.full_name.trim(),
+          // avatar_url já foi atualizado no upload, não precisa atualizar aqui
+        })
+        .eq('id', user.id);
 
       if (updateError) {
         logDatabaseError('Atualização de perfil', updateError);
@@ -227,19 +277,19 @@ export default function ProfilePage() {
     }
   };
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPhone(e.target.value);
-    setProfile({ ...profile, phone: formatted });
-    if (errors.phone) {
-      setErrors({ ...errors, phone: undefined });
-    }
-  };
-
-  const handlePostcodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPostcode(e.target.value);
-    setProfile({ ...profile, address_postcode: formatted });
-    if (errors.address_postcode) {
-      setErrors({ ...errors, address_postcode: undefined });
+  const handleLogout = async () => {
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        setError('Erro ao sair da conta');
+      } else {
+        router.push('/login');
+        router.refresh();
+      }
+    } catch (err) {
+      console.error('Erro ao fazer logout:', err);
+      setError('Erro ao sair da conta');
     }
   };
 
@@ -247,278 +297,223 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen bg-brand-offwhite flex items-center justify-center">
         <span className="text-[10px] uppercase tracking-[0.4em] animate-pulse">
-          A carregar perfil...
+          A carregar...
         </span>
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-brand-offwhite flex items-center justify-center px-6 pt-24 pb-12">
-      <div className="max-w-xl w-full bg-white p-8 md:p-12 shadow-sm border border-gray-100">
-        <h2 className="text-2xl font-light uppercase tracking-[0.3em] text-center mb-8 text-brand-softblack">
-          O Meu Perfil
-        </h2>
+    <div className="min-h-screen bg-brand-offwhite py-24 px-6">
+      <div className="max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-3xl md:text-4xl font-light uppercase tracking-widest mb-2 text-brand-softblack">
+            Seus Dados
+          </h1>
+          <p className="text-sm font-light text-brand-softblack/60">
+            Gerencie suas informações pessoais
+          </p>
+        </div>
 
-        {/* Mensagem de Sucesso */}
-        {success && (
-          <div className="mb-6 p-4 bg-brand-green/10 border border-brand-green/30 text-brand-green text-sm text-center rounded-sm">
-            <div className="flex items-center justify-center gap-2">
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-              <span>Perfil atualizado com sucesso!</span>
+        {/* Formulário */}
+        <div className="bg-white p-8 md:p-12 shadow-sm border border-gray-100">
+          {/* Mensagens de Feedback */}
+          {success && (
+            <div className="mb-6 p-4 bg-brand-green/10 border border-brand-green/30 text-brand-green text-sm text-center rounded-sm">
+              <div className="flex items-center justify-center gap-2">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                <span>Alterações salvas com sucesso!</span>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Mensagem de Erro */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 text-red-600 text-sm text-center rounded-sm">
-            {error}
-          </div>
-        )}
+          {error && (
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 text-red-600 text-sm text-center rounded-sm">
+              {error}
+            </div>
+          )}
 
-        <form onSubmit={handleUpdate} className="space-y-8">
-          {/* Dados Pessoais */}
-          <div>
-            <h3 className="text-[11px] uppercase tracking-[0.2em] mb-6 font-medium border-l-2 border-brand-green pl-4 text-brand-softblack">
-              Dados Pessoais
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex flex-col md:col-span-2">
+          <form onSubmit={handleUpdate} className="space-y-10">
+            {/* Seção de Avatar */}
+            <div className="flex flex-col items-center space-y-4">
+              <div className="relative">
+                {profile.avatar_url ? (
+                  <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-gray-200">
+                    <Image
+                      src={profile.avatar_url}
+                      alt="Avatar"
+                      fill
+                      className="object-cover"
+                      onError={(e) => {
+                        // Se a imagem falhar, mostrar iniciais
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-stone-200 border-2 border-gray-200 flex items-center justify-center">
+                    <span className="text-2xl font-serif text-brand-softblack/70">
+                      {getInitials(profile.full_name)}
+                    </span>
+                  </div>
+                )}
+                
+                {uploadingAvatar && (
+                  <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                    <svg
+                      className="animate-spin h-6 w-6 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                  </div>
+                )}
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+                id="avatar-upload"
+              />
+              <label
+                htmlFor="avatar-upload"
+                className="text-[10px] uppercase tracking-widest opacity-70 hover:opacity-100 cursor-pointer transition-opacity underline"
+              >
+                {uploadingAvatar ? 'Enviando...' : 'Alterar Foto'}
+              </label>
+            </div>
+
+            {/* Dados Pessoais */}
+            <div className="space-y-8">
+              {/* Nome Completo */}
+              <div>
                 <label
                   htmlFor="full_name"
-                  className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium"
+                  className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack"
                 >
-                  Nome Completo <span className="text-red-500">*</span>
+                  Nome Completo
                 </label>
                 <input
                   id="full_name"
                   type="text"
-                  className={`w-full bg-transparent border-b py-2 focus:outline-none transition text-brand-softblack placeholder:text-gray-400 ${
-                    errors.full_name
-                      ? "border-red-400 focus:border-red-500"
-                      : "border-gray-300 focus:border-brand-green"
-                  }`}
                   value={profile.full_name}
                   onChange={(e) => {
                     setProfile({ ...profile, full_name: e.target.value });
-                    if (errors.full_name) {
-                      setErrors({ ...errors, full_name: undefined });
-                    }
+                    if (fullNameError) setFullNameError(null);
                   }}
+                  className={`w-full bg-transparent border-b py-3 focus:outline-none transition text-brand-softblack placeholder:text-gray-400 font-light ${
+                    fullNameError
+                      ? 'border-red-400 focus:border-red-500'
+                      : 'border-gray-300 focus:border-brand-green'
+                  }`}
                   placeholder="Seu nome completo"
                   required
                 />
-                {errors.full_name && (
-                  <p className="text-[10px] text-red-500 mt-1">
-                    {errors.full_name}
-                  </p>
+                {fullNameError && (
+                  <p className="text-[10px] text-red-500 mt-2">{fullNameError}</p>
                 )}
               </div>
-              <div className="flex flex-col">
+
+              {/* E-mail (Readonly) */}
+              <div>
                 <label
-                  htmlFor="phone"
-                  className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium"
+                  htmlFor="email"
+                  className="text-[10px] uppercase tracking-widest flex items-center gap-2 mb-3 opacity-70 font-medium text-brand-softblack"
                 >
-                  Telefone
+                  E-mail
+                  <Lock className="w-3 h-3 opacity-50" />
                 </label>
                 <input
-                  id="phone"
-                  type="tel"
-                  className={`w-full bg-transparent border-b py-2 focus:outline-none transition text-brand-softblack placeholder:text-gray-400 ${
-                    errors.phone
-                      ? "border-red-400 focus:border-red-500"
-                      : "border-gray-300 focus:border-brand-green"
-                  }`}
-                  value={profile.phone}
-                  onChange={handlePhoneChange}
-                  placeholder="(00) 00000-0000"
-                  maxLength={15}
+                  id="email"
+                  type="email"
+                  value={profile.email}
+                  disabled
+                  className="w-full bg-transparent border-b border-gray-200 py-3 focus:outline-none text-brand-softblack/50 font-light cursor-not-allowed"
+                  placeholder="seu@email.com"
                 />
-                {errors.phone && (
-                  <p className="text-[10px] text-red-500 mt-1">
-                    {errors.phone}
-                  </p>
-                )}
+                <p className="text-[9px] text-gray-400 mt-2 italic">
+                  O e-mail não pode ser alterado por aqui
+                </p>
               </div>
             </div>
-          </div>
 
-          {/* Endereço */}
-          <div className="pt-4">
-            <h3 className="text-[11px] uppercase tracking-[0.2em] mb-6 font-medium border-l-2 border-brand-green pl-4 text-brand-softblack">
-              Endereço de Entrega
-            </h3>
-
-            <div className="space-y-6">
-              <div className="flex flex-col">
-                <label
-                  htmlFor="address_street"
-                  className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium"
-                >
-                  Rua e Número
-                </label>
-                <input
-                  id="address_street"
-                  type="text"
-                  className={`w-full bg-transparent border-b py-2 focus:outline-none transition text-brand-softblack placeholder:text-gray-400 ${
-                    errors.address_street
-                      ? "border-red-400 focus:border-red-500"
-                      : "border-gray-300 focus:border-brand-green"
-                  }`}
-                  value={profile.address_street}
-                  onChange={(e) => {
-                    setProfile({ ...profile, address_street: e.target.value });
-                    if (errors.address_street) {
-                      setErrors({ ...errors, address_street: undefined });
-                    }
-                  }}
-                  placeholder="Rua, número, complemento"
-                />
-                {errors.address_street && (
-                  <p className="text-[10px] text-red-500 mt-1">
-                    {errors.address_street}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex flex-col">
-                <label
-                  htmlFor="address_district"
-                  className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium"
-                >
-                  Bairro
-                </label>
-                <input
-                  id="address_district"
-                  type="text"
-                  className={`w-full bg-transparent border-b py-2 focus:outline-none transition text-brand-softblack placeholder:text-gray-400 ${
-                    errors.address_district
-                      ? "border-red-400 focus:border-red-500"
-                      : "border-gray-300 focus:border-brand-green"
-                  }`}
-                  value={profile.address_district}
-                  onChange={(e) => {
-                    setProfile({ ...profile, address_district: e.target.value });
-                    if (errors.address_district) {
-                      setErrors({ ...errors, address_district: undefined });
-                    }
-                  }}
-                  placeholder="Bairro"
-                />
-                {errors.address_district && (
-                  <p className="text-[10px] text-red-500 mt-1">
-                    {errors.address_district}
-                  </p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex flex-col">
-                  <label
-                    htmlFor="address_city"
-                    className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium"
+            {/* Botão Salvar */}
+            <button
+              type="submit"
+              disabled={updating}
+              className="w-full bg-brand-green text-brand-offwhite py-4 uppercase text-xs tracking-[0.2em] hover:bg-brand-softblack transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            >
+              {updating ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg
+                    className="animate-spin h-4 w-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
                   >
-                    Cidade
-                  </label>
-                  <input
-                    id="address_city"
-                    type="text"
-                    className={`w-full bg-transparent border-b py-2 focus:outline-none transition text-brand-softblack placeholder:text-gray-400 ${
-                      errors.address_city
-                        ? "border-red-400 focus:border-red-500"
-                        : "border-gray-300 focus:border-brand-green"
-                    }`}
-                    value={profile.address_city}
-                    onChange={(e) => {
-                      setProfile({ ...profile, address_city: e.target.value });
-                      if (errors.address_city) {
-                        setErrors({ ...errors, address_city: undefined });
-                      }
-                    }}
-                    placeholder="Cidade"
-                  />
-                  {errors.address_city && (
-                    <p className="text-[10px] text-red-500 mt-1">
-                      {errors.address_city}
-                    </p>
-                  )}
-                </div>
-                <div className="flex flex-col">
-                  <label
-                    htmlFor="address_postcode"
-                    className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium"
-                  >
-                    CEP
-                  </label>
-                  <input
-                    id="address_postcode"
-                    type="text"
-                    className={`w-full bg-transparent border-b py-2 focus:outline-none transition text-brand-softblack placeholder:text-gray-400 ${
-                      errors.address_postcode
-                        ? "border-red-400 focus:border-red-500"
-                        : "border-gray-300 focus:border-brand-green"
-                    }`}
-                    value={profile.address_postcode}
-                    onChange={handlePostcodeChange}
-                    placeholder="00000-000"
-                    maxLength={9}
-                  />
-                  {errors.address_postcode && (
-                    <p className="text-[10px] text-red-500 mt-1">
-                      {errors.address_postcode}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  <span>A salvar...</span>
+                </span>
+              ) : (
+                'Salvar Alterações'
+              )}
+            </button>
+          </form>
 
-          <button
-            type="submit"
-            disabled={updating}
-            className="w-full bg-brand-green text-brand-offwhite py-4 uppercase text-[10px] tracking-[0.2em] mt-8 hover:bg-brand-green/90 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md font-medium"
-          >
-            {updating ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg
-                  className="animate-spin h-4 w-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                A atualizar...
-              </span>
-            ) : (
-              "Guardar Alterações"
-            )}
-          </button>
-        </form>
+          {/* Separador */}
+          <div className="mt-12 pt-8 border-t border-gray-200">
+            {/* Botão Logout */}
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-full bg-transparent border border-gray-300 text-gray-600 py-4 uppercase text-xs tracking-[0.2em] hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            >
+              Sair da Conta
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
