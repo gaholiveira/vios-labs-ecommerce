@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ReactNode } from "react";
 
 interface AccordionItem {
   title: string;
-  content: string;
+  content: string | ReactNode;
 }
 
 interface ProductAccordionProps {
