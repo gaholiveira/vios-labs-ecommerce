@@ -427,9 +427,9 @@ export default function ProductPageContent({ product }: ProductPageContentProps)
 
           <button 
             data-sticky-bar-trigger
-            onClick={handleAddToCart}
-            className="border border-brand-green rounded-sm bg-brand-green text-brand-offwhite px-6 py-3 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium active:bg-brand-softblack/80 active:border-brand-softblack md:hover:bg-brand-softblack md:hover:border-brand-softblack transition-all duration-500 ease-out md:transform md:hover:scale-105">
-            Adicionar ao Carrinho
+            disabled
+            className="border border-gray-300 rounded-sm bg-gray-100 text-gray-500 px-6 py-3 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium cursor-not-allowed transition-all duration-500 ease-out">
+            Disponível em Breve
           </button>
 
           {/* Texto Legal ANVISA */}

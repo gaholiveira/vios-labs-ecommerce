@@ -66,11 +66,11 @@ export default function StickyBar({
 
             {/* Botão de Comprar */}
             <button
-              onClick={onAddToCart}
-              className="flex-shrink-0 border border-brand-green rounded-sm bg-brand-green text-brand-offwhite px-4 py-2.5 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium active:bg-brand-softblack/80 active:border-brand-softblack transition-all duration-300 whitespace-nowrap"
-              aria-label={`Adicionar ${productName} ao carrinho`}
+              disabled
+              className="flex-shrink-0 border border-gray-300 rounded-sm bg-gray-100 text-gray-500 px-4 py-2.5 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium cursor-not-allowed transition-all duration-300 whitespace-nowrap"
+              aria-label="Produto disponível em breve"
             >
-              Adicionar - {formatPrice(price)}
+              Disponível em Breve
             </button>
           </div>
         </motion.div>
