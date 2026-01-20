@@ -1,13 +1,28 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-// Inicializa o Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-02-24.acacia", // ou a versão mais recente suportada
-});
+// Função helper para obter o cliente Stripe (lazy initialization)
+function getStripeClient(): Stripe {
+  const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+  
+  if (!STRIPE_SECRET_KEY) {
+    throw new Error(
+      'Missing STRIPE_SECRET_KEY environment variable. Please add it to your .env.local file.'
+    );
+  }
+
+  return new Stripe(STRIPE_SECRET_KEY, {
+    apiVersion: "2025-02-24.acacia",
+    typescript: true,
+    maxNetworkRetries: 2,
+    timeout: 30000,
+  });
+}
 
 export async function POST(req: Request) {
   try {
+    // Inicializar Stripe apenas quando a rota for chamada (runtime)
+    const stripe = getStripeClient();
     const { items, userId, customerEmail } = await req.json();
 
     // Obter a URL base da requisição ou variável de ambiente
