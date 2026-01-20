@@ -75,6 +75,9 @@ export async function POST(req: Request) {
           product_data: {
             name: item.name,
             images: imageUrl ? [imageUrl] : [], // Apenas URLs absolutas válidas
+            metadata: {
+              product_id: item.id, // ID do produto para uso no webhook
+            },
           },
           unit_amount: Math.round(item.price * 100), // Converte para centavos
         },

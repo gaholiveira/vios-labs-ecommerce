@@ -22,10 +22,10 @@ export default function SuccessPage() {
   }
 
   return (
-    <main className="min-h-screen bg-brand-offwhite flex items-center justify-center px-6 py-24">
-      <div className="max-w-md w-full text-center">
+    <main className="min-h-screen bg-brand-offwhite flex items-start justify-center px-6 pt-32 md:pt-40 pb-24">
+      <div className="max-w-md w-full text-center mt-8 md:mt-16">
         {/* Ícone de Check Animado */}
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-10 md:mb-12">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -80,7 +80,7 @@ export default function SuccessPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.8 }}
-          className="text-3xl md:text-4xl font-extralight uppercase tracking-widest mb-6 text-brand-softblack"
+          className="text-3xl md:text-4xl font-extralight uppercase tracking-widest mb-8 md:mb-10 text-brand-softblack"
         >
           Pedido Confirmado
         </motion.h1>
@@ -90,7 +90,7 @@ export default function SuccessPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 1 }}
-          className="text-base font-light text-brand-softblack/70 mb-8 leading-relaxed max-w-sm mx-auto"
+          className="text-base md:text-lg font-light text-brand-softblack/70 mb-10 md:mb-12 leading-relaxed max-w-sm mx-auto"
         >
           Obrigado por escolher a VIOS. Você receberá os detalhes por e-mail.
         </motion.p>
