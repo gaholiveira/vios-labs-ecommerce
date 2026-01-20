@@ -2,7 +2,8 @@ import { createBrowserClient } from '@supabase/ssr'
 
 /**
  * Cria um cliente Supabase para uso em Client Components
- * Este cliente gerencia cookies automaticamente no navegador
+ * O createBrowserClient do @supabase/ssr gerencia cookies automaticamente
+ * para suportar PKCE em SSR (necessário para password reset e outros fluxos)
  */
 export function createClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -14,5 +15,6 @@ export function createClient() {
     )
   }
 
+  // createBrowserClient gerencia cookies automaticamente para PKCE
   return createBrowserClient(url, key)
 }

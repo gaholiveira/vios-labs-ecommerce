@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server'
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {
@@ -12,17 +12,30 @@ export async function GET(request: NextRequest) {
   const errorDescription = searchParams.get('error_description')
   const origin = requestUrl.origin
 
-  // Log para debug (apenas em desenvolvimento)
+  // Debug logging apenas em desenvolvimento
   if (process.env.NODE_ENV === 'development') {
-    console.log('🔐 Callback recebido:', { 
-      code: code ? 'presente' : 'ausente', 
-      type, 
-      next,
-      error,
-      errorCode,
-      fullUrl: requestUrl.toString()
-    })
+    // Logs de debug removidos para produção
   }
+
+  // Criar cliente Supabase com cookies da requisição para Route Handler
+  const response = NextResponse.next()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value)
+            response.cookies.set(name, value, options)
+          })
+        },
+      },
+    }
+  )
 
   // Se há erros do Supabase (link expirado, inválido, etc.)
   if (error || errorCode) {
@@ -55,31 +68,24 @@ export async function GET(request: NextRequest) {
   }
 
   if (code) {
-    const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error) {
-      // PRIORIDADE 1: Se for password reset (type=recovery), SEMPRE redirecionar para reset-password
+      // PRIORIDADE 1: Se for password reset (type=recovery), SEMPRE redirecionar para update-password
       if (type === 'recovery') {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('✅ Sessão de recovery criada. Redirecionando para /reset-password')
-        }
-        return NextResponse.redirect(`${origin}/reset-password`)
+            // Sessão de recovery criada. Redirecionando para /update-password
+        return NextResponse.redirect(`${origin}/update-password`, { headers: response.headers })
       }
       
-      // PRIORIDADE 2: Se next=/reset-password, também redirecionar
-      if (next === '/reset-password') {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('✅ Next=/reset-password detectado. Redirecionando para /reset-password')
-        }
-        return NextResponse.redirect(`${origin}/reset-password`)
+      // PRIORIDADE 2: Se next=/update-password ou /reset-password, também redirecionar
+      if (next === '/update-password' || next === '/reset-password') {
+            // Next=/update-password detectado. Redirecionando para /update-password
+        return NextResponse.redirect(`${origin}/update-password`, { headers: response.headers })
       }
       
       // Sucesso: redirecionar para a página desejada
-      if (process.env.NODE_ENV === 'development') {
-        console.log('✅ Sessão criada. Redirecionando para:', next)
-      }
-      return NextResponse.redirect(`${origin}${next}`)
+            // Sessão criada. Redirecionando
+      return NextResponse.redirect(`${origin}${next}`, { headers: response.headers })
     }
     
     // Erro: redirecionar para login com mensagem de erro
@@ -87,7 +93,7 @@ export async function GET(request: NextRequest) {
     const errorMessage = error?.message || 'Erro ao autenticar'
     
     // Se for password reset e houver erro, redirecionar para forgot-password
-    if (type === 'recovery' || next === '/reset-password') {
+    if (type === 'recovery' || next === '/update-password' || next === '/reset-password') {
       return NextResponse.redirect(
         `${origin}/forgot-password?error=${encodeURIComponent(errorMessage)}`
       )
@@ -99,8 +105,5 @@ export async function GET(request: NextRequest) {
   }
 
   // Sem código: redirecionar para login
-  if (process.env.NODE_ENV === 'development') {
-    console.warn('⚠️ Callback sem código. Redirecionando para login.')
-  }
   return NextResponse.redirect(`${origin}/login?error=no-code`)
 }

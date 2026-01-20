@@ -34,6 +34,11 @@ const nextConfig: NextConfig = {
     // Permitir URLs que começam com / (relativas)
     unoptimized: false,
   },
+  // Otimizações de performance
+  compress: true,
+  poweredByHeader: false,
+  reactStrictMode: true,
+  // swcMinify removido - SWC é o minificador padrão no Next.js 16+
 };
 
 export default nextConfig;

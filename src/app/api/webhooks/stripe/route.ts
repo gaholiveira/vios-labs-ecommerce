@@ -234,7 +234,7 @@ async function handleCheckoutSessionCompleted(
       throw new Error('Order was not created');
     }
 
-    console.log(`✅ Order created: ${order.id}`);
+    // Order created successfully
 
     // Criar os itens do pedido
     const orderItems = lineItems.data.map((lineItem) => {
@@ -319,7 +319,7 @@ async function sendOrderConfirmationEmail({
 }) {
   // Verificar se Resend está configurado
   if (!process.env.RESEND_API_KEY) {
-    console.log('⚠️ RESEND_API_KEY not configured. Skipping email.');
+    // RESEND_API_KEY not configured. Skipping email.
     return;
   }
 
@@ -360,7 +360,7 @@ async function sendOrderConfirmationEmail({
     }
 
     const result = await response.json();
-    console.log(`✅ Order confirmation email sent to ${customerEmail}`);
+    // Order confirmation email sent successfully
     return result;
   } catch (error: any) {
     // Log do erro mas não falha o webhook

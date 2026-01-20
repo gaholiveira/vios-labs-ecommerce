@@ -251,7 +251,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`✅ Order confirmation email sent to ${data.customerEmail} (${emailData?.id})`);
+    // Order confirmation email sent successfully
 
     return NextResponse.json({ 
       success: true, 

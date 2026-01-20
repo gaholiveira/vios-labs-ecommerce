@@ -79,7 +79,7 @@ export default function LoteZeroSalesForm({
           setLoading(false);
           return;
         } catch (vipErr) {
-          console.log("Tabela vip_list não encontrada (opcional)");
+          // Tabela vip_list não encontrada (opcional)
         }
 
         onSuccess();
@@ -145,7 +145,7 @@ export default function LoteZeroSalesForm({
               onConflict: "user_id"
             });
         } catch (vipErr) {
-          console.log("Tabela vip_list não encontrada (opcional)");
+          // Tabela vip_list não encontrada (opcional)
         }
       }
 

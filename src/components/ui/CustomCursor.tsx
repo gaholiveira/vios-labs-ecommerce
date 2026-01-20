@@ -225,9 +225,11 @@ export default function CustomCursor() {
 
     document.addEventListener('mouseleave', handleMouseLeave, { passive: true });
 
-    // Inicializar posição em coordenadas seguras (fora da tela) para evitar piscar no canto
-    cursorX.set(-100);
-    cursorY.set(-100);
+    // Inicializar posição no centro da tela para garantir visibilidade
+    if (typeof window !== 'undefined') {
+      cursorX.set(window.innerWidth / 2);
+      cursorY.set(window.innerHeight / 2);
+    }
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
@@ -241,12 +243,12 @@ export default function CustomCursor() {
   return (
     <motion.div
       data-custom-cursor
-      className="fixed top-0 left-0 pointer-events-none z-[9999] hidden lg:block"
+      className="fixed top-0 left-0 pointer-events-none z-[9999]"
       style={{
         x: cursorX,
         y: cursorY,
       }}
-      initial={{ opacity: 0 }}
+      initial={{ opacity: 1 }}
       animate={{ 
         opacity: isOverInput ? 0 : 1,
       }}

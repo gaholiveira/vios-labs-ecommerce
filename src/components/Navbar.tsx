@@ -7,32 +7,51 @@ import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import Avatar from '@/components/ui/Avatar';
 import DropdownMenu from '@/components/ui/DropdownMenu';
+import SiteSearch from '@/components/SiteSearch';
 
 export default function Navbar() {
-  const { totalItems, setIsOpen, setIsMenuOpen, setIsSearchOpen } = useCart();
+  const { totalItems, setIsOpen, setIsMenuOpen } = useCart();
   const { user } = useAuth();
   const [profile, setProfile] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
+    let ticking = false;
+    
     const handleScroll = () => {
-      // Apenas no desktop (md:), aplicar animação de scroll
-      if (window.innerWidth >= 768) {
-        setIsScrolled(window.scrollY > 10);
-      } else {
-        // Mobile: sempre manter false para altura fixa
-        setIsScrolled(false);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          // Apenas no desktop (md:), aplicar animação de scroll
+          if (window.innerWidth >= 768) {
+            setIsScrolled(window.scrollY > 10);
+          } else {
+            // Mobile: sempre manter false para altura fixa
+            setIsScrolled(false);
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
-    window.addEventListener('resize', handleScroll);
+    // Throttle resize events
+    let resizeTimeout: NodeJS.Timeout;
+    const handleResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        handleScroll();
+      }, 150);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleResize, { passive: true });
     // Inicializar estado baseado no tamanho atual
     handleScroll();
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleScroll);
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(resizeTimeout);
     };
   }, []);
 
@@ -117,16 +136,10 @@ export default function Navbar() {
             <span className="h-0.5 w-full bg-brand-softblack transition-all"></span>
           </button>
 
-          {/* Lupa de Pesquisa - Mobile */}
-          <button 
-            onClick={() => setIsSearchOpen(true)} 
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center -ml-2 -my-2 p-2 active:opacity-70 transition-opacity"
-            aria-label="Pesquisar"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-            </svg>
-          </button>
+          {/* Command Palette Search - Mobile */}
+          <div className="-ml-2 -my-2">
+            <SiteSearch />
+          </div>
         </div>
 
         {/* DESKTOP: LADO ESQUERDO - Menu de Links */}
@@ -140,6 +153,9 @@ export default function Navbar() {
               {item.label}
             </Link>
           ))}
+          
+          {/* Command Palette Search */}
+          <SiteSearch />
         </div>
 
         {/* LOGO CENTRAL */}

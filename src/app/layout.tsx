@@ -1,16 +1,22 @@
 import Navbar from '@/components/Navbar';
-import CartDrawer from '@/components/CartDrawer';
 import { CartProvider } from '@/context/CartContext';
 import './globals.css';
 import Footer from '@/components/Footer';
-import MobileMenu from '@/components/MobileMenu';
-import SearchOverlay from '@/components/SearchOverlay';
 import SmoothScrolling from '@/components/SmoothScrolling';
 import ToastContainer from '@/components/ToastContainer';
 import ThirdPartyScripts from '@/components/ThirdPartyScripts';
 import ClientCustomCursor from '@/components/ui/ClientCustomCursor';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import dynamic from 'next/dynamic';
+
+// Lazy load de componentes pesados que não são críticos para o primeiro render
+// Removido ssr: false pois esses componentes já são Client Components
+const CartDrawer = dynamic(() => import('@/components/CartDrawer'));
+
+const MobileMenu = dynamic(() => import('@/components/MobileMenu'));
+
+const SearchOverlay = dynamic(() => import('@/components/SearchOverlay'));
 
 // Configuração otimizada da fonte Inter com display: 'swap' para melhor performance
 const inter = Inter({
