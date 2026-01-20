@@ -97,7 +97,7 @@ export default function Home() {
       </section>
 
       {/* Grid de Produtos */}
-      <section id="produtos" className="max-w-7xl mx-auto px-6 py-24">
+      <section id="produtos" className="max-w-7xl mx-auto px-4 md:px-6 py-24">
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-x-10 sm:gap-y-16">
           {PRODUCTS.map((product, index) => (
             <FadeInStagger 

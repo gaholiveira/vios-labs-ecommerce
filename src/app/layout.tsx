@@ -20,15 +20,57 @@ const inter = Inter({
   preload: true,
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://vioslabs.com.br';
+const siteName = 'VIOS LABS';
+const siteDescription = 'Descubra os suplementos premium da VIOS LABS. Produtos desenvolvidos com ciência para sua melhor versão.';
+const ogImage = `${siteUrl}/images/og-image.jpg`; // Certifique-se de criar este arquivo (1200x630px)
+
 export const metadata: Metadata = {
-  title: 'VIOS LABS | A ciência da melhor versão',
-  description: 'Descubra os suplementos premium da VIOS LABS. Produtos desenvolvidos com ciência para sua melhor versão.',
-  keywords: 'suplementos, saúde, bem-estar, vios labs, nutrição',
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: `${siteName} | A Ciência da Longevidade`,
+    template: `%s | ${siteName}`,
+  },
+  description: siteDescription,
+  keywords: ['suplementos', 'saúde', 'bem-estar', 'vios labs', 'nutrição', 'longevidade', 'performance', 'ciência'],
+  authors: [{ name: 'VIOS LABS' }],
+  creator: 'VIOS LABS',
+  publisher: 'VIOS LABS',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   openGraph: {
-    title: 'VIOS LABS | A ciência da melhor versão',
-    description: 'Descubra os suplementos premium da VIOS LABS.',
     type: 'website',
     locale: 'pt_BR',
+    url: siteUrl,
+    siteName,
+    title: `${siteName} | A Ciência da Longevidade`,
+    description: siteDescription,
+    images: [
+      {
+        url: ogImage,
+        width: 1200,
+        height: 630,
+        alt: 'VIOS LABS - A Ciência da Longevidade',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `${siteName} | A Ciência da Longevidade`,
+    description: siteDescription,
+    images: [ogImage],
+  },
+  alternates: {
+    canonical: siteUrl,
   },
 };
 

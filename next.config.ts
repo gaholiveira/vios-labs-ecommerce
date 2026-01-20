@@ -17,7 +17,22 @@ const nextConfig: NextConfig = {
         hostname: '*.supabase.in',
         pathname: '/storage/v1/object/public/**',
       },
+      // Permitir localhost para desenvolvimento
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3000',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '127.0.0.1',
+        port: '3000',
+        pathname: '/**',
+      },
     ],
+    // Permitir URLs que começam com / (relativas)
+    unoptimized: false,
   },
 };
 

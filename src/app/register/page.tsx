@@ -90,7 +90,8 @@ export default function RegisterPage() {
         return;
       }
 
-      // Sucesso - o trigger do banco criará o perfil automaticamente
+      // O trigger do banco criará o perfil automaticamente
+      // O trigger também associará pedidos de guest checkout automaticamente
       // Redirecionar para login com mensagem de sucesso
       router.push('/login?registered=true&message=Verifique seu e-mail para confirmar a conta');
     } catch (err) {
@@ -102,7 +103,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-brand-offwhite flex items-center justify-center px-6 py-24">
+    <div className="min-h-screen bg-brand-offwhite flex items-center justify-center px-4 md:px-6 py-24">
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-12">

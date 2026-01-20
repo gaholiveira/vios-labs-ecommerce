@@ -1,14 +1,41 @@
 "use client";
 
-import { ReactLenis } from "lenis/react";
+import { ReactLenis, useLenis } from "lenis/react";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 interface SmoothScrollingProps {
   children: React.ReactNode;
 }
 
+// Componente interno para acessar a instância do Lenis
+function LenisWrapper({ pathname }: { pathname: string }) {
+  const lenis = useLenis();
+
+  useEffect(() => {
+    // Resetar scroll restoration do browser
+    if (typeof window !== 'undefined' && window.history.scrollRestoration) {
+      window.history.scrollRestoration = 'manual';
+    }
+
+    // Resetar scroll quando a rota mudar
+    if (lenis) {
+      lenis.scrollTo(0, { immediate: true });
+    } else {
+      // Fallback: resetar scroll diretamente se Lenis não estiver pronto
+      const timer = setTimeout(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [pathname, lenis]);
+
+  return null;
+}
+
 export default function SmoothScrolling({ children }: SmoothScrollingProps) {
   const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     // Detectar dispositivo touch
@@ -34,6 +61,7 @@ export default function SmoothScrolling({ children }: SmoothScrollingProps) {
         touchMultiplier: isTouchDevice ? 2 : 1, // Acelera rolagem no mobile
       }}
     >
+      <LenisWrapper pathname={pathname} />
       {children}
     </ReactLenis>
   );

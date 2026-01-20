@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/utils/format";
@@ -14,6 +15,17 @@ interface ProductPageContentProps {
 
 export default function ProductPageContent({ product }: ProductPageContentProps) {
   const { addToCart } = useCart();
+
+  // Garantir que a página sempre comece no topo ao carregar
+  useEffect(() => {
+    // Scroll para o topo quando o componente montar
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    
+    // Resetar scroll history
+    if (typeof window !== 'undefined' && window.history.scrollRestoration) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, [product.id]); // Reexecutar se o produto mudar
 
   const handleAddToCart = () => {
     addToCart(product);

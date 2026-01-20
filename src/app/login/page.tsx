@@ -71,6 +71,13 @@ export default function LoginPage() {
       }
 
       if (data.user) {
+        // Associar pedidos de guest checkout ao usuário (se houver)
+        try {
+          await supabase.rpc('associate_my_guest_orders');
+        } catch (assocError) {
+          // Silenciosamente ignora erros de associação (pode não existir pedidos)
+        }
+
         // Verificar se há redirect salvo
         const redirect = sessionStorage.getItem('redirect');
         if (redirect) {
@@ -90,7 +97,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-brand-offwhite flex items-center justify-center px-6 py-24">
+    <div className="min-h-screen bg-brand-offwhite flex items-center justify-center px-4 md:px-6 py-24">
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-12">

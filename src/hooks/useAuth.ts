@@ -37,9 +37,10 @@ export function useAuth() {
   }, [router, supabase.auth])
 
   const signOut = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
+    // Usar função centralizada de logout para garantir limpeza completa
+    const { handleLogout } = await import('@/utils/auth');
+    await handleLogout();
+    // Não precisa router.push pois o handleLogout já faz window.location.href
   }
 
   return {

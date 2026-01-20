@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/utils/supabase/client';
 
 interface DropdownMenuItem {
   label?: string;
@@ -45,17 +44,17 @@ export default function DropdownMenu({
   }, [isOpen]);
 
   const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push('/');
-    router.refresh();
+    // Importar e usar função centralizada de logout
+    const { handleLogout: logout } = await import('@/utils/auth');
+    setIsOpen(false); // Fechar menu antes do logout
+    await logout();
   };
 
   const handleItemClick = async (item: DropdownMenuItem) => {
     // Se for "Sair", fazer logout e não navegar
     if (item.label === 'Sair') {
-      await handleLogout();
       setIsOpen(false);
+      await handleLogout();
       return;
     }
 

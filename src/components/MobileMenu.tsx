@@ -4,7 +4,6 @@ import { createClient } from '@/utils/supabase/client';
 import { useCart } from '@/context/CartContext';
 import Link from 'next/link';
 import { User } from '@supabase/supabase-js';
-import { useRouter } from 'next/navigation';
 import Avatar from '@/components/ui/Avatar';
 
 export default function MobileMenu() {
@@ -13,7 +12,6 @@ export default function MobileMenu() {
   const [profile, setProfile] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null);
   const [loading, setLoading] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const router = useRouter();
 
   // Prevenir scroll quando menu está aberto
   useEffect(() => {
@@ -60,17 +58,19 @@ export default function MobileMenu() {
 
   const handleLogout = async () => {
     setLoggingOut(true);
+    setIsMenuOpen(false); // Fechar menu antes do logout
+    
     try {
-      const supabase = createClient();
-    await supabase.auth.signOut();
-    setUser(null);
-      setIsMenuOpen(false);
-      router.push('/');
-      router.refresh();
+      // Importar e usar função centralizada de logout
+      const { handleLogout: logout } = await import('@/utils/auth');
+      await logout();
+      // Não precisa setLoggingOut(false) pois a página será recarregada
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
-    } finally {
-      setLoggingOut(false);
+      // Mesmo com erro, tentar redirecionar
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
     }
   };
 

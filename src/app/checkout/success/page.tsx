@@ -16,7 +16,7 @@ function SuccessContent() {
   }, [clearCart]);
 
   return (
-    <main className="min-h-screen bg-[#faf9f6] flex items-center justify-center px-6 py-24 md:py-32">
+    <main className="min-h-screen bg-[#faf9f6] flex items-center justify-center px-4 md:px-6 py-24 md:py-32">
       <div className="flex flex-col items-center text-center max-w-lg w-full mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700">
         {/* Ícone de Sucesso */}
         <div className="mb-8 md:mb-10 relative">
@@ -60,12 +60,12 @@ function SuccessContent() {
           </Link>
           
           {/* Link para criar conta (Estratégia Guest Checkout) */}
-          <div className="pt-6 text-xs text-stone-400">
+          <div className="pt-6 text-xs text-stone-400 max-w-sm mx-auto">
             Ainda não tem conta?{' '}
             <Link href="/register" className="text-[#082f1e] underline underline-offset-4 hover:opacity-80 transition-opacity">
               Crie sua senha
             </Link>{' '}
-            para acompanhar o pedido.
+            com o mesmo e-mail para acompanhar este pedido.
           </div>
 
           {/* Link para Concierge (Opcional) */}

@@ -5,10 +5,13 @@ import { useRouter } from 'next/navigation';
 import { formatDatabaseError, logDatabaseError } from '@/utils/errorHandler';
 import Image from 'next/image';
 import { Lock } from 'lucide-react';
+import Skeleton from '@/components/ui/Skeleton';
+import { useCart } from '@/context/CartContext';
 
 export default function ProfilePage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { showToast } = useCart();
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -207,6 +210,7 @@ export default function ProfilePage() {
       // Atualizar estado local
       setProfile({ ...profile, avatar_url: publicUrl });
       setSuccess(true);
+      showToast('Foto atualizada com sucesso');
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       logDatabaseError('Exceção ao fazer upload de avatar', err);
@@ -266,6 +270,7 @@ export default function ProfilePage() {
         setError(errorMessage);
       } else {
         setSuccess(true);
+        showToast('Perfil atualizado com sucesso');
         setTimeout(() => setSuccess(false), 5000);
       }
     } catch (err) {
@@ -279,31 +284,52 @@ export default function ProfilePage() {
 
   const handleLogout = async () => {
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        setError('Erro ao sair da conta');
-      } else {
-        router.push('/login');
-        router.refresh();
-      }
+      // Importar e usar função centralizada de logout
+      const { handleLogout: logout } = await import('@/utils/auth');
+      await logout();
+      // Não precisa de router.push pois o logout já faz window.location.href
     } catch (err) {
       console.error('Erro ao fazer logout:', err);
       setError('Erro ao sair da conta');
+      // Mesmo com erro, tentar redirecionar
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
     }
   };
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="min-h-screen bg-brand-offwhite flex items-center justify-center">
-        <span className="text-[10px] uppercase tracking-[0.4em] animate-pulse">
-          A carregar...
-        </span>
+      <div className="min-h-screen bg-brand-offwhite py-24 px-4 md:px-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-12">
+            <Skeleton className="h-10 w-48 mx-auto mb-2" />
+            <Skeleton className="h-4 w-64 mx-auto" />
+          </div>
+          <div className="bg-white p-8 md:p-12 shadow-sm border border-gray-100">
+            <div className="flex flex-col items-center space-y-4 mb-10">
+              <Skeleton className="w-24 h-24 rounded-full" variant="circular" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+            <div className="space-y-8">
+              <div>
+                <Skeleton className="h-3 w-32 mb-3" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+              <div>
+                <Skeleton className="h-3 w-24 mb-3" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            </div>
+            <Skeleton className="h-12 w-full mt-10" />
+          </div>
+        </div>
       </div>
     );
+  }
 
   return (
-    <div className="min-h-screen bg-brand-offwhite py-24 px-6">
+    <div className="min-h-screen bg-brand-offwhite py-24 px-4 md:px-6">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">

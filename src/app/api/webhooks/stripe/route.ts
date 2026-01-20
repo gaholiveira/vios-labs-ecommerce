@@ -76,7 +76,6 @@ export async function POST(req: NextRequest) {
     let event: Stripe.Event;
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-      console.log(`✅ Webhook verified: ${event.type} (${event.id})`);
     } catch (err: any) {
       console.error('❌ Webhook signature verification failed:', err.message);
       return NextResponse.json(
@@ -88,19 +87,18 @@ export async function POST(req: NextRequest) {
     // Processar o evento baseado no tipo
     switch (event.type) {
       case 'checkout.session.completed':
-        console.log(`Processing checkout.session.completed for session: ${(event.data.object as Stripe.Checkout.Session).id}`);
         await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session, stripe);
         break;
 
       case 'payment_intent.succeeded':
         // Opcional: também processar payment_intent.succeeded como fallback
         // Mas checkout.session.completed já deve ser suficiente
-        console.log(`Payment intent succeeded: ${(event.data.object as Stripe.PaymentIntent).id}`);
         // Não processar aqui, esperar checkout.session.completed
         break;
 
       default:
-        console.log(`⚠️ Unhandled event type: ${event.type} (${event.id})`);
+        // Evento não tratado - silenciosamente ignorar
+        break;
     }
 
     return NextResponse.json({ received: true });
@@ -130,8 +128,6 @@ async function handleCheckoutSessionCompleted(
   const supabaseAdmin = getSupabaseAdmin();
   
   try {
-    console.log(`Processing checkout session: ${session.id}`);
-    
     // Verificar se já processamos este pedido (evitar duplicatas)
     const { data: existingOrder, error: checkError } = await supabaseAdmin
       .from('orders')
@@ -146,36 +142,56 @@ async function handleCheckoutSessionCompleted(
     }
 
     if (existingOrder) {
-      console.log(`⚠️ Order already exists for session ${session.id}: ${existingOrder.id}`);
+      // Pedido já existe - evitar duplicatas
       return;
     }
 
     // Obter dados do metadata da sessão
     const metadata = session.metadata || {};
     const userId = metadata.userId === 'null' || metadata.userId === null || metadata.userId === undefined ? null : metadata.userId;
-    const customerEmail = session.customer_email || metadata.customerEmail || session.customer_details?.email;
+    
+    // Prioridade para obter email:
+    // 1. session.customer_email (sempre preenchido se coletado no checkout)
+    // 2. session.customer_details?.email (fallback)
+    // 3. metadata.customerEmail (fallback, pode ser 'null' string)
+    let customerEmail = session.customer_email || 
+                       session.customer_details?.email || 
+                       (metadata.customerEmail && metadata.customerEmail !== 'null' ? metadata.customerEmail : null);
+    
     const isGuest = metadata.isGuest === 'true' || !userId;
 
-    console.log('Session metadata:', { userId, customerEmail, isGuest, metadata });
-
-    // Validar que temos um email do cliente
-    if (!customerEmail) {
-      console.error('Missing customer email in session:', {
+    // Validar que temos um email do cliente (OBRIGATÓRIO)
+    if (!customerEmail || customerEmail === 'null') {
+      console.error('❌ Missing customer email in session:', {
+        session_id: session.id,
         customer_email: session.customer_email,
         metadata_customerEmail: metadata.customerEmail,
         customer_details_email: session.customer_details?.email,
+        customer_details: session.customer_details,
+        payment_intent: session.payment_intent,
       });
-      throw new Error('Customer email is required but not found in session');
+      
+      // Tentar recuperar do PaymentIntent como último recurso
+      if (session.payment_intent && typeof session.payment_intent === 'string') {
+        try {
+          const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent);
+          customerEmail = paymentIntent.receipt_email || customerEmail;
+        } catch (piError) {
+          console.error('Error fetching PaymentIntent:', piError);
+        }
+      }
+      
+      if (!customerEmail || customerEmail === 'null') {
+        throw new Error('Customer email is required but not found in session. Ensure email collection is enabled in Stripe Checkout.');
+      }
     }
 
     // Obter os itens da linha da sessão do Stripe
-    console.log('Fetching line items for session:', session.id);
     let lineItems;
     try {
       lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
         expand: ['data.price.product'],
       });
-      console.log(`Found ${lineItems.data?.length || 0} line items`);
     } catch (error: any) {
       console.error('Error fetching line items:', error);
       throw new Error(`Failed to fetch line items: ${error.message}`);
@@ -190,13 +206,6 @@ async function handleCheckoutSessionCompleted(
     const amountTotal = session.amount_total ? session.amount_total / 100 : 0; // Converter de centavos para reais
 
     // Criar o pedido no Supabase
-    console.log('Creating order in Supabase:', {
-      user_id: userId,
-      customer_email: customerEmail,
-      total_amount: amountTotal,
-      stripe_session_id: session.id,
-    });
-
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .insert({
@@ -272,9 +281,90 @@ async function handleCheckoutSessionCompleted(
       throw new Error(`Failed to create order items: ${itemsError.message}`);
     }
 
-    console.log(`✅ Order created successfully: ${order.id} for ${isGuest ? 'guest' : 'user'} ${userId || customerEmail}`);
+    // Pedido criado com sucesso (log removido para produção)
+
+    // Enviar email de confirmação (não bloqueia se falhar)
+    try {
+      await sendOrderConfirmationEmail({
+        order,
+        orderItems,
+        customerEmail,
+        customerName: session.customer_details?.name || null,
+      });
+    } catch (emailError: any) {
+      // Log do erro mas não falha o webhook
+      console.error('⚠️ Error sending confirmation email:', emailError.message);
+    }
+
   } catch (error: any) {
     console.error('Error in handleCheckoutSessionCompleted:', error);
+    throw error;
+  }
+}
+
+/**
+ * Envia email de confirmação de pedido
+ * Usa chamada interna direta para evitar fetch desnecessário
+ */
+async function sendOrderConfirmationEmail({
+  order,
+  orderItems,
+  customerEmail,
+  customerName,
+}: {
+  order: any;
+  orderItems: any[];
+  customerEmail: string;
+  customerName: string | null;
+}) {
+  // Verificar se Resend está configurado
+  if (!process.env.RESEND_API_KEY) {
+    console.log('⚠️ RESEND_API_KEY not configured. Skipping email.');
+    return;
+  }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const orderUrl = `${siteUrl}/orders`;
+
+  const emailData = {
+    customerEmail,
+    customerName,
+    orderId: order.id,
+    orderDate: order.created_at,
+    totalAmount: order.total_amount,
+    items: orderItems.map((item) => ({
+      product_name: item.product_name,
+      quantity: item.quantity,
+      price: item.price,
+      product_image: item.product_image,
+    })),
+    orderUrl,
+  };
+
+  try {
+    // Chamar API interna de envio de email
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+    
+    const response = await fetch(`${baseUrl}/api/send-order-confirmation`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(emailData),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(error.error || 'Failed to send email');
+    }
+
+    const result = await response.json();
+    console.log(`✅ Order confirmation email sent to ${customerEmail}`);
+    return result;
+  } catch (error: any) {
+    // Log do erro mas não falha o webhook
+    console.error('⚠️ Error sending order confirmation email:', error.message);
     throw error;
   }
 }

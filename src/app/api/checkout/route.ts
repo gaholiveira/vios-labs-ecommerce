@@ -139,6 +139,10 @@ export async function POST(req: Request) {
       line_items: lineItems,
       mode: "payment",
       payment_method_types: ["card", "boleto"],
+      // IMPORTANTE: Forçar coleta de email (obrigatório para guest checkout)
+      customer_email: customerEmail || undefined, // Se tiver email, usar; senão Stripe coletará
+      // Configurar para sempre coletar email do cliente
+      billing_address_collection: 'auto', // Coleta endereço de cobrança
       shipping_address_collection: {
         allowed_countries: ["BR"],
       },
