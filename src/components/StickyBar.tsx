@@ -10,12 +10,16 @@ interface StickyBarProps {
   price: number;
   productId: string;
   onAddToCart: () => void;
+  isOutOfStock?: boolean;
+  onWaitlistClick?: () => void;
 }
 
 export default function StickyBar({
   productName,
   price,
   onAddToCart,
+  isOutOfStock = false,
+  onWaitlistClick,
 }: StickyBarProps) {
   const [isVisible, setIsVisible] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -64,7 +68,7 @@ export default function StickyBar({
               </p>
             </div>
 
-            {/* Botão de Comprar */}
+            {/* Botão Desabilitado - Lançamento em Breve */}
             <button
               disabled
               className="flex-shrink-0 border border-gray-300 rounded-sm bg-gray-100 text-gray-500 px-4 py-2.5 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium cursor-not-allowed transition-all duration-300 whitespace-nowrap"

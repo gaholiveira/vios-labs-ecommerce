@@ -10,6 +10,10 @@ export interface Product {
   rating?: number;
   reviews?: number;
   anvisaRecord?: string;
+  // Informações de estoque (opcionais, carregadas sob demanda)
+  stockQuantity?: number;
+  availableQuantity?: number;
+  stockStatus?: 'in_stock' | 'low_stock' | 'out_of_stock';
 }
 
 export const PRODUCTS: Product[] = [

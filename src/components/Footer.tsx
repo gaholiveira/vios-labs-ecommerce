@@ -11,16 +11,16 @@ export default function Footer({ className = '' }: FooterProps) {
         <div>
           <h4 className="text-[10px] uppercase tracking-[0.3em] mb-6 font-bold">Menu</h4>
           <ul className="space-y-4 text-xs font-light tracking-widest opacity-80">
-            <li><a href="#" className="hover:opacity-100 transition">Coleções</a></li>
+            <li><Link href="/" className="hover:opacity-100 transition">Produtos</Link></li>
             <li><Link href="/sobre" className="hover:opacity-100 transition">Sobre Nós</Link></li>
-            <li><a href="#" className="hover:opacity-100 transition">Contacto</a></li>
+            <li><Link href="/contato" className="hover:opacity-100 transition">Contato</Link></li>
           </ul>
         </div>
         <div>
           <h4 className="text-[10px] uppercase tracking-[0.3em] mb-6 font-bold">Ajuda</h4>
           <ul className="space-y-4 text-xs font-light tracking-widest opacity-80">
             <li><Link href="/trocas" className="hover:opacity-100 transition">Envios e Devoluções</Link></li>
-            <li><a href="#" className="hover:opacity-100 transition">Central de Atendimento</a></li>
+            <li><Link href="/contato" className="hover:opacity-100 transition">Central de Atendimento</Link></li>
           </ul>
         </div>
         <div>

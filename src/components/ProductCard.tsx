@@ -152,11 +152,10 @@ function ProductCard({ product }: { product: Product }) {
           )}
         </div>
 
-        {/* Botão de Adicionar - Desabilitado quando "Em Breve" */}
+        {/* Botão Desabilitado - Lançamento em Breve */}
         <button
-          onClick={() => addToCart(product)}
           disabled
-          className="border border-gray-300 rounded-sm bg-gray-300 text-gray-500 px-6 py-3 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium cursor-not-allowed transition-all duration-300 mt-2"
+          className="border border-gray-300 rounded-sm bg-gray-100 text-gray-500 px-6 py-3 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium cursor-not-allowed transition-all duration-300 mt-2"
           aria-disabled="true"
         >
           Lançamento em breve

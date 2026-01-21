@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/utils/format";
 import ProductAccordion from "@/components/ProductAccordion";
 import StickyBar from "@/components/StickyBar";
 import KeyIngredients from "@/components/KeyIngredients";
+import WaitlistModal from "@/components/WaitlistModal";
 import { Product } from "@/constants/products";
+import { useAuth } from "@/hooks/useAuth";
+import type { InventoryStatus } from "@/types/database";
 
 interface ProductPageContentProps {
   product: Product;
@@ -15,6 +18,10 @@ interface ProductPageContentProps {
 
 export default function ProductPageContent({ product }: ProductPageContentProps) {
   const { addToCart } = useCart();
+  const { user } = useAuth();
+  const [inventory, setInventory] = useState<InventoryStatus | null>(null);
+  const [isLoadingInventory, setIsLoadingInventory] = useState(true);
+  const [showWaitlistModal, setShowWaitlistModal] = useState(false);
 
   // Garantir que a página sempre comece no topo ao carregar
   useEffect(() => {
@@ -27,9 +34,39 @@ export default function ProductPageContent({ product }: ProductPageContentProps)
     }
   }, [product.id]); // Reexecutar se o produto mudar
 
+  // Buscar estoque do produto
+  useEffect(() => {
+    const fetchInventory = async () => {
+      try {
+        setIsLoadingInventory(true);
+        const response = await fetch(`/api/inventory/status?product_id=${product.id}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          setInventory(data);
+        }
+      } catch (error) {
+        console.error('Error fetching inventory:', error);
+        // Se falhar, assumir que está disponível (fallback)
+        setInventory(null);
+      } finally {
+        setIsLoadingInventory(false);
+      }
+    };
+
+    fetchInventory();
+  }, [product.id]);
+
   const handleAddToCart = () => {
     addToCart(product);
   };
+
+  const handleWaitlistClick = () => {
+    setShowWaitlistModal(true);
+  };
+
+  // Determinar se o produto está disponível
+  const isOutOfStock = inventory !== null && inventory.available_quantity === 0;
 
   // Conteúdo específico para cada produto
   const getProductSpecificContent = (productId: string) => {
@@ -425,6 +462,7 @@ export default function ProductPageContent({ product }: ProductPageContentProps)
             {product.description}
           </div>
 
+          {/* Botão Desabilitado - Lançamento em Breve */}
           <button 
             data-sticky-bar-trigger
             disabled
@@ -461,6 +499,17 @@ export default function ProductPageContent({ product }: ProductPageContentProps)
         price={product.price}
         productId={product.id}
         onAddToCart={handleAddToCart}
+        isOutOfStock={isOutOfStock}
+        onWaitlistClick={handleWaitlistClick}
+      />
+
+      {/* Modal de Waitlist */}
+      <WaitlistModal
+        isOpen={showWaitlistModal}
+        onClose={() => setShowWaitlistModal(false)}
+        productId={product.id}
+        productName={product.name}
+        userId={user?.id}
       />
     </>
   );

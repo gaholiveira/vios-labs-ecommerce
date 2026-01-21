@@ -283,6 +283,33 @@ async function handleCheckoutSessionCompleted(
 
     // Pedido criado com sucesso (log removido para produção)
 
+    // ========================================================================
+    // CONFIRMAR RESERVA DE ESTOQUE (Sistema de Inventory)
+    // ========================================================================
+    // Confirma a reserva de estoque e decrementa o stock_quantity
+    try {
+      const { data: confirmResult, error: confirmError } = await supabaseAdmin.rpc('confirm_reservation', {
+        p_stripe_session_id: session.id,
+        p_order_id: order.id,
+      });
+
+      if (confirmError) {
+        console.error('⚠️ Error confirming inventory reservation:', confirmError);
+        // Log o erro mas não falha o webhook (pedido já foi criado)
+        // Em produção, você pode adicionar uma fila de retry aqui
+      } else if (confirmResult && !confirmResult.success) {
+        console.warn('⚠️ Inventory reservation not found or already processed:', confirmResult);
+        // Isso pode acontecer se não houve reserva prévia (checkout antigo)
+        // Ou se a reserva já foi processada
+      } else {
+        // Reserva confirmada com sucesso
+        console.log('✅ Inventory reservation confirmed for order:', order.id);
+      }
+    } catch (inventoryError: any) {
+      console.error('⚠️ Error in inventory confirmation:', inventoryError.message);
+      // Não falha o webhook, apenas loga o erro
+    }
+
     // Enviar email de confirmação (não bloqueia se falhar)
     try {
       await sendOrderConfirmationEmail({
