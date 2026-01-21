@@ -41,119 +41,178 @@ export default function LoteZeroSalesForm({
     try {
       const supabase = createClient();
 
-      // Se usuário já está logado, apenas adicionar à lista VIP
+      // ========================================================================
+      // CENÁRIO 1: USUÁRIO JÁ ESTÁ LOGADO
+      // ========================================================================
       if (user) {
-        try {
-          const { error: vipError } = await supabase
-            .from("vip_list")
+        console.log('[LOTE ZERO] Usuário logado, adicionando à VIP list:', user.id);
+
+        // Atualizar perfil primeiro
+        if (name) {
+          const { error: profileError } = await supabase
+            .from("profiles")
             .upsert({
+              id: user.id,
+              full_name: name.trim(),
               email: user.email,
-              user_id: user.id,
-              full_name: name || user.user_metadata?.full_name || "",
-              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
             }, {
-              onConflict: "user_id"
+              onConflict: "id"
             });
 
-          if (vipError && !vipError.message.includes("duplicate") && !vipError.message.includes("relation")) {
-            logDatabaseError('Inserção na lista VIP (usuário logado)', vipError);
-            onError(formatDatabaseError(vipError));
-            setLoading(false);
-            return;
+          if (profileError) {
+            console.warn('[LOTE ZERO] Erro ao atualizar perfil:', profileError);
           }
-
-          // Atualizar perfil com dados se fornecido
-          if (name || email) {
-            await supabase
-              .from("profiles")
-              .upsert({
-                id: user.id,
-                full_name: name?.trim() || undefined,
-                email: email || user.email || undefined,
-              }, {
-                onConflict: "id"
-              });
-          }
-
-          onSuccess();
-          setLoading(false);
-          return;
-        } catch (vipErr) {
-          // Tabela vip_list não encontrada (opcional)
         }
 
+        // Adicionar à lista VIP (upsert para evitar duplicatas)
+        const { error: vipError } = await supabase
+          .from("vip_list")
+          .upsert({
+            email: user.email,
+            user_id: user.id,
+            full_name: name?.trim() || user.user_metadata?.full_name || null,
+          }, {
+            onConflict: "user_id"
+          });
+
+        if (vipError) {
+          console.error('[LOTE ZERO] Erro ao adicionar à VIP list:', vipError);
+          logDatabaseError('Inserção na lista VIP (usuário logado)', vipError);
+          onError('Erro ao processar sua inscrição. Tente novamente.');
+          setLoading(false);
+          return;
+        }
+
+        console.log('[LOTE ZERO] ✅ Usuário adicionado à VIP list com sucesso!');
         onSuccess();
         setLoading(false);
         return;
       }
 
-      // Se não está logado, criar conta
+      // ========================================================================
+      // CENÁRIO 2: USUÁRIO NÃO ESTÁ LOGADO - CRIAR CONTA E ADICIONAR À VIP
+      // ========================================================================
+      console.log('[LOTE ZERO] Criando nova conta para:', email);
+
+      // 1. Criar conta no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
+        email: email.trim().toLowerCase(),
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
-            full_name: name,
-            phone: whatsapp,
+            full_name: name.trim(),
+            phone: whatsapp || null,
             vip_list: true,
           },
         },
       });
 
       if (authError) {
+        console.error('[LOTE ZERO] Erro ao criar conta:', authError);
         logDatabaseError('Criação de usuário (Auth - Lote Zero)', authError);
-        onError(formatDatabaseError(authError));
+        
+        // Mensagens de erro mais amigáveis
+        if (authError.message.includes('already registered')) {
+          onError('Este email já está cadastrado. Faça login para continuar.');
+        } else if (authError.message.includes('Password')) {
+          onError('A senha deve ter no mínimo 6 caracteres.');
+        } else {
+          onError(formatDatabaseError(authError));
+        }
+        
         setLoading(false);
         return;
       }
 
       if (!authData.user) {
+        console.error('[LOTE ZERO] Nenhum usuário retornado após signUp');
         onError('Não foi possível criar a conta. Tente novamente.');
         setLoading(false);
         return;
       }
 
-      // Criar/atualizar perfil
-      if (authData.user) {
-        await new Promise(resolve => setTimeout(resolve, 500));
+      console.log('[LOTE ZERO] ✅ Conta criada com sucesso! User ID:', authData.user.id);
+
+      // 2. Aguardar um momento para garantir que o Auth processou
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // 3. Criar perfil
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .upsert({
+          id: authData.user.id,
+          full_name: name.trim(),
+          email: email.trim().toLowerCase(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: "id"
+        });
+
+      if (profileError) {
+        console.warn('[LOTE ZERO] Aviso ao criar perfil:', profileError);
+        logDatabaseError('Criação de perfil (Lote Zero)', profileError);
+        // Não bloquear o fluxo se o perfil falhar
+      } else {
+        console.log('[LOTE ZERO] ✅ Perfil criado com sucesso!');
+      }
+
+      // 4. Adicionar à lista VIP (GARANTIDO)
+      const { error: vipError } = await supabase
+        .from("vip_list")
+        .insert({
+          email: email.trim().toLowerCase(),
+          user_id: authData.user.id,
+          full_name: name.trim(),
+        });
+
+      if (vipError) {
+        console.error('[LOTE ZERO] Erro ao adicionar à VIP list:', vipError);
+        logDatabaseError('Inserção na lista VIP (novo usuário)', vipError);
         
-        const { error: profileError } = await supabase
-          .from("profiles")
+        // Se falhar, tentar novamente com upsert
+        const { error: vipRetryError } = await supabase
+          .from("vip_list")
           .upsert({
-            id: authData.user.id,
+            email: email.trim().toLowerCase(),
+            user_id: authData.user.id,
             full_name: name.trim(),
-            email: email || authData.user.email || null,
           }, {
-            onConflict: "id"
+            onConflict: "user_id"
           });
 
-        if (profileError) {
-          logDatabaseError('Atualização de perfil (Lote Zero)', profileError);
-        }
-
-        // Adicionar à lista VIP
-        try {
-          await supabase
-            .from("vip_list")
-            .upsert({
-              email: email,
-              user_id: authData.user.id,
-              full_name: name,
-              created_at: new Date().toISOString(),
-            }, {
-              onConflict: "user_id"
-            });
-        } catch (vipErr) {
-          // Tabela vip_list não encontrada (opcional)
+        if (vipRetryError) {
+          console.error('[LOTE ZERO] Erro ao adicionar à VIP list (retry):', vipRetryError);
+          onError('Conta criada, mas não foi possível adicionar à lista VIP. Entre em contato com o suporte.');
+          setLoading(false);
+          return;
         }
       }
 
+      console.log('[LOTE ZERO] ✅ Usuário adicionado à VIP list com sucesso!');
+
+      // 5. Fazer login automático após criar conta
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+
+      if (signInError) {
+        console.warn('[LOTE ZERO] Aviso: não foi possível fazer login automático:', signInError);
+        // Não bloquear o sucesso se o login automático falhar
+      } else {
+        console.log('[LOTE ZERO] ✅ Login automático realizado com sucesso!');
+      }
+
+      // 6. Sucesso!
       setLoading(false);
       onSuccess();
-    } catch (err) {
+    } catch (err: any) {
+      console.error('[LOTE ZERO] Exceção não tratada:', err);
       logDatabaseError('Exceção ao processar inscrição (Lote Zero)', err);
-      onError(formatDatabaseError(err));
+      onError(err?.message || 'Erro inesperado. Tente novamente.');
       setLoading(false);
     }
   };
