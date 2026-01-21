@@ -16,9 +16,9 @@ BEGIN
     ALTER TABLE public.vip_list 
     ADD COLUMN phone TEXT;
     
-    RAISE NOTICE 'Coluna phone adicionada à tabela vip_list';
+    RAISE NOTICE '✅ Coluna phone adicionada à tabela vip_list';
   ELSE
-    RAISE NOTICE 'Coluna phone já existe na tabela vip_list';
+    RAISE NOTICE 'ℹ️ Coluna phone já existe na tabela vip_list';
   END IF;
 END $$;
 
@@ -41,4 +41,4 @@ ORDER BY ordinal_position;
 -- Comentário na coluna
 COMMENT ON COLUMN public.vip_list.phone IS 'WhatsApp ou telefone de contato do VIP';
 
-RAISE NOTICE '✅ Campo phone adicionado à vip_list com sucesso!';
+-- ✅ Script concluído! A coluna phone foi adicionada à tabela vip_list com sucesso!

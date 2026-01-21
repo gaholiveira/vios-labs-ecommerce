@@ -191,20 +191,34 @@ export default function LoteZeroPage() {
             </svg>
           </div>
           <h1 className="text-3xl md:text-4xl font-light uppercase tracking-tighter mb-6 text-brand-softblack">
-            {user ? (alreadyVip ? "Você já está na lista VIP!" : "Você está na lista VIP!") : "Conta Criada com Sucesso!"}
+            {alreadyVip ? "Você já está na lista VIP!" : "Inscrição Confirmada!"}
           </h1>
           <p className="text-brand-softblack/70 text-base font-light leading-relaxed mb-4">
-            {user 
-              ? (alreadyVip 
-                  ? "Você já estava na lista VIP do Lote Zero. Fique atento ao seu e-mail para receber as novidades!"
-                  : "Você foi adicionado à lista VIP do Lote Zero. Fique atento ao seu e-mail!")
-              : "Você está na lista VIP do Lote Zero e sua conta foi criada."
+            {alreadyVip 
+              ? "Você já estava na lista VIP do Lote Zero. Fique atento ao seu e-mail para receber as novidades!"
+              : "Parabéns! Você foi adicionado à lista VIP do Lote Zero. Fique atento ao seu e-mail para receber as novidades exclusivas!"
             }
           </p>
           {!user && (
-            <p className="text-brand-softblack/60 text-sm font-light leading-relaxed mb-8">
-              Verifique seu e-mail para confirmar sua conta e começar a comprar.
-            </p>
+            <div className="mb-8 p-4 bg-brand-green/10 border border-brand-green/30 rounded-sm max-w-md mx-auto">
+              <p className="text-brand-softblack/70 text-sm font-light leading-relaxed mb-3">
+                💡 <strong>Dica:</strong> Crie uma conta para acompanhar seu pedido e ter acesso exclusivo a futuros lançamentos.
+              </p>
+              <div className="flex gap-3 justify-center flex-wrap">
+                <a
+                  href="/register"
+                  className="inline-block bg-brand-green text-brand-offwhite px-6 py-2 text-[10px] uppercase tracking-widest hover:bg-brand-green/90 transition-all font-medium"
+                >
+                  Criar Conta
+                </a>
+                <a
+                  href="/login"
+                  className="inline-block border border-brand-softblack px-6 py-2 text-[10px] uppercase tracking-widest text-brand-softblack hover:bg-brand-softblack hover:text-brand-offwhite transition-all font-medium"
+                >
+                  Fazer Login
+                </a>
+              </div>
+            </div>
           )}
           <div className="flex gap-4 justify-center flex-wrap">
             <a
@@ -213,14 +227,6 @@ export default function LoteZeroPage() {
             >
               Explorar Produtos
             </a>
-            {!user && (
-              <a
-                href="/login"
-                className="inline-block bg-brand-green text-brand-offwhite px-10 py-4 text-[10px] uppercase tracking-widest hover:bg-brand-green/90 transition-all font-medium"
-              >
-                Fazer Login
-              </a>
-            )}
           </div>
         </div>
       </main>

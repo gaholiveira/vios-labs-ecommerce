@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { createClient } from '@/utils/supabase/client';
 import { formatDatabaseError, logDatabaseError } from '@/utils/errorHandler';
+import Link from 'next/link';
 
 interface LoteZeroSalesFormProps {
   user: any;
@@ -20,8 +21,8 @@ interface LoteZeroSalesFormProps {
 
 export default function LoteZeroSalesForm({
   user,
-  email,
-  name,
+  email: initialEmail,
+  name: initialName,
   onEmailChange,
   onNameChange,
   onSuccess,
@@ -30,192 +31,151 @@ export default function LoteZeroSalesForm({
   setLoading,
   error,
 }: LoteZeroSalesFormProps) {
-  const [password, setPassword] = useState('');
+  const [localEmail, setLocalEmail] = useState(initialEmail);
+  const [localName, setLocalName] = useState(initialName);
   const [whatsapp, setWhatsapp] = useState('');
+
+  // Sincronizar com props quando mudarem (ex: quando user for detectado)
+  useEffect(() => {
+    if (initialEmail) setLocalEmail(initialEmail);
+    if (initialName) setLocalName(initialName);
+  }, [initialEmail, initialName]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     onError(null as any);
 
+    // Validações básicas
+    if (!localName.trim()) {
+      onError('Nome completo é obrigatório');
+      setLoading(false);
+      return;
+    }
+
+    if (!localEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(localEmail.trim())) {
+      onError('Email válido é obrigatório');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const supabase = createClient();
+      const emailTrimmed = localEmail.trim().toLowerCase();
+      const fullNameTrimmed = localName.trim();
+      const phoneTrimmed = whatsapp.trim() || null;
 
       // ========================================================================
-      // CENÁRIO 1: USUÁRIO JÁ ESTÁ LOGADO
+      // USAR API ROUTE SERVER-SIDE PARA GARANTIR INSERÇÃO
+      // A API route usa service role key e contorna políticas RLS
       // ========================================================================
+
+      console.log('[LOTE ZERO] Enviando dados para API:', {
+        email: emailTrimmed,
+        user_id: user?.id || null,
+        full_name: fullNameTrimmed,
+        phone: phoneTrimmed,
+      });
+
+      const response = await fetch('/api/vip-list', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: emailTrimmed,
+          user_id: user?.id || null,
+          full_name: fullNameTrimmed,
+          phone: phoneTrimmed,
+        }),
+      });
+
+      // Verificar se a resposta é JSON válido
+      let result;
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          result = await response.json();
+        } catch (jsonError) {
+          console.error('[LOTE ZERO] Erro ao parsear JSON da resposta:', jsonError);
+          const text = await response.text();
+          console.error('[LOTE ZERO] Resposta da API (texto):', text);
+          onError('Erro ao processar resposta do servidor. Tente novamente.');
+          setLoading(false);
+          return;
+        }
+      } else {
+        // Se não for JSON, tentar ler como texto
+        const text = await response.text();
+        console.error('[LOTE ZERO] Resposta não é JSON:', text);
+        onError('Erro ao processar resposta do servidor. Tente novamente.');
+        setLoading(false);
+        return;
+      }
+
+      // Verificar se houve erro
+      if (!response.ok) {
+        console.error('[LOTE ZERO] Erro da API:', {
+          status: response.status,
+          statusText: response.statusText,
+          result,
+        });
+        onError(result?.error || `Erro ${response.status}: ${response.statusText || 'Erro ao processar sua inscrição. Tente novamente.'}`);
+        setLoading(false);
+        return;
+      }
+
+      // Log do resultado para debugging
+      console.log('[LOTE ZERO] Resposta da API:', {
+        ok: response.ok,
+        status: response.status,
+        result,
+        hasSuccess: 'success' in (result || {}),
+        successValue: result?.success,
+      });
+
+      // Verificar se result existe e não está vazio
+      if (!result || typeof result !== 'object' || Object.keys(result).length === 0) {
+        console.error('[LOTE ZERO] Resultado vazio ou inválido:', result);
+        onError('Resposta inválida do servidor. Tente novamente.');
+        setLoading(false);
+        return;
+      }
+
+      // Verificar se result.success existe e é true
+      if (result.success !== true) {
+        console.error('[LOTE ZERO] API retornou sucesso=false:', result);
+        onError(result?.error || 'Erro ao processar sua inscrição. Tente novamente.');
+        setLoading(false);
+        return;
+      }
+
+      // Se usuário está logado, também atualizar perfil
       if (user) {
-        console.log('[LOTE ZERO] Usuário logado, adicionando à VIP list:', user.id);
-
-        // Atualizar perfil primeiro (incluindo WhatsApp se fornecido)
-        if (name || whatsapp) {
+        const supabase = createClient();
+        if (localName.trim() || whatsapp.trim()) {
           const { error: profileError } = await supabase
             .from("profiles")
             .upsert({
               id: user.id,
-              full_name: name?.trim() || undefined,
-              phone: whatsapp?.trim() || undefined,
-              email: user.email,
+              full_name: fullNameTrimmed || undefined,
+              phone: phoneTrimmed || undefined,
+              email: emailTrimmed,
               updated_at: new Date().toISOString(),
             }, {
               onConflict: "id"
             });
 
           if (profileError) {
-            console.warn('[LOTE ZERO] Erro ao atualizar perfil:', profileError);
-          } else {
-            console.log('[LOTE ZERO] ✅ Perfil atualizado com WhatsApp:', whatsapp || 'não fornecido');
+            console.warn('[LOTE ZERO] Aviso ao atualizar perfil:', profileError);
+            // Não bloquear o sucesso se o perfil falhar
           }
         }
-
-        // Adicionar à lista VIP (upsert para evitar duplicatas)
-        const { error: vipError } = await supabase
-          .from("vip_list")
-          .upsert({
-            email: user.email,
-            user_id: user.id,
-            full_name: name?.trim() || user.user_metadata?.full_name || null,
-            phone: whatsapp?.trim() || null,
-          }, {
-            onConflict: "user_id"
-          });
-
-        if (vipError) {
-          console.error('[LOTE ZERO] Erro ao adicionar à VIP list:', vipError);
-          logDatabaseError('Inserção na lista VIP (usuário logado)', vipError);
-          onError('Erro ao processar sua inscrição. Tente novamente.');
-          setLoading(false);
-          return;
-        }
-
-        console.log('[LOTE ZERO] ✅ Usuário adicionado à VIP list com sucesso!');
-        onSuccess();
-        setLoading(false);
-        return;
       }
 
-      // ========================================================================
-      // CENÁRIO 2: USUÁRIO NÃO ESTÁ LOGADO - CRIAR CONTA E ADICIONAR À VIP
-      // ========================================================================
-      console.log('[LOTE ZERO] Criando nova conta para:', email);
-
-      // 1. Criar conta no Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-          data: {
-            full_name: name.trim(),
-            phone: whatsapp || null,
-            vip_list: true,
-          },
-        },
-      });
-
-      if (authError) {
-        console.error('[LOTE ZERO] Erro ao criar conta:', authError);
-        logDatabaseError('Criação de usuário (Auth - Lote Zero)', authError);
-        
-        // Mensagens de erro mais amigáveis
-        if (authError.message.includes('already registered')) {
-          onError('Este email já está cadastrado. Faça login para continuar.');
-        } else if (authError.message.includes('Password')) {
-          onError('A senha deve ter no mínimo 6 caracteres.');
-        } else {
-          onError(formatDatabaseError(authError));
-        }
-        
-        setLoading(false);
-        return;
-      }
-
-      if (!authData.user) {
-        console.error('[LOTE ZERO] Nenhum usuário retornado após signUp');
-        onError('Não foi possível criar a conta. Tente novamente.');
-        setLoading(false);
-        return;
-      }
-
-      console.log('[LOTE ZERO] ✅ Conta criada com sucesso! User ID:', authData.user.id);
-
-      // 2. Aguardar um momento para garantir que o Auth processou
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // 3. Criar perfil (incluindo WhatsApp se fornecido)
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .upsert({
-          id: authData.user.id,
-          full_name: name.trim(),
-          phone: whatsapp?.trim() || null,
-          email: email.trim().toLowerCase(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }, {
-          onConflict: "id"
-        });
-
-      if (profileError) {
-        console.warn('[LOTE ZERO] Aviso ao criar perfil:', profileError);
-        logDatabaseError('Criação de perfil (Lote Zero)', profileError);
-        // Não bloquear o fluxo se o perfil falhar
-      } else {
-        console.log('[LOTE ZERO] ✅ Perfil criado com sucesso! WhatsApp:', whatsapp || 'não fornecido');
-      }
-
-      // 4. Adicionar à lista VIP (GARANTIDO) com WhatsApp
-      const { error: vipError } = await supabase
-        .from("vip_list")
-        .insert({
-          email: email.trim().toLowerCase(),
-          user_id: authData.user.id,
-          full_name: name.trim(),
-          phone: whatsapp?.trim() || null,
-        });
-
-      if (vipError) {
-        console.error('[LOTE ZERO] Erro ao adicionar à VIP list:', vipError);
-        logDatabaseError('Inserção na lista VIP (novo usuário)', vipError);
-        
-        // Se falhar, tentar novamente com upsert
-        const { error: vipRetryError } = await supabase
-          .from("vip_list")
-          .upsert({
-            email: email.trim().toLowerCase(),
-            user_id: authData.user.id,
-            full_name: name.trim(),
-            phone: whatsapp?.trim() || null,
-          }, {
-            onConflict: "user_id"
-          });
-
-        if (vipRetryError) {
-          console.error('[LOTE ZERO] Erro ao adicionar à VIP list (retry):', vipRetryError);
-          onError('Conta criada, mas não foi possível adicionar à lista VIP. Entre em contato com o suporte.');
-          setLoading(false);
-          return;
-        }
-      }
-
-      console.log('[LOTE ZERO] ✅ Usuário adicionado à VIP list com sucesso!');
-
-      // 5. Fazer login automático após criar conta
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
-      });
-
-      if (signInError) {
-        console.warn('[LOTE ZERO] Aviso: não foi possível fazer login automático:', signInError);
-        // Não bloquear o sucesso se o login automático falhar
-      } else {
-        console.log('[LOTE ZERO] ✅ Login automático realizado com sucesso!');
-      }
-
-      // 6. Sucesso!
-      setLoading(false);
+      console.log('[LOTE ZERO] ✅ Dados salvos na VIP list com sucesso!', result.data);
       onSuccess();
+      setLoading(false);
     } catch (err: any) {
       console.error('[LOTE ZERO] Exceção não tratada:', err);
       logDatabaseError('Exceção ao processar inscrição (Lote Zero)', err);
@@ -256,6 +216,21 @@ export default function LoteZeroSalesForm({
           </div>
         )}
 
+        {/* Info se usuário está logado */}
+        {user && (
+          <div className="mb-6 p-3 sm:p-4 bg-brand-green/10 border border-brand-green/20 rounded-sm">
+            <p className="text-xs sm:text-sm text-brand-softblack/80">
+              Logado como: <span className="font-medium break-all">{user.email}</span>
+            </p>
+            <p className="text-[10px] sm:text-xs text-brand-softblack/60 mt-1">
+              Você pode editar seus dados abaixo ou{' '}
+              <Link href="/profile" className="underline hover:text-brand-green transition-colors">
+                atualizar seu perfil
+              </Link>
+            </p>
+          </div>
+        )}
+
         {/* Formulário */}
         <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8 mb-8 sm:mb-12">
           {/* Nome Completo */}
@@ -265,8 +240,11 @@ export default function LoteZeroSalesForm({
             </label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => onNameChange(e.target.value)}
+              value={localName}
+              onChange={(e) => {
+                setLocalName(e.target.value);
+                onNameChange(e.target.value);
+              }}
               className="w-full bg-transparent border-0 border-b border-gray-300 pb-2 sm:pb-3 focus:border-black outline-none transition-colors font-mono text-sm sm:text-base text-brand-softblack placeholder:text-gray-400"
               placeholder="Seu nome completo"
               required
@@ -274,47 +252,30 @@ export default function LoteZeroSalesForm({
           </div>
 
           {/* E-mail */}
-          {!user && (
-            <div>
-              <label className="text-[9px] sm:text-[10px] uppercase tracking-widest block mb-2 sm:mb-3 text-brand-softblack/60 font-light">
-                E-mail
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => onEmailChange(e.target.value)}
-                className="w-full bg-transparent border-0 border-b border-gray-300 pb-2 sm:pb-3 focus:border-black outline-none transition-colors font-mono text-sm sm:text-base text-brand-softblack placeholder:text-gray-400"
-                placeholder="seu@email.com"
-                required
-              />
-            </div>
-          )}
-
-          {user && (
-            <div className="p-3 sm:p-4 bg-brand-green/5 border border-brand-green/20 rounded-sm">
-              <p className="text-xs sm:text-sm text-brand-softblack/80">
-                Logado como: <span className="font-medium break-all">{user.email}</span>
+          <div>
+            <label className="text-[9px] sm:text-[10px] uppercase tracking-widest block mb-2 sm:mb-3 text-brand-softblack/60 font-light">
+              E-mail
+            </label>
+            <input
+              type="email"
+              value={localEmail}
+              onChange={(e) => {
+                setLocalEmail(e.target.value);
+                onEmailChange(e.target.value);
+              }}
+              disabled={!!user} // Desabilitar se estiver logado
+              className={`w-full bg-transparent border-0 border-b border-gray-300 pb-2 sm:pb-3 focus:border-black outline-none transition-colors font-mono text-sm sm:text-base text-brand-softblack placeholder:text-gray-400 ${
+                user ? 'opacity-70 cursor-not-allowed' : ''
+              }`}
+              placeholder="seu@email.com"
+              required
+            />
+            {user && (
+              <p className="text-[10px] text-brand-softblack/50 mt-1">
+                O email não pode ser alterado enquanto estiver logado
               </p>
-            </div>
-          )}
-
-          {/* Senha (apenas se não estiver logado) */}
-          {!user && (
-            <div>
-              <label className="text-[9px] sm:text-[10px] uppercase tracking-widest block mb-2 sm:mb-3 text-brand-softblack/60 font-light">
-                Senha
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-transparent border-0 border-b border-gray-300 pb-2 sm:pb-3 focus:border-black outline-none transition-colors font-mono text-sm sm:text-base text-brand-softblack placeholder:text-gray-400"
-                placeholder="Mínimo 6 caracteres"
-                minLength={6}
-                required
-              />
-            </div>
-          )}
+            )}
+          </div>
 
           {/* WhatsApp */}
           <div>
@@ -328,6 +289,9 @@ export default function LoteZeroSalesForm({
               className="w-full bg-transparent border-0 border-b border-gray-300 pb-2 sm:pb-3 focus:border-black outline-none transition-colors font-mono text-sm sm:text-base text-brand-softblack placeholder:text-gray-400"
               placeholder="+55 11 99999-9999"
             />
+            <p className="text-[10px] text-brand-softblack/50 mt-1">
+              Para receber atualizações exclusivas sobre o Lote Zero
+            </p>
           </div>
 
           {/* Botão de Ação */}
@@ -336,15 +300,40 @@ export default function LoteZeroSalesForm({
             disabled={loading}
             className="w-full bg-brand-softblack text-brand-offwhite py-3 sm:py-4 uppercase tracking-[0.15em] sm:tracking-[0.2em] text-[11px] sm:text-xs font-medium hover:bg-brand-softblack/90 active:bg-brand-softblack/80 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed mt-6 sm:mt-8"
           >
-            {loading ? 'Processando...' : 'Garantir Meu Acesso'}
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processando...
+              </span>
+            ) : (
+              'Garantir Meu Acesso'
+            )}
           </button>
         </form>
+
+        {/* Mensagem para usuários não logados */}
+        {!user && (
+          <div className="mb-8 p-4 bg-brand-green/5 border border-brand-green/20 rounded-sm">
+            <p className="text-xs sm:text-sm text-brand-softblack/70 mb-2">
+              💡 <strong>Dica:</strong> Crie uma conta para acompanhar seu pedido e ter acesso exclusivo a futuros lançamentos.
+            </p>
+            <Link
+              href="/register"
+              className="text-[10px] sm:text-xs uppercase tracking-widest text-brand-green hover:underline font-medium"
+            >
+              Criar conta →
+            </Link>
+          </div>
+        )}
 
         {/* Elementos de Confiança */}
         <div className="space-y-3 sm:space-y-4 pt-6 sm:pt-8 pb-8 sm:pb-12 md:pb-16 border-t border-gray-200">
           <div className="flex items-start gap-2 sm:gap-3">
             <svg
-              className="w-4 h-4 sm:w-5 sm:h-5 text-brand-green flex-shrink-0 mt-0.5"
+              className="w-4 h-4 sm:w-5 sm:h-5 text-brand-green shrink-0 mt-0.5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -363,7 +352,7 @@ export default function LoteZeroSalesForm({
 
           <div className="flex items-start gap-2 sm:gap-3">
             <svg
-              className="w-4 h-4 sm:w-5 sm:h-5 text-brand-green flex-shrink-0 mt-0.5"
+              className="w-4 h-4 sm:w-5 sm:h-5 text-brand-green shrink-0 mt-0.5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -382,7 +371,7 @@ export default function LoteZeroSalesForm({
 
           <div className="flex items-start gap-2 sm:gap-3">
             <svg
-              className="w-4 h-4 sm:w-5 sm:h-5 text-brand-green flex-shrink-0 mt-0.5"
+              className="w-4 h-4 sm:w-5 sm:h-5 text-brand-green shrink-0 mt-0.5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
