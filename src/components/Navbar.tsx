@@ -1,6 +1,6 @@
 // src/components/Navbar.tsx
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
@@ -9,7 +9,7 @@ import Avatar from '@/components/ui/Avatar';
 import DropdownMenu from '@/components/ui/DropdownMenu';
 import SiteSearch from '@/components/SiteSearch';
 
-export default function Navbar() {
+function Navbar() {
   const { totalItems, setIsOpen, setIsMenuOpen } = useCart();
   const { user } = useAuth();
   const [profile, setProfile] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null);
@@ -81,15 +81,24 @@ export default function Navbar() {
     loadProfile();
   }, [user]);
 
-  // Menu de links para desktop
-  const desktopMenuItems = [
+  // Handlers memoizados
+  const handleOpenCart = useCallback(() => {
+    setIsOpen(true);
+  }, [setIsOpen]);
+
+  const handleOpenMenu = useCallback(() => {
+    setIsMenuOpen(true);
+  }, [setIsMenuOpen]);
+
+  // Menu de links para desktop - Memoizado
+  const desktopMenuItems = useMemo(() => [
     { href: '/', label: 'Início' },
     { href: '/sobre', label: 'Sobre Nós' },
     { href: '/lote-zero', label: 'Lote Zero' },
-  ];
+  ], []);
 
-  // Itens do dropdown
-  const dropdownItems = [
+  // Itens do dropdown - Memoizado
+  const dropdownItems = useMemo(() => [
     {
       label: 'Minha Conta',
       href: '/profile',
@@ -117,7 +126,16 @@ export default function Navbar() {
         </svg>
       ),
     },
-  ];
+  ], []);
+
+  // Memoizar texto do carrinho
+  const cartAriaLabel = useMemo(() => {
+    return `Abrir carrinho com ${totalItems} item${totalItems !== 1 ? 's' : ''}`;
+  }, [totalItems]);
+
+  const cartBadgeDisplay = useMemo(() => {
+    return totalItems > 9 ? '9+' : totalItems;
+  }, [totalItems]);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm md:bg-brand-offwhite/80 md:backdrop-blur-md border-b border-gray-200/50 transition-colors duration-300">
@@ -126,7 +144,7 @@ export default function Navbar() {
         {/* MOBILE: LADO ESQUERDO - Menu Hambúrguer */}
         <div className="flex-1 flex items-center space-x-6 md:hidden">
           <button 
-            onClick={() => setIsMenuOpen(true)} 
+            onClick={handleOpenMenu} 
             className="flex flex-col space-y-1.5 w-6 min-h-[44px] min-w-[44px] items-center justify-center -ml-2 -my-2 p-2 group active:opacity-70 transition-opacity"
             aria-label="Abrir menu de navegação"
             aria-expanded={false}
@@ -171,16 +189,16 @@ export default function Navbar() {
         <div className="flex-1 flex justify-end items-center space-x-4">
           {/* Carrinho - Ícone de Sacola */}
           <button 
-            onClick={() => setIsOpen(true)}
+            onClick={handleOpenCart}
             className="min-h-[44px] min-w-[44px] flex items-center justify-center -my-2 p-2 active:opacity-70 md:hover:opacity-50 transition-opacity relative"
-            aria-label={`Abrir carrinho com ${totalItems} item${totalItems !== 1 ? 's' : ''}`}
+            aria-label={cartAriaLabel}
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
             </svg>
             {totalItems > 0 && (
               <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-brand-softblack text-white text-[8px] font-medium rounded-full flex items-center justify-center">
-                {totalItems > 9 ? '9+' : totalItems}
+                {cartBadgeDisplay}
               </span>
             )}
             {/* Texto apenas no mobile */}
@@ -216,3 +234,6 @@ export default function Navbar() {
     </nav>
   );
 }
+
+// Memoizar componente inteiro
+export default memo(Navbar);

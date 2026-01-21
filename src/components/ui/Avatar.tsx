@@ -1,5 +1,6 @@
 'use client';
 
+import { memo, useMemo } from 'react';
 import Image from 'next/image';
 
 interface AvatarProps {
@@ -10,26 +11,27 @@ interface AvatarProps {
   className?: string;
 }
 
-export default function Avatar({ 
+function Avatar({ 
   src, 
   alt = 'Avatar', 
   name, 
   size = 'md',
   className = ''
 }: AvatarProps) {
-  // Função para obter iniciais do nome
-  const getInitials = (name: string | null | undefined): string => {
+  // Função para obter iniciais do nome - Memoizada
+  const initials = useMemo(() => {
     if (!name) return 'U';
     const parts = name.trim().split(' ');
     if (parts.length === 1) return parts[0][0].toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
+  }, [name]);
 
-  const sizeClasses = {
+  // Memoizar classes de tamanho
+  const sizeClasses = useMemo(() => ({
     sm: 'w-8 h-8 text-xs',
     md: 'w-10 h-10 text-sm',
     lg: 'w-20 h-20 text-2xl',
-  };
+  }), []);
 
   const sizeClass = sizeClasses[size];
 
@@ -48,7 +50,10 @@ export default function Avatar({
 
   return (
     <div className={`${sizeClass} rounded-full bg-stone-100 text-stone-600 font-medium flex items-center justify-center border-2 border-gray-200 ${className}`}>
-      {getInitials(name)}
+      {initials}
     </div>
   );
 }
+
+// Memoizar componente Avatar
+export default memo(Avatar);

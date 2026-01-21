@@ -1,4 +1,6 @@
-export default function AboutSection() {
+import { memo } from 'react';
+
+function AboutSection() {
   return (
     <section className="bg-brand-offwhite py-24 px-6">
       <div className="max-w-3xl mx-auto text-center">
@@ -31,3 +33,6 @@ export default function AboutSection() {
     </section>
   );
 }
+
+// Memoizar AboutSection pois é conteúdo estático
+export default memo(AboutSection);

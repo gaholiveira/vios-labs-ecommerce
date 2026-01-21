@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -9,7 +9,7 @@ import { formatPrice } from '@/utils/format';
 import ShippingMeter from '@/components/cart/ShippingMeter';
 import { useAuth } from '@/hooks/useAuth';
 
-export default function CartDrawer() {
+function CartDrawer() {
   const { cart, isOpen, setIsOpen, removeFromCart, updateQuantity, totalPrice } = useCart();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { user } = useAuth(); // Obter usuário atual (pode ser null para guests)
@@ -90,6 +90,10 @@ export default function CartDrawer() {
     }
   };
 
+  const handleCloseCart = useCallback(() => {
+    setIsOpen(false);
+  }, [setIsOpen]);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -101,7 +105,7 @@ export default function CartDrawer() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
             className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60]"
-            onClick={() => setIsOpen(false)}
+            onClick={handleCloseCart}
             aria-hidden="true"
           />
 
@@ -123,7 +127,7 @@ export default function CartDrawer() {
               O teu carrinho
             </h2>
             <button 
-              onClick={() => setIsOpen(false)}
+              onClick={handleCloseCart}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               aria-label="Fechar carrinho"
             >
@@ -157,7 +161,7 @@ export default function CartDrawer() {
                 <p className="text-gray-500 font-light text-sm mb-2">O teu carrinho está vazio.</p>
                 <Link 
                   href="/"
-                  onClick={() => setIsOpen(false)}
+                  onClick={handleCloseCart}
                   className="text-brand-green text-[10px] uppercase tracking-wider hover:underline"
                 >
                   Continuar a comprar
@@ -175,7 +179,7 @@ export default function CartDrawer() {
                       {/* Imagem do Produto */}
                       <Link 
                         href={`/produto/${item.id}`}
-                        onClick={() => setIsOpen(false)}
+                        onClick={handleCloseCart}
                         className="relative w-20 h-24 flex-shrink-0 bg-gray-100 rounded-sm overflow-hidden group"
                       >
                         <Image
@@ -193,7 +197,7 @@ export default function CartDrawer() {
                       <div className="flex-1 min-w-0">
                         <Link 
                           href={`/produto/${item.id}`}
-                          onClick={() => setIsOpen(false)}
+                          onClick={handleCloseCart}
                           className="block"
                         >
                           <h3 className="text-sm uppercase font-medium text-brand-softblack hover:text-brand-green transition-colors line-clamp-2">
@@ -309,7 +313,7 @@ export default function CartDrawer() {
               
               <Link
                 href="/"
-                onClick={() => setIsOpen(false)}
+                onClick={handleCloseCart}
                 className="block text-center text-[10px] uppercase tracking-wider text-brand-softblack/60 hover:text-brand-green transition-colors mt-3"
               >
                 Continuar a comprar
@@ -323,3 +327,6 @@ export default function CartDrawer() {
     </AnimatePresence>
   );
 }
+
+// Memoizar componente inteiro
+export default memo(CartDrawer);

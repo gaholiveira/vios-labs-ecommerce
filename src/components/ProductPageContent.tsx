@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo, memo } from "react";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/utils/format";
@@ -16,7 +16,7 @@ interface ProductPageContentProps {
   product: Product;
 }
 
-export default function ProductPageContent({ product }: ProductPageContentProps) {
+function ProductPageContent({ product }: ProductPageContentProps) {
   const { addToCart } = useCart();
   const { user } = useAuth();
   const [inventory, setInventory] = useState<InventoryStatus | null>(null);
@@ -57,16 +57,22 @@ export default function ProductPageContent({ product }: ProductPageContentProps)
     fetchInventory();
   }, [product.id]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = useCallback(() => {
     addToCart(product);
-  };
+  }, [addToCart, product]);
 
-  const handleWaitlistClick = () => {
+  const handleWaitlistClick = useCallback(() => {
     setShowWaitlistModal(true);
-  };
+  }, []);
 
-  // Determinar se o produto está disponível
-  const isOutOfStock = inventory !== null && inventory.available_quantity === 0;
+  const handleWaitlistClose = useCallback(() => {
+    setShowWaitlistModal(false);
+  }, []);
+
+  // Determinar se o produto está disponível - Memoizado
+  const isOutOfStock = useMemo(() => {
+    return inventory !== null && inventory.available_quantity === 0;
+  }, [inventory]);
 
   // Conteúdo específico para cada produto
   const getProductSpecificContent = (productId: string) => {
@@ -433,7 +439,10 @@ export default function ProductPageContent({ product }: ProductPageContentProps)
     };
   };
 
-  const productContent = getProductSpecificContent(product.id);
+  // Memoizar conteúdo do produto para evitar recálculos
+  const productContent = useMemo(() => {
+    return getProductSpecificContent(product.id);
+  }, [product.id]);
 
   return (
     <>
@@ -506,7 +515,7 @@ export default function ProductPageContent({ product }: ProductPageContentProps)
       {/* Modal de Waitlist */}
       <WaitlistModal
         isOpen={showWaitlistModal}
-        onClose={() => setShowWaitlistModal(false)}
+        onClose={handleWaitlistClose}
         productId={product.id}
         productName={product.name}
         userId={user?.id}
@@ -514,3 +523,6 @@ export default function ProductPageContent({ product }: ProductPageContentProps)
     </>
   );
 }
+
+// Memoizar componente com comparação de props
+export default memo(ProductPageContent);

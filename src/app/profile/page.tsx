@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import { formatDatabaseError, logDatabaseError } from '@/utils/errorHandler';
@@ -24,13 +24,13 @@ export default function ProfilePage() {
   });
   const [fullNameError, setFullNameError] = useState<string | null>(null);
 
-  // Função para obter iniciais do nome
-  const getInitials = (name: string): string => {
+  // Função para obter iniciais do nome - Memoizada
+  const getInitials = useCallback((name: string): string => {
     if (!name) return 'U';
     const parts = name.trim().split(' ');
     if (parts.length === 1) return parts[0][0].toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
+  }, []);
 
   useEffect(() => {
     async function loadProfile() {
@@ -86,8 +86,8 @@ export default function ProfilePage() {
     loadProfile();
   }, [router]);
 
-  // Função para fazer upload do avatar
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Função para fazer upload do avatar - Otimizada com useCallback
+  const handleAvatarUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -222,9 +222,9 @@ export default function ProfilePage() {
         fileInputRef.current.value = '';
       }
     }
-  };
+  }, [profile, showToast]);
 
-  const handleUpdate = async (e: React.FormEvent) => {
+  const handleUpdate = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(false);
@@ -280,9 +280,9 @@ export default function ProfilePage() {
     } finally {
       setUpdating(false);
     }
-  };
+  }, [profile.full_name, showToast]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       // Importar e usar função centralizada de logout
       const { handleLogout: logout } = await import('@/utils/auth');
@@ -296,7 +296,12 @@ export default function ProfilePage() {
         window.location.href = '/';
       }
     }
-  };
+  }, []);
+
+  // Memoizar iniciais do perfil
+  const profileInitials = useMemo(() => {
+    return getInitials(profile.full_name);
+  }, [profile.full_name, getInitials]);
 
   if (loading) {
     return (
@@ -391,7 +396,7 @@ export default function ProfilePage() {
                 ) : (
                   <div className="w-24 h-24 rounded-full bg-stone-200 border-2 border-gray-200 flex items-center justify-center">
                     <span className="text-2xl font-serif text-brand-softblack/70">
-                      {getInitials(profile.full_name)}
+                      {profileInitials}
                     </span>
                   </div>
                 )}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback, memo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -18,7 +18,7 @@ interface DropdownMenuProps {
   align?: 'left' | 'right';
 }
 
-export default function DropdownMenu({ 
+function DropdownMenu({ 
   children, 
   items, 
   align = 'right' 
@@ -26,6 +26,15 @@ export default function DropdownMenu({
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  // Memoizar handlers
+  const handleToggle = useCallback(() => {
+    setIsOpen(prev => !prev);
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setIsOpen(false);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -43,14 +52,14 @@ export default function DropdownMenu({
     };
   }, [isOpen]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     // Importar e usar função centralizada de logout
     const { handleLogout: logout } = await import('@/utils/auth');
     setIsOpen(false); // Fechar menu antes do logout
     await logout();
-  };
+  }, []);
 
-  const handleItemClick = async (item: DropdownMenuItem) => {
+  const handleItemClick = useCallback(async (item: DropdownMenuItem) => {
     // Se for "Sair", fazer logout e não navegar
     if (item.label === 'Sair') {
       setIsOpen(false);
@@ -72,12 +81,12 @@ export default function DropdownMenu({
     }
     
     setIsOpen(false);
-  };
+  }, [router, handleLogout]);
 
   return (
     <div className="relative" ref={menuRef}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
         className="focus:outline-none focus:ring-2 focus:ring-brand-green/20 rounded-full transition-opacity hover:opacity-80"
         aria-expanded={isOpen}
         aria-haspopup="true"
@@ -90,7 +99,7 @@ export default function DropdownMenu({
           {/* Overlay para fechar ao clicar fora */}
           <div
             className="fixed inset-0 z-10"
-            onClick={() => setIsOpen(false)}
+            onClick={handleClose}
           />
 
           {/* Menu Dropdown */}
@@ -139,3 +148,6 @@ export default function DropdownMenu({
     </div>
   );
 }
+
+// Memoizar componente DropdownMenu
+export default memo(DropdownMenu);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import AboutSection from "@/components/AboutSection";
 import ProductCard from "@/components/ProductCard";
@@ -47,14 +47,25 @@ export default function Home() {
     }
   }, [router]);
 
+  // Handler para scroll suave - Memoizado
+  const handleExploreClick = useCallback(() => {
+    const productsSection = document.getElementById('produtos');
+    if (productsSection) {
+      productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
+
+  // Memoizar estilo de altura do viewport
+  const heroStyle = useMemo(() => ({
+    height: viewportHeight ? `${viewportHeight}px` : '100svh'
+  }), [viewportHeight]);
+
   return (
     <main>
       {/* Hero Section */}
       <section 
         className="relative w-full flex items-center justify-center overflow-hidden bg-brand-softblack"
-        style={{ 
-          height: viewportHeight ? `${viewportHeight}px` : '100svh' 
-        }}
+        style={heroStyle}
       >
         {/* Usando o componente Image do Next.js para máxima performance */}
         <div className="absolute inset-0 transform-gpu will-change-transform">
@@ -83,12 +94,7 @@ export default function Home() {
             Vios 2026
           </h1>
           <button 
-            onClick={() => {
-              const productsSection = document.getElementById('produtos');
-              if (productsSection) {
-                productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }
-            }}
+            onClick={handleExploreClick}
             className="border border-brand-offwhite rounded-sm px-10 py-4 min-h-[44px] text-xs uppercase tracking-[0.2em] text-brand-offwhite active:bg-brand-green/80 active:text-brand-offwhite active:border-brand-green md:hover:bg-brand-green md:hover:text-brand-offwhite md:hover:border-brand-green transition-all duration-500 ease-out md:transform md:hover:scale-105 font-medium"
           >
             Explorar Loja

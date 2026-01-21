@@ -1,10 +1,11 @@
+import { memo } from 'react';
 import Link from 'next/link';
 
 interface FooterProps {
   className?: string;
 }
 
-export default function Footer({ className = '' }: FooterProps) {
+function Footer({ className = '' }: FooterProps) {
   return (
     <footer className={`bg-brand-softblack text-brand-offwhite py-16 px-6 ${className}`}>
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
@@ -90,3 +91,6 @@ export default function Footer({ className = '' }: FooterProps) {
     </footer>
   );
 }
+
+// Memoizar Footer pois raramente muda
+export default memo(Footer);

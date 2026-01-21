@@ -1,12 +1,12 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo, memo } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useCart } from '@/context/CartContext';
 import Link from 'next/link';
 import { User } from '@supabase/supabase-js';
 import Avatar from '@/components/ui/Avatar';
 
-export default function MobileMenu() {
+function MobileMenu() {
   const { isMenuOpen, setIsMenuOpen } = useCart();
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null);
@@ -56,7 +56,7 @@ export default function MobileMenu() {
     getUser();
   }, [isMenuOpen]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     setLoggingOut(true);
     setIsMenuOpen(false); // Fechar menu antes do logout
     
@@ -72,17 +72,18 @@ export default function MobileMenu() {
         window.location.href = '/';
       }
     }
-  };
+  }, [setIsMenuOpen]);
 
-  const handleLinkClick = () => {
+  const handleLinkClick = useCallback(() => {
     setIsMenuOpen(false);
-  };
+  }, [setIsMenuOpen]);
 
-  const menuItems = [
+  // Memoizar menuItems para evitar recriação
+  const menuItems = useMemo(() => [
     { href: '/', label: 'Início', icon: 'home' },
     { href: '/sobre', label: 'Sobre Nós', icon: 'info' },
     { href: '/lote-zero', label: 'Lote Zero', icon: 'star' },
-  ];
+  ], []);
 
   return (
     <>
@@ -268,3 +269,6 @@ export default function MobileMenu() {
     </>
   );
 }
+
+// Memoizar o componente inteiro para evitar re-renders desnecessários
+export default memo(MobileMenu);
