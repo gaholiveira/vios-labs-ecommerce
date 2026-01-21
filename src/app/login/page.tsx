@@ -49,7 +49,7 @@ export default function LoginPage() {
       if (params.get('error')) {
         const errorMsg = params.get('message') || params.get('error');
         // Não mostrar como erro se for sobre email confirmado
-        if (!errorMsg.includes('confirmado') && !errorMsg.includes('email')) {
+        if (errorMsg && !errorMsg.includes('confirmado') && !errorMsg.includes('email')) {
           setError(errorMsg || 'Erro de autenticação');
         }
       }
