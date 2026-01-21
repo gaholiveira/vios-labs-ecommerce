@@ -31,10 +31,17 @@ export interface OrderItem {
 export interface Profile {
   id: string;
   full_name?: string;
+  phone?: string;
   avatar_url?: string;
   email?: string;
   username?: string;
   website?: string;
+  address_street?: string;
+  address_city?: string;
+  address_postcode?: string;
+  address_country?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface VipList {
@@ -42,6 +49,7 @@ export interface VipList {
   user_id?: string;
   email: string;
   full_name?: string;
+  phone?: string;
   created_at: string;
 }
 

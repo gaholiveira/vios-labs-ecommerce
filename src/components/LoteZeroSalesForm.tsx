@@ -47,13 +47,14 @@ export default function LoteZeroSalesForm({
       if (user) {
         console.log('[LOTE ZERO] Usuário logado, adicionando à VIP list:', user.id);
 
-        // Atualizar perfil primeiro
-        if (name) {
+        // Atualizar perfil primeiro (incluindo WhatsApp se fornecido)
+        if (name || whatsapp) {
           const { error: profileError } = await supabase
             .from("profiles")
             .upsert({
               id: user.id,
-              full_name: name.trim(),
+              full_name: name?.trim() || undefined,
+              phone: whatsapp?.trim() || undefined,
               email: user.email,
               updated_at: new Date().toISOString(),
             }, {
@@ -62,6 +63,8 @@ export default function LoteZeroSalesForm({
 
           if (profileError) {
             console.warn('[LOTE ZERO] Erro ao atualizar perfil:', profileError);
+          } else {
+            console.log('[LOTE ZERO] ✅ Perfil atualizado com WhatsApp:', whatsapp || 'não fornecido');
           }
         }
 
@@ -72,6 +75,7 @@ export default function LoteZeroSalesForm({
             email: user.email,
             user_id: user.id,
             full_name: name?.trim() || user.user_metadata?.full_name || null,
+            phone: whatsapp?.trim() || null,
           }, {
             onConflict: "user_id"
           });
@@ -138,12 +142,13 @@ export default function LoteZeroSalesForm({
       // 2. Aguardar um momento para garantir que o Auth processou
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // 3. Criar perfil
+      // 3. Criar perfil (incluindo WhatsApp se fornecido)
       const { error: profileError } = await supabase
         .from("profiles")
         .upsert({
           id: authData.user.id,
           full_name: name.trim(),
+          phone: whatsapp?.trim() || null,
           email: email.trim().toLowerCase(),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -156,16 +161,17 @@ export default function LoteZeroSalesForm({
         logDatabaseError('Criação de perfil (Lote Zero)', profileError);
         // Não bloquear o fluxo se o perfil falhar
       } else {
-        console.log('[LOTE ZERO] ✅ Perfil criado com sucesso!');
+        console.log('[LOTE ZERO] ✅ Perfil criado com sucesso! WhatsApp:', whatsapp || 'não fornecido');
       }
 
-      // 4. Adicionar à lista VIP (GARANTIDO)
+      // 4. Adicionar à lista VIP (GARANTIDO) com WhatsApp
       const { error: vipError } = await supabase
         .from("vip_list")
         .insert({
           email: email.trim().toLowerCase(),
           user_id: authData.user.id,
           full_name: name.trim(),
+          phone: whatsapp?.trim() || null,
         });
 
       if (vipError) {
@@ -179,6 +185,7 @@ export default function LoteZeroSalesForm({
             email: email.trim().toLowerCase(),
             user_id: authData.user.id,
             full_name: name.trim(),
+            phone: whatsapp?.trim() || null,
           }, {
             onConflict: "user_id"
           });

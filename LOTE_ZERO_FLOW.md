@@ -32,18 +32,20 @@ O formulário do Lote Zero é responsável por:
 
 **SQL Executado:**
 ```sql
--- Atualizar perfil
+-- Atualizar perfil (incluindo WhatsApp)
 UPDATE profiles
 SET full_name = 'Nome do Cliente',
+    phone = '+55 11 99999-9999',
     updated_at = NOW()
 WHERE id = 'user-uuid';
 
 -- Adicionar à VIP list (ou atualizar se já existe)
-INSERT INTO vip_list (email, user_id, full_name)
-VALUES ('email@example.com', 'user-uuid', 'Nome do Cliente')
+INSERT INTO vip_list (email, user_id, full_name, phone)
+VALUES ('email@example.com', 'user-uuid', 'Nome do Cliente', '+55 11 99999-9999')
 ON CONFLICT (user_id) 
 DO UPDATE SET 
   full_name = EXCLUDED.full_name,
+  phone = EXCLUDED.phone,
   email = EXCLUDED.email;
 ```
 
@@ -91,25 +93,27 @@ DO UPDATE SET
 -- 1. Criar usuário (via Supabase Auth)
 -- auth.users é gerenciado pelo Supabase
 
--- 2. Criar perfil
-INSERT INTO profiles (id, full_name, email, created_at, updated_at)
-VALUES ('new-user-uuid', 'Nome do Cliente', 'email@example.com', NOW(), NOW())
+-- 2. Criar perfil (incluindo WhatsApp)
+INSERT INTO profiles (id, full_name, phone, email, created_at, updated_at)
+VALUES ('new-user-uuid', 'Nome do Cliente', '+55 11 99999-9999', 'email@example.com', NOW(), NOW())
 ON CONFLICT (id) 
 DO UPDATE SET 
   full_name = EXCLUDED.full_name,
+  phone = EXCLUDED.phone,
   email = EXCLUDED.email,
   updated_at = NOW();
 
--- 3. Adicionar à VIP list
-INSERT INTO vip_list (email, user_id, full_name)
-VALUES ('email@example.com', 'new-user-uuid', 'Nome do Cliente');
+-- 3. Adicionar à VIP list (com WhatsApp)
+INSERT INTO vip_list (email, user_id, full_name, phone)
+VALUES ('email@example.com', 'new-user-uuid', 'Nome do Cliente', '+55 11 99999-9999');
 
 -- Se falhar (duplicata), tentar novamente com upsert
-INSERT INTO vip_list (email, user_id, full_name)
-VALUES ('email@example.com', 'new-user-uuid', 'Nome do Cliente')
+INSERT INTO vip_list (email, user_id, full_name, phone)
+VALUES ('email@example.com', 'new-user-uuid', 'Nome do Cliente', '+55 11 99999-9999')
 ON CONFLICT (user_id) 
 DO UPDATE SET 
   full_name = EXCLUDED.full_name,
+  phone = EXCLUDED.phone,
   email = EXCLUDED.email;
 ```
 
@@ -169,12 +173,14 @@ CREATE TABLE public.vip_list (
   email TEXT NOT NULL,
   user_id UUID UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name TEXT,
+  phone TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
 
 -- Índices para performance
 CREATE INDEX idx_vip_list_user_id ON vip_list(user_id);
 CREATE INDEX idx_vip_list_email ON vip_list(email);
+CREATE INDEX idx_vip_list_phone ON vip_list(phone) WHERE phone IS NOT NULL;
 CREATE INDEX idx_vip_list_created_at ON vip_list(created_at DESC);
 ```
 
@@ -183,12 +189,14 @@ CREATE INDEX idx_vip_list_created_at ON vip_list(created_at DESC);
 - `email`: Email do cliente
 - `user_id`: Referência para auth.users (único)
 - `full_name`: Nome completo
+- `phone`: WhatsApp/Telefone de contato (opcional)
 - `created_at`: Data de cadastro
 
 **Constraints:**
 - `user_id` é UNIQUE (um usuário só pode estar uma vez na lista)
 - `user_id` referencia `auth.users(id)` com CASCADE
 - `email` é obrigatório
+- `phone` é opcional
 
 ---
 
@@ -310,7 +318,12 @@ SELECT * FROM pg_policies WHERE tablename = 'profiles';
 SELECT COUNT(*) as total_vips FROM vip_list;
 
 -- VIPs cadastrados hoje
-SELECT * FROM vip_list 
+SELECT 
+  full_name,
+  email,
+  phone,
+  created_at
+FROM vip_list 
 WHERE created_at >= CURRENT_DATE
 ORDER BY created_at DESC;
 
@@ -318,8 +331,32 @@ ORDER BY created_at DESC;
 SELECT * FROM vip_list 
 WHERE user_id IS NULL;
 
--- Top 10 mais recentes
-SELECT * FROM vip_list 
+-- VIPs com WhatsApp fornecido
+SELECT 
+  full_name,
+  email,
+  phone,
+  created_at
+FROM vip_list 
+WHERE phone IS NOT NULL
+ORDER BY created_at DESC;
+
+-- VIPs sem WhatsApp (para fazer follow-up)
+SELECT 
+  full_name,
+  email,
+  created_at
+FROM vip_list 
+WHERE phone IS NULL
+ORDER BY created_at DESC;
+
+-- Top 10 mais recentes com todos os dados
+SELECT 
+  full_name,
+  email,
+  phone,
+  created_at
+FROM vip_list 
 ORDER BY created_at DESC 
 LIMIT 10;
 ```
