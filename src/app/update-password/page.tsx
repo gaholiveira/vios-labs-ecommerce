@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { formatDatabaseError, logDatabaseError } from '@/utils/errorHandler';
 import Link from 'next/link';
+import { useCart } from '@/context/CartContext';
 
 export default function UpdatePasswordPage() {
   const [password, setPassword] = useState('');
@@ -12,12 +13,15 @@ export default function UpdatePasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const { showToast } = useCart();
 
   useEffect(() => {
     // Verificar se o usuário está autenticado (sessão de recovery)
     async function checkAuth() {
       try {
         const supabase = createClient();
+        
+        // Verificar usuário
         const {
           data: { user },
           error: authError,
@@ -25,13 +29,37 @@ export default function UpdatePasswordPage() {
 
         if (authError || !user) {
           setError('Link inválido ou expirado. Solicite um novo link de redefinição.');
+          // Redirecionar após 5 segundos
+          setTimeout(() => {
+            router.push('/forgot-password?error=Link expirado. Solicite um novo link.');
+          }, 5000);
+          return;
         }
+
+        // Verificar se há sessão válida (necessária para recovery)
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+
+        if (sessionError || !session) {
+          setError('Sessão inválida. Solicite um novo link de redefinição.');
+          setTimeout(() => {
+            router.push('/forgot-password?error=Sessão inválida. Solicite um novo link.');
+          }, 5000);
+          return;
+        }
+
+        // Sessão válida - usuário pode prosseguir
       } catch (err) {
         setError('Erro ao verificar autenticação. Solicite um novo link de redefinição.');
+        setTimeout(() => {
+          router.push('/forgot-password');
+        }, 5000);
       }
     }
     checkAuth();
-  }, []);
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,11 +95,12 @@ export default function UpdatePasswordPage() {
       // Sucesso
       setSuccess(true);
       setLoading(false);
+      showToast('Senha atualizada com sucesso! Você já pode fazer login.');
 
-      // Redirecionar para login após 3 segundos
+      // Redirecionar para login após 2 segundos
       setTimeout(() => {
         router.push('/login?password-reset=true');
-      }, 3000);
+      }, 2000);
     } catch (err) {
       logDatabaseError('Exceção ao atualizar senha', err);
       const errorMessage = formatDatabaseError(err);

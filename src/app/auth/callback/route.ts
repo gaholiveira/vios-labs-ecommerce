@@ -1,191 +1,292 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { createServerClient } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
 
-export async function GET(request: NextRequest) {
-  const requestUrl = new URL(request.url)
-  const searchParams = requestUrl.searchParams
-  const code = searchParams.get('code')
-  const type = searchParams.get('type') // 'recovery' para password reset, 'signup' para registro
-  const next = searchParams.get('next') ?? '/'
-  const error = searchParams.get('error') // Erros do Supabase
-  const errorCode = searchParams.get('error_code')
-  const errorDescription = searchParams.get('error_description')
-  const origin = requestUrl.origin
+/**
+ * Callback Route Handler para autenticação Supabase
+ * 
+ * Este route handler processa callbacks de:
+ * - Confirmação de email (signup)
+ * - Redefinição de senha (recovery)
+ * - OAuth providers (futuro)
+ * 
+ * Fluxo completo:
+ * 1. Recebe código de autenticação via query params
+ * 2. Troca código por sessão usando PKCE
+ * 3. Redireciona para página apropriada baseado no tipo
+ */
 
-  // Debug logging apenas em desenvolvimento
-  if (process.env.NODE_ENV === 'development') {
-    // Logs de debug removidos para produção
-  }
+interface CallbackParams {
+  code: string | null;
+  type: string | null; // 'recovery' | 'signup' | null
+  next: string;
+  error: string | null;
+  errorCode: string | null;
+  errorDescription: string | null;
+}
 
-  // Criar cliente Supabase com cookies da requisição para Route Handler
-  // IMPORTANTE: O code verifier do PKCE deve estar nos cookies para funcionar
-  const response = NextResponse.next()
-  const supabase = createServerClient(
+/**
+ * Cria cliente Supabase com configuração adequada para PKCE
+ */
+function createSupabaseClient(request: NextRequest, response: NextResponse) {
+  return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {
-          return request.cookies.getAll()
+          return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          // Garantir que os cookies sejam definidos tanto na request quanto na response
           cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value)
-            // Definir cookies na response com opções adequadas para PKCE
+            request.cookies.set(name, value);
             response.cookies.set(name, value, {
               ...options,
-              // Garantir SameSite=Lax para funcionar com links de email
               sameSite: (options?.sameSite as 'lax' | 'strict' | 'none') || 'lax',
-              // Path deve ser / para estar disponível em todas as rotas
               path: options?.path || '/',
-              // HttpOnly deve ser false para que o cliente possa acessar (necessário para PKCE)
-              httpOnly: false,
-            })
-          })
+              httpOnly: false, // Necessário para PKCE funcionar no cliente
+            });
+          });
         },
       },
     }
-  )
+  );
+}
 
-  // Se há erros do Supabase (link expirado, inválido, etc.)
-  if (error || errorCode) {
-    const isRecovery = type === 'recovery' || next === '/reset-password'
-    
-    // Mensagem amigável baseada no erro
-    let errorMessage = 'Erro ao processar o link de redefinição de senha.'
-    let isEmailConfirmed = false
-    
-    if (errorCode === 'otp_expired') {
-      // Link expirado - mas pode ser que email já esteja confirmado
-      if (!isRecovery) {
-        errorMessage = 'Este link já expirou. Se seu email já foi confirmado, faça login normalmente.'
-        isEmailConfirmed = true
-      } else {
-        errorMessage = 'Link de redefinição de senha expirado ou inválido. Por favor, solicite um novo link.'
-      }
-    } else if (error === 'access_denied') {
-      // Acesso negado - geralmente significa link já usado ou email já confirmado
-      if (!isRecovery) {
-        errorMessage = 'Este link já foi utilizado. Seu email já está confirmado! Faça login para continuar.'
-        isEmailConfirmed = true
-      } else {
-        errorMessage = 'Acesso negado. O link pode ter expirado ou já foi usado. Solicite um novo link.'
-      }
-    } else if (errorDescription) {
-      errorMessage = decodeURIComponent(errorDescription).replace(/\+/g, ' ')
-      // Se não for recovery, pode ser confirmação de email
-      if (!isRecovery && (errorDescription.includes('already') || errorDescription.includes('used'))) {
-        isEmailConfirmed = true
-      }
-    }
+/**
+ * Processa erros do Supabase e retorna mensagens amigáveis
+ */
+function processAuthError(
+  error: string | null,
+  errorCode: string | null,
+  errorDescription: string | null,
+  type: string | null
+): { message: string; isEmailConfirmed: boolean; isRecovery: boolean } {
+  const isRecovery = type === 'recovery';
+  let message = 'Erro ao processar autenticação.';
+  let isEmailConfirmed = false;
 
-    // Se for password reset, redirecionar para forgot-password
+  // Erro de código expirado
+  if (errorCode === 'otp_expired') {
     if (isRecovery) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('❌ Erro no callback de recovery:', { error, errorCode, errorDescription })
-      }
-      return NextResponse.redirect(
-        `${origin}/forgot-password?error=${encodeURIComponent(errorMessage)}`
-      )
+      message = 'Link de redefinição de senha expirado. Solicite um novo link.';
+    } else {
+      message = 'Link de confirmação expirado. Se seu email já foi confirmado, faça login normalmente.';
+      isEmailConfirmed = true;
+    }
+    return { message, isEmailConfirmed, isRecovery };
+  }
+
+  // Acesso negado (geralmente link já usado)
+  if (error === 'access_denied') {
+    if (isRecovery) {
+      message = 'Link já utilizado ou inválido. Solicite um novo link de redefinição.';
+    } else {
+      message = 'Este link já foi utilizado. Seu email já está confirmado! Faça login para continuar.';
+      isEmailConfirmed = true;
+    }
+    return { message, isEmailConfirmed, isRecovery };
+  }
+
+  // Erro genérico com descrição
+  if (errorDescription) {
+    message = decodeURIComponent(errorDescription).replace(/\+/g, ' ');
+    if (!isRecovery && (errorDescription.includes('already') || errorDescription.includes('used'))) {
+      isEmailConfirmed = true;
+    }
+    return { message, isEmailConfirmed, isRecovery };
+  }
+
+  // Erro genérico
+  if (error) {
+    message = 'Erro ao processar o link. Tente novamente ou solicite um novo link.';
+    return { message, isEmailConfirmed, isRecovery };
+  }
+
+  return { message, isEmailConfirmed, isRecovery };
+}
+
+/**
+ * Processa código de autenticação e troca por sessão
+ */
+async function exchangeCodeForSession(
+  supabase: ReturnType<typeof createSupabaseClient>,
+  code: string,
+  type: string | null
+): Promise<{ success: boolean; error?: any; user?: any }> {
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+  if (error) {
+    return { success: false, error };
+  }
+
+  if (!data?.session) {
+    return { success: false, error: { message: 'Sessão não criada' } };
+  }
+
+  return { success: true, user: data.user };
+}
+
+/**
+ * Determina para onde redirecionar após autenticação bem-sucedida
+ */
+function getRedirectUrl(
+  type: string | null,
+  next: string,
+  origin: string
+): string {
+  // Password reset sempre vai para update-password
+  if (type === 'recovery' || next === '/update-password' || next === '/reset-password') {
+    return `${origin}/update-password`;
+  }
+
+  // Confirmação de email ou login normal
+  return `${origin}${next}`;
+}
+
+/**
+ * Processa erros de PKCE ou link já usado
+ */
+async function handlePKCEError(
+  error: any,
+  type: string | null,
+  next: string,
+  origin: string,
+  supabase: ReturnType<typeof createSupabaseClient>
+): Promise<NextResponse> {
+  const isLinkUsedOrExpired =
+    error?.message?.includes('PKCE') ||
+    error?.message?.includes('code verifier') ||
+    error?.message?.includes('already been used') ||
+    error?.message?.includes('expired') ||
+    error?.message?.includes('invalid');
+
+  if (!isLinkUsedOrExpired) {
+    return NextResponse.redirect(
+      `${origin}/login?error=auth-code-error&message=${encodeURIComponent(error?.message || 'Erro ao autenticar')}`
+    );
+  }
+
+  // Confirmação de email (signup ou sem type)
+  if (type === 'signup' || !type) {
+    // Verificar se usuário já tem sessão ativa
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user) {
+      // Usuário já logado - redirecionar para home
+      return NextResponse.redirect(`${origin}/?email-confirmed=true`);
     }
 
-    // Outros erros: se for confirmação de email, informar que pode já estar confirmado
+    // Email já confirmado mas sem sessão - redirecionar para login
+    const message = 'Este link já foi utilizado. Seu email já está confirmado! Faça login com suas credenciais para continuar.';
+    return NextResponse.redirect(
+      `${origin}/login?email-confirmed=true&message=${encodeURIComponent(message)}`
+    );
+  }
+
+  // Password reset
+  if (type === 'recovery' || next === '/update-password' || next === '/reset-password') {
+    const message = 'Link expirado ou já utilizado. Solicite um novo link de redefinição de senha.';
+    return NextResponse.redirect(
+      `${origin}/forgot-password?error=${encodeURIComponent(message)}`
+    );
+  }
+
+  // Outros casos - assumir confirmação de email
+  const message = 'Este link já foi utilizado. Se seu email já foi confirmado, faça login normalmente.';
+  return NextResponse.redirect(
+    `${origin}/login?email-confirmed=true&message=${encodeURIComponent(message)}`
+  );
+}
+
+export async function GET(request: NextRequest) {
+  const requestUrl = new URL(request.url);
+  const searchParams = requestUrl.searchParams;
+  const origin = requestUrl.origin;
+
+  // Extrair parâmetros da URL
+  const params: CallbackParams = {
+    code: searchParams.get('code'),
+    type: searchParams.get('type'),
+    next: searchParams.get('next') ?? '/',
+    error: searchParams.get('error'),
+    errorCode: searchParams.get('error_code'),
+    errorDescription: searchParams.get('error_description'),
+  };
+
+  const response = NextResponse.next();
+  const supabase = createSupabaseClient(request, response);
+
+  // ==========================================
+  // CENÁRIO 1: Erros explícitos do Supabase
+  // ==========================================
+  if (params.error || params.errorCode) {
+    const { message, isEmailConfirmed, isRecovery } = processAuthError(
+      params.error,
+      params.errorCode,
+      params.errorDescription,
+      params.type
+    );
+
+    if (process.env.NODE_ENV === 'development') {
+      console.error('❌ Erro no callback:', {
+        error: params.error,
+        errorCode: params.errorCode,
+        errorDescription: params.errorDescription,
+        type: params.type,
+      });
+    }
+
+    // Password reset sempre vai para forgot-password
+    if (isRecovery) {
+      return NextResponse.redirect(
+        `${origin}/forgot-password?error=${encodeURIComponent(message)}`
+      );
+    }
+
+    // Confirmação de email já confirmado
     if (isEmailConfirmed) {
       return NextResponse.redirect(
-        `${origin}/login?email-confirmed=true&message=${encodeURIComponent(errorMessage)}`
-      )
+        `${origin}/login?email-confirmed=true&message=${encodeURIComponent(message)}`
+      );
     }
 
-    // Outros erros: redirecionar para login
+    // Outros erros
     return NextResponse.redirect(
-      `${origin}/login?error=auth-error&message=${encodeURIComponent(errorMessage)}`
-    )
+      `${origin}/login?error=auth-error&message=${encodeURIComponent(message)}`
+    );
   }
 
-  if (code) {
-    // Tentar trocar o código por sessão
-    // Se o code verifier não estiver nos cookies, isso falhará
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-    
-    if (!error && data?.session) {
-      // PRIORIDADE 1: Se for password reset (type=recovery), SEMPRE redirecionar para update-password
-      if (type === 'recovery') {
-            // Sessão de recovery criada. Redirecionando para /update-password
-        return NextResponse.redirect(`${origin}/update-password`, { headers: response.headers })
-      }
-      
-      // PRIORIDADE 2: Se next=/update-password ou /reset-password, também redirecionar
-      if (next === '/update-password' || next === '/reset-password') {
-            // Next=/update-password detectado. Redirecionando para /update-password
-        return NextResponse.redirect(`${origin}/update-password`, { headers: response.headers })
-      }
-      
-      // Sucesso: redirecionar para a página desejada
-            // Sessão criada. Redirecionando
-      return NextResponse.redirect(`${origin}${next}`, { headers: response.headers })
+  // ==========================================
+  // CENÁRIO 2: Código de autenticação presente
+  // ==========================================
+  if (params.code) {
+    const result = await exchangeCodeForSession(supabase, params.code, params.type);
+
+    // Sucesso: sessão criada
+    if (result.success) {
+      const redirectUrl = getRedirectUrl(params.type, params.next, origin);
+      return NextResponse.redirect(redirectUrl, { headers: response.headers });
     }
-    
-    // Erro: verificar se é erro de PKCE ou link já usado/expirado
-    console.error('❌ Erro ao trocar código por sessão:', error)
-    
-    let errorMessage = error?.message || 'Erro ao autenticar'
-    
-    // Verificar se o erro indica que o link já foi usado ou email já confirmado
-    const isLinkUsedOrExpired = 
-      error?.message?.includes('PKCE') || 
-      error?.message?.includes('code verifier') ||
-      error?.message?.includes('already been used') ||
-      error?.message?.includes('expired') ||
-      error?.message?.includes('invalid')
-    
-    // Tratar especificamente o erro de PKCE code verifier ou link já usado
-    if (isLinkUsedOrExpired) {
-      // Se for confirmação de email (signup ou sem type), assumir que email pode já estar confirmado
-      if (type === 'signup' || !type) {
-        // Tentar verificar se o usuário já tem uma sessão ativa
-        const { data: { user: existingUser } } = await supabase.auth.getUser()
-        
-        if (existingUser) {
-          // Usuário já está logado! Redirecionar para home
-          return NextResponse.redirect(`${origin}/?email-confirmed=true`)
-        }
-        
-        // Para confirmação de email: informar que o email já pode estar confirmado
-        errorMessage = 'Este link já foi utilizado. Seu email já está confirmado! Faça login com suas credenciais para continuar.'
-        return NextResponse.redirect(
-          `${origin}/login?email-confirmed=true&message=${encodeURIComponent(errorMessage)}`
-        )
-      }
-      
-      // Se for password reset
-      if (type === 'recovery' || next === '/update-password' || next === '/reset-password') {
-        errorMessage = 'Link expirado ou já utilizado. Solicite um novo link de redefinição de senha.'
-        return NextResponse.redirect(
-          `${origin}/forgot-password?error=${encodeURIComponent(errorMessage)}`
-        )
-      }
-      
-      // Outros casos: pode ser confirmação de email também
-      errorMessage = 'Este link já foi utilizado. Se seu email já foi confirmado, faça login normalmente.'
-      return NextResponse.redirect(
-        `${origin}/login?email-confirmed=true&message=${encodeURIComponent(errorMessage)}`
-      )
+
+    // Erro: processar tipo de erro
+    if (process.env.NODE_ENV === 'development') {
+      console.error('❌ Erro ao trocar código por sessão:', result.error);
     }
-    
-    // Outros erros: redirecionar para login com mensagem de erro
-    // Se for password reset e houver erro, redirecionar para forgot-password
-    if (type === 'recovery' || next === '/update-password' || next === '/reset-password') {
-      return NextResponse.redirect(
-        `${origin}/forgot-password?error=${encodeURIComponent(errorMessage)}`
-      )
-    }
-    
-    return NextResponse.redirect(
-      `${origin}/login?error=auth-code-error&message=${encodeURIComponent(errorMessage)}`
-    )
+
+    // Erro de PKCE ou link já usado
+    return await handlePKCEError(
+      result.error,
+      params.type,
+      params.next,
+      origin,
+      supabase
+    );
   }
 
-  // Sem código: redirecionar para login
-  return NextResponse.redirect(`${origin}/login?error=no-code`)
+  // ==========================================
+  // CENÁRIO 3: Sem código nem erro (URL inválida)
+  // ==========================================
+  return NextResponse.redirect(
+    `${origin}/login?error=no-code&message=${encodeURIComponent('Link inválido. Verifique o link recebido por email.')}`
+  );
 }

@@ -1,60 +1,89 @@
 /**
- * Utilitário para logout completo e limpeza de sessão
- * Garante que toda a sessão seja limpa corretamente
+ * Utilitários de autenticação centralizados
+ * Funções reutilizáveis para gerenciar autenticação em toda a aplicação
  */
 
-export async function handleLogout() {
+import { createClient } from '@/utils/supabase/client';
+
+/**
+ * Verifica se um erro de autenticação indica email não confirmado
+ */
+export function isEmailNotConfirmedError(error: any): boolean {
+  if (!error) return false;
+  
+  const errorMessage = error.message?.toLowerCase() || '';
+  const errorCode = error.status?.toString() || '';
+  
+  // Códigos e mensagens que indicam email não confirmado
+  return (
+    errorMessage.includes('email not confirmed') ||
+    errorMessage.includes('email_not_confirmed') ||
+    errorMessage.includes('confirmation') ||
+    errorCode === '401' ||
+    error.status === 401
+  );
+}
+
+/**
+ * Reenvia email de confirmação usando API route
+ */
+export async function resendConfirmationEmail(email: string): Promise<{ success: boolean; error?: string; message?: string }> {
   try {
-    // Importação dinâmica para evitar problemas de build
-    const { createClient } = await import('@/utils/supabase/client');
+    const response = await fetch('/api/auth/resend-confirmation', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email: email.trim() }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { success: false, error: data.error || 'Erro ao reenviar email' };
+    }
+
+    return { success: true, message: data.message };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Erro ao reenviar email' };
+  }
+}
+
+/**
+ * Faz logout do usuário
+ */
+export async function handleLogout(): Promise<void> {
+  try {
     const supabase = createClient();
-
-    // 1. Limpar carrinho antes do logout (se o contexto estiver disponível)
-    // Nota: O carrinho será limpo automaticamente quando a página recarregar
-    // mas limpamos aqui também para garantir
-
-    // 2. Fazer signOut no Supabase
     const { error } = await supabase.auth.signOut();
-
+    
     if (error) {
       console.error('Erro ao fazer logout:', error);
-      // Continuar mesmo se houver erro para garantir limpeza
     }
-
-    // 3. Limpar localStorage (exceto itens que queremos manter)
-    if (typeof window !== 'undefined') {
-      // Limpar dados relacionados à sessão
-      const keysToKeep: string[] = []; // Adicione chaves que deseja manter
-      const allKeys = Object.keys(localStorage);
-      
-      allKeys.forEach(key => {
-        // Manter apenas chaves específicas se necessário
-        if (!keysToKeep.includes(key)) {
-          // Limpar apenas chaves relacionadas ao Supabase/auth
-          if (key.includes('supabase') || key.includes('auth') || key.includes('sb-')) {
-            localStorage.removeItem(key);
-          }
-        }
-      });
-
-      // 4. Limpar sessionStorage
-      sessionStorage.clear();
-
-      // 5. Aguardar um pouco para garantir que o signOut foi processado
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-
-    // 6. Forçar reload completo da página para garantir limpeza total
-    // Usar window.location.href é mais confiável que router.refresh() para logout
-    // Isso garante que todos os estados sejam resetados
+    
+    // Sempre redirecionar, mesmo se houver erro
     if (typeof window !== 'undefined') {
       window.location.href = '/';
     }
-  } catch (error) {
-    console.error('Erro durante logout:', error);
-    // Mesmo com erro, tentar redirecionar para garantir que o usuário saia
+  } catch (err) {
+    console.error('Exceção ao fazer logout:', err);
+    // Mesmo com erro, tentar redirecionar
     if (typeof window !== 'undefined') {
       window.location.href = '/';
     }
+  }
+}
+
+/**
+ * Verifica se o usuário está autenticado
+ */
+export async function checkAuth(): Promise<{ user: any | null; error: string | null }> {
+  try {
+    const supabase = createClient();
+    const { data: { user }, error } = await supabase.auth.getUser();
+    
+    return { user, error: error?.message || null };
+  } catch (err: any) {
+    return { user: null, error: err?.message || 'Erro ao verificar autenticação' };
   }
 }

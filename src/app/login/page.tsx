@@ -5,6 +5,8 @@ import { createClient } from '@/utils/supabase/client';
 import { formatDatabaseError, logDatabaseError } from '@/utils/errorHandler';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
+import { isEmailNotConfirmedError } from '@/utils/auth';
+import ResendConfirmationEmail from '@/components/auth/ResendConfirmationEmail';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -13,6 +15,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showEmailConfirmed, setShowEmailConfirmed] = useState(false);
+  const [showEmailNotConfirmed, setShowEmailNotConfirmed] = useState(false);
   const router = useRouter();
   const { showToast } = useCart();
 
@@ -77,11 +80,21 @@ export default function LoginPage() {
         logDatabaseError('Login', authError);
         const errorMessage = formatDatabaseError(authError);
         
+        // Verificar se o erro é de email não confirmado
+        if (isEmailNotConfirmedError(authError)) {
+          setShowEmailNotConfirmed(true);
+          setError('Por favor, confirme seu email antes de fazer login. Verifique sua caixa de entrada.');
+          setLoading(false);
+          return;
+        }
+        
         // Usar toast para erros de login
         if (errorMessage.includes('Invalid') || errorMessage.includes('credenciais') || errorMessage.includes('inválida')) {
           showToast('Credenciais inválidas');
+          setError('Credenciais inválidas. Verifique seu email e senha.');
         } else {
           showToast(errorMessage);
+          setError(errorMessage);
         }
         
         setLoading(false);
@@ -134,7 +147,7 @@ export default function LoginPage() {
             <div className="mb-6 p-4 bg-brand-green/10 border border-brand-green/30 text-brand-green text-sm text-center rounded-sm animate-fadeIn">
               <div className="flex items-center justify-center gap-2">
                 <svg
-                  className="w-5 h-5 flex-shrink-0"
+                  className="w-5 h-5 shrink-0"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -177,7 +190,10 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
-                  if (error) setError(null);
+                  if (error) {
+                    setError(null);
+                    setShowEmailNotConfirmed(false);
+                  }
                 }}
                 className={`w-full bg-transparent border-b py-3 focus:outline-none transition text-brand-softblack placeholder:text-gray-400 font-light ${
                   error 
@@ -203,10 +219,13 @@ export default function LoginPage() {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (error) setError(null);
-                  }}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (error) {
+                    setError(null);
+                    setShowEmailNotConfirmed(false);
+                  }
+                }}
                   className={`w-full bg-transparent border-b py-3 pr-12 focus:outline-none transition text-brand-softblack placeholder:text-gray-400 font-light font-mono ${
                     error 
                       ? 'border-red-400 focus:border-red-500' 
@@ -235,6 +254,19 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
+
+            {/* Componente de reenvio de confirmação - aparece quando email não confirmado */}
+            {showEmailNotConfirmed && email && (
+              <ResendConfirmationEmail
+                email={email}
+                onSuccess={() => {
+                  showToast('Email de confirmação reenviado! Verifique sua caixa de entrada.');
+                }}
+                onError={(errorMsg) => {
+                  showToast(errorMsg);
+                }}
+              />
+            )}
 
             {/* Botão de Submit */}
             <button

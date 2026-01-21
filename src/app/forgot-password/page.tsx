@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { formatDatabaseError, logDatabaseError } from '@/utils/errorHandler';
 import Link from 'next/link';
+import { useCart } from '@/context/CartContext';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -11,6 +12,7 @@ export default function ForgotPasswordPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { showToast } = useCart();
 
   useEffect(() => {
     // Verificar se há erro na URL (vindo do callback ou home page)
@@ -57,6 +59,7 @@ export default function ForgotPasswordPage() {
       // Sucesso - mostrar mensagem
       setSuccess(true);
       setLoading(false);
+      showToast('Link de redefinição enviado! Verifique seu e-mail.');
     } catch (err) {
       logDatabaseError('Exceção ao solicitar redefinição de senha', err);
       const errorMessage = formatDatabaseError(err);

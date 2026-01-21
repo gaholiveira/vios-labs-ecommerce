@@ -4,6 +4,8 @@ import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { formatDatabaseError, logDatabaseError } from '@/utils/errorHandler';
+import ResendConfirmationEmail from '@/components/auth/ResendConfirmationEmail';
+import { useCart } from '@/context/CartContext';
 
 interface FormErrors {
   full_name?: string;
@@ -21,7 +23,9 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
+  const [showResendEmail, setShowResendEmail] = useState(false);
   const router = useRouter();
+  const { showToast } = useCart();
 
   // Validação do formulário
   const validateForm = (): boolean => {
@@ -92,8 +96,13 @@ export default function RegisterPage() {
 
       // O trigger do banco criará o perfil automaticamente
       // O trigger também associará pedidos de guest checkout automaticamente
-      // Redirecionar para login com mensagem de sucesso
-      router.push('/login?registered=true&message=Verifique seu e-mail para confirmar a conta');
+      
+      // Mostrar opção de reenvio de email
+      setShowResendEmail(true);
+      showToast('Conta criada! Verifique seu e-mail para confirmar.');
+      
+      // Não redirecionar imediatamente - deixar usuário ver opção de reenvio
+      // router.push('/login?registered=true&message=Verifique seu e-mail para confirmar a conta');
     } catch (err) {
       logDatabaseError('Exceção ao criar conta', err);
       const errorMessage = formatDatabaseError(err);
@@ -259,11 +268,34 @@ export default function RegisterPage() {
             </button>
           </form>
 
+          {/* Componente de reenvio de email - aparece após registro */}
+          {showResendEmail && formData.email && (
+            <div className="mt-6">
+              <ResendConfirmationEmail
+                email={formData.email}
+                onSuccess={() => {
+                  showToast('Email reenviado! Verifique sua caixa de entrada.');
+                }}
+                onError={(errorMsg) => {
+                  showToast(errorMsg);
+                }}
+              />
+            </div>
+          )}
+
           {/* Link para Login */}
           <div className="mt-8 pt-6 border-t border-gray-200">
-            <p className="text-center text-[10px] uppercase tracking-widest opacity-60">
+            <p className="text-center text-[10px] uppercase tracking-widest opacity-60 mb-3">
               Já tem conta? <Link href="/login" className="underline font-medium hover:text-brand-green transition">Entrar</Link>
             </p>
+            {showResendEmail && (
+              <p className="text-center text-[10px] uppercase tracking-widest opacity-60">
+                Após confirmar seu email,{' '}
+                <Link href="/login" className="underline font-medium hover:text-brand-green transition">
+                  faça login aqui
+                </Link>
+              </p>
+            )}
           </div>
         </div>
       </div>
