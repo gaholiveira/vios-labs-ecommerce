@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [showEmailConfirmed, setShowEmailConfirmed] = useState(false);
   const router = useRouter();
   const { showToast } = useCart();
 
@@ -31,9 +32,26 @@ export default function LoginPage() {
         router.replace('/login');
       }
       
+      // Tratar caso de email já confirmado (link já usado/expirado mas email confirmado)
+      if (params.get('email-confirmed') === 'true') {
+        const message = params.get('message') || 'Seu email já está confirmado! Faça login com suas credenciais para continuar.';
+        // Mostrar como mensagem de sucesso (não erro) mas destacada
+        setError(null); // Limpar erros
+        setShowEmailConfirmed(true); // Mostrar banner
+        showToast(message);
+        router.replace('/login'); // Limpar URL após alguns segundos
+        // Esconder banner após 8 segundos
+        setTimeout(() => {
+          setShowEmailConfirmed(false);
+        }, 8000);
+      }
+      
       if (params.get('error')) {
         const errorMsg = params.get('message') || params.get('error');
-        setError(errorMsg || 'Erro de autenticação');
+        // Não mostrar como erro se for sobre email confirmado
+        if (!errorMsg.includes('confirmado') && !errorMsg.includes('email')) {
+          setError(errorMsg || 'Erro de autenticação');
+        }
       }
       
       const redirect = params.get('redirect');
@@ -111,6 +129,33 @@ export default function LoginPage() {
 
         {/* Formulário */}
         <div className="bg-white p-8 md:p-12 shadow-sm border border-gray-100">
+          {/* Banner de email confirmado */}
+          {showEmailConfirmed && (
+            <div className="mb-6 p-4 bg-brand-green/10 border border-brand-green/30 text-brand-green text-sm text-center rounded-sm animate-fadeIn">
+              <div className="flex items-center justify-center gap-2">
+                <svg
+                  className="w-5 h-5 flex-shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <div className="text-left">
+                  <p className="font-medium mb-1">Email já confirmado! ✅</p>
+                  <p className="text-xs opacity-90">
+                    Seu email já está confirmado. Faça login com suas credenciais abaixo para continuar.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {error && (
             <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 text-red-600 text-sm text-center rounded-sm">
               {error}

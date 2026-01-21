@@ -8,10 +8,12 @@ import FadeInStagger from "@/components/FadeInStagger";
 import { PRODUCTS } from "@/constants/products";
 import Image from "next/image";
 import { useMobileViewportHeight } from "@/hooks/useMobileViewportHeight";
+import { useCart } from "@/context/CartContext";
 
 export default function Home() {
   const router = useRouter();
   const viewportHeight = useMobileViewportHeight();
+  const { showToast } = useCart();
 
   useEffect(() => {
     // Detectar códigos de autenticação e erros na URL
@@ -44,8 +46,16 @@ export default function Home() {
         // Limpar a URL sem recarregar a página
         window.history.replaceState({}, "", "/");
       }
+
+      // Se email foi confirmado e usuário já está logado
+      const emailConfirmed = params.get("email-confirmed");
+      if (emailConfirmed === "true") {
+        showToast("Email confirmado com sucesso! Bem-vindo de volta!");
+        // Limpar a URL
+        window.history.replaceState({}, "", "/");
+      }
     }
-  }, [router]);
+  }, [router, showToast]);
 
   // Handler para scroll suave - Memoizado
   const handleExploreClick = useCallback(() => {

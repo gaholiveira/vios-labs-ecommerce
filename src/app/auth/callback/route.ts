@@ -54,12 +54,30 @@ export async function GET(request: NextRequest) {
     
     // Mensagem amigável baseada no erro
     let errorMessage = 'Erro ao processar o link de redefinição de senha.'
+    let isEmailConfirmed = false
+    
     if (errorCode === 'otp_expired') {
-      errorMessage = 'Link de redefinição de senha expirado ou inválido. Por favor, solicite um novo link.'
+      // Link expirado - mas pode ser que email já esteja confirmado
+      if (!isRecovery) {
+        errorMessage = 'Este link já expirou. Se seu email já foi confirmado, faça login normalmente.'
+        isEmailConfirmed = true
+      } else {
+        errorMessage = 'Link de redefinição de senha expirado ou inválido. Por favor, solicite um novo link.'
+      }
     } else if (error === 'access_denied') {
-      errorMessage = 'Acesso negado. O link pode ter expirado ou já foi usado.'
+      // Acesso negado - geralmente significa link já usado ou email já confirmado
+      if (!isRecovery) {
+        errorMessage = 'Este link já foi utilizado. Seu email já está confirmado! Faça login para continuar.'
+        isEmailConfirmed = true
+      } else {
+        errorMessage = 'Acesso negado. O link pode ter expirado ou já foi usado. Solicite um novo link.'
+      }
     } else if (errorDescription) {
       errorMessage = decodeURIComponent(errorDescription).replace(/\+/g, ' ')
+      // Se não for recovery, pode ser confirmação de email
+      if (!isRecovery && (errorDescription.includes('already') || errorDescription.includes('used'))) {
+        isEmailConfirmed = true
+      }
     }
 
     // Se for password reset, redirecionar para forgot-password
@@ -69,6 +87,13 @@ export async function GET(request: NextRequest) {
       }
       return NextResponse.redirect(
         `${origin}/forgot-password?error=${encodeURIComponent(errorMessage)}`
+      )
+    }
+
+    // Outros erros: se for confirmação de email, informar que pode já estar confirmado
+    if (isEmailConfirmed) {
+      return NextResponse.redirect(
+        `${origin}/login?email-confirmed=true&message=${encodeURIComponent(errorMessage)}`
       )
     }
 
@@ -101,32 +126,50 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${origin}${next}`, { headers: response.headers })
     }
     
-    // Erro: verificar se é erro de PKCE
+    // Erro: verificar se é erro de PKCE ou link já usado/expirado
     console.error('❌ Erro ao trocar código por sessão:', error)
     
     let errorMessage = error?.message || 'Erro ao autenticar'
     
-    // Tratar especificamente o erro de PKCE code verifier
-    if (error?.message?.includes('PKCE') || error?.message?.includes('code verifier')) {
-      errorMessage = 'Link expirado ou inválido. Por favor, solicite um novo link de redefinição de senha ou confirmação de email.'
+    // Verificar se o erro indica que o link já foi usado ou email já confirmado
+    const isLinkUsedOrExpired = 
+      error?.message?.includes('PKCE') || 
+      error?.message?.includes('code verifier') ||
+      error?.message?.includes('already been used') ||
+      error?.message?.includes('expired') ||
+      error?.message?.includes('invalid')
+    
+    // Tratar especificamente o erro de PKCE code verifier ou link já usado
+    if (isLinkUsedOrExpired) {
+      // Se for confirmação de email (signup ou sem type), assumir que email pode já estar confirmado
+      if (type === 'signup' || !type) {
+        // Tentar verificar se o usuário já tem uma sessão ativa
+        const { data: { user: existingUser } } = await supabase.auth.getUser()
+        
+        if (existingUser) {
+          // Usuário já está logado! Redirecionar para home
+          return NextResponse.redirect(`${origin}/?email-confirmed=true`)
+        }
+        
+        // Para confirmação de email: informar que o email já pode estar confirmado
+        errorMessage = 'Este link já foi utilizado. Seu email já está confirmado! Faça login com suas credenciais para continuar.'
+        return NextResponse.redirect(
+          `${origin}/login?email-confirmed=true&message=${encodeURIComponent(errorMessage)}`
+        )
+      }
       
-      // Se for password reset, redirecionar para forgot-password
+      // Se for password reset
       if (type === 'recovery' || next === '/update-password' || next === '/reset-password') {
+        errorMessage = 'Link expirado ou já utilizado. Solicite um novo link de redefinição de senha.'
         return NextResponse.redirect(
           `${origin}/forgot-password?error=${encodeURIComponent(errorMessage)}`
         )
       }
       
-      // Se for signup, redirecionar para register
-      if (type === 'signup') {
-        return NextResponse.redirect(
-          `${origin}/register?error=${encodeURIComponent(errorMessage)}`
-        )
-      }
-      
-      // Outros casos: redirecionar para login
+      // Outros casos: pode ser confirmação de email também
+      errorMessage = 'Este link já foi utilizado. Se seu email já foi confirmado, faça login normalmente.'
       return NextResponse.redirect(
-        `${origin}/login?error=pkce-error&message=${encodeURIComponent(errorMessage)}`
+        `${origin}/login?email-confirmed=true&message=${encodeURIComponent(errorMessage)}`
       )
     }
     
