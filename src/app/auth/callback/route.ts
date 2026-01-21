@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Criar cliente Supabase com cookies da requisição para Route Handler
+  // IMPORTANTE: O code verifier do PKCE deve estar nos cookies para funcionar
   const response = NextResponse.next()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,9 +29,19 @@ export async function GET(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
+          // Garantir que os cookies sejam definidos tanto na request quanto na response
           cookiesToSet.forEach(({ name, value, options }) => {
             request.cookies.set(name, value)
-            response.cookies.set(name, value, options)
+            // Definir cookies na response com opções adequadas para PKCE
+            response.cookies.set(name, value, {
+              ...options,
+              // Garantir SameSite=Lax para funcionar com links de email
+              sameSite: (options?.sameSite as 'lax' | 'strict' | 'none') || 'lax',
+              // Path deve ser / para estar disponível em todas as rotas
+              path: options?.path || '/',
+              // HttpOnly deve ser false para que o cliente possa acessar (necessário para PKCE)
+              httpOnly: false,
+            })
           })
         },
       },
@@ -68,9 +79,11 @@ export async function GET(request: NextRequest) {
   }
 
   if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    // Tentar trocar o código por sessão
+    // Se o code verifier não estiver nos cookies, isso falhará
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     
-    if (!error) {
+    if (!error && data?.session) {
       // PRIORIDADE 1: Se for password reset (type=recovery), SEMPRE redirecionar para update-password
       if (type === 'recovery') {
             // Sessão de recovery criada. Redirecionando para /update-password
@@ -88,10 +101,36 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${origin}${next}`, { headers: response.headers })
     }
     
-    // Erro: redirecionar para login com mensagem de erro
+    // Erro: verificar se é erro de PKCE
     console.error('❌ Erro ao trocar código por sessão:', error)
-    const errorMessage = error?.message || 'Erro ao autenticar'
     
+    let errorMessage = error?.message || 'Erro ao autenticar'
+    
+    // Tratar especificamente o erro de PKCE code verifier
+    if (error?.message?.includes('PKCE') || error?.message?.includes('code verifier')) {
+      errorMessage = 'Link expirado ou inválido. Por favor, solicite um novo link de redefinição de senha ou confirmação de email.'
+      
+      // Se for password reset, redirecionar para forgot-password
+      if (type === 'recovery' || next === '/update-password' || next === '/reset-password') {
+        return NextResponse.redirect(
+          `${origin}/forgot-password?error=${encodeURIComponent(errorMessage)}`
+        )
+      }
+      
+      // Se for signup, redirecionar para register
+      if (type === 'signup') {
+        return NextResponse.redirect(
+          `${origin}/register?error=${encodeURIComponent(errorMessage)}`
+        )
+      }
+      
+      // Outros casos: redirecionar para login
+      return NextResponse.redirect(
+        `${origin}/login?error=pkce-error&message=${encodeURIComponent(errorMessage)}`
+      )
+    }
+    
+    // Outros erros: redirecionar para login com mensagem de erro
     // Se for password reset e houver erro, redirecionar para forgot-password
     if (type === 'recovery' || next === '/update-password' || next === '/reset-password') {
       return NextResponse.redirect(
