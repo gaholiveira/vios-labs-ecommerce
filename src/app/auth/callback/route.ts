@@ -44,6 +44,8 @@ function createSupabaseClient(request: NextRequest, response: NextResponse) {
               sameSite: (options?.sameSite as 'lax' | 'strict' | 'none') || 'lax',
               path: options?.path || '/',
               httpOnly: false, // Necessário para PKCE funcionar no cliente
+              secure: process.env.NODE_ENV === 'production', // HTTPS em produção
+              maxAge: options?.maxAge || 60 * 60 * 24 * 7, // 7 dias padrão
             });
           });
         },
@@ -112,18 +114,43 @@ async function exchangeCodeForSession(
   supabase: ReturnType<typeof createSupabaseClient>,
   code: string,
   type: string | null
-): Promise<{ success: boolean; error?: any; user?: any }> {
-  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+): Promise<{ success: boolean; error?: any; user?: any; session?: any }> {
+  try {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-  if (error) {
-    return { success: false, error };
+    if (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('❌ Erro ao trocar código por sessão:', {
+          error: error.message,
+          code: error.code,
+          type,
+        });
+      }
+      return { success: false, error };
+    }
+
+    if (!data?.session) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('❌ Sessão não criada após exchangeCodeForSession');
+      }
+      return { success: false, error: { message: 'Sessão não criada' } };
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ Sessão criada com sucesso:', {
+        userId: data.user?.id,
+        type,
+        hasSession: !!data.session,
+      });
+    }
+
+    return { success: true, user: data.user, session: data.session };
+  } catch (err: any) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('❌ Exceção ao trocar código por sessão:', err);
+    }
+    return { success: false, error: err };
   }
-
-  if (!data?.session) {
-    return { success: false, error: { message: 'Sessão não criada' } };
-  }
-
-  return { success: true, user: data.user };
 }
 
 /**
@@ -260,17 +287,77 @@ export async function GET(request: NextRequest) {
   // CENÁRIO 2: Código de autenticação presente
   // ==========================================
   if (params.code) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📧 Processando código de autenticação:', {
+        type: params.type,
+        next: params.next,
+        hasCode: !!params.code,
+      });
+    }
+
     const result = await exchangeCodeForSession(supabase, params.code, params.type);
 
     // Sucesso: sessão criada
-    if (result.success) {
+    if (result.success && result.session) {
+      // Para recovery, verificar se a sessão está acessível
+      if (params.type === 'recovery') {
+        // Aguardar um momento para garantir que cookies foram salvos
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Verificar se a sessão está acessível
+        const { data: { session: verifySession }, error: verifyError } = await supabase.auth.getSession();
+        
+        if (verifyError) {
+          if (process.env.NODE_ENV === 'development') {
+            console.error('⚠️ Erro ao verificar sessão após criação:', verifyError);
+          }
+          const message = 'Erro ao processar link de redefinição. Tente solicitar um novo link.';
+          return NextResponse.redirect(
+            `${origin}/forgot-password?error=${encodeURIComponent(message)}`
+          );
+        }
+
+        if (!verifySession) {
+          if (process.env.NODE_ENV === 'development') {
+            console.error('⚠️ Sessão não encontrada após criação (recovery)');
+            console.log('📋 Dados da sessão criada:', {
+              hasSession: !!result.session,
+              userId: result.user?.id,
+            });
+          }
+          // Mesmo sem sessão verificável, tentar redirecionar - o cliente pode ter a sessão
+          // A página update-password fará a verificação final
+        } else {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ Sessão verificada com sucesso (recovery)');
+          }
+        }
+      }
+
       const redirectUrl = getRedirectUrl(params.type, params.next, origin);
-      return NextResponse.redirect(redirectUrl, { headers: response.headers });
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Redirecionando para:', redirectUrl, { 
+          type: params.type,
+          hasSession: !!result.session,
+        });
+      }
+      
+      // Garantir que os headers de cookies sejam enviados
+      return NextResponse.redirect(redirectUrl, { 
+        headers: response.headers,
+      });
     }
 
     // Erro: processar tipo de erro
     if (process.env.NODE_ENV === 'development') {
-      console.error('❌ Erro ao trocar código por sessão:', result.error);
+      console.error('❌ Erro ao trocar código por sessão:', {
+        error: result.error,
+        message: result.error?.message,
+        code: result.error?.code,
+        status: result.error?.status,
+        type: params.type,
+      });
     }
 
     // Erro de PKCE ou link já usado
