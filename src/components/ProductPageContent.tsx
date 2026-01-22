@@ -2,12 +2,14 @@
 
 import { useEffect, useState, useCallback, useMemo, memo } from "react";
 import Image from "next/image";
+import { motion } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/utils/format";
 import ProductAccordion from "@/components/ProductAccordion";
 import StickyBar from "@/components/StickyBar";
 import KeyIngredients from "@/components/KeyIngredients";
 import WaitlistModal from "@/components/WaitlistModal";
+import TextReveal from "@/components/ui/text-reveal";
 import { Product } from "@/constants/products";
 import { useAuth } from "@/hooks/useAuth";
 import type { InventoryStatus } from "@/types/database";
@@ -462,22 +464,47 @@ function ProductPageContent({ product }: ProductPageContentProps) {
 
         {/* Detalhes */}
         <div className="flex flex-col justify-center">
-          <h1 className="text-3xl font-light uppercase tracking-widest mb-4">
-            {product.name}
-          </h1>
-          <p className="text-xl mb-6">{formatPrice(product.price)}</p>
+          {/* Título do Produto com TextReveal */}
+          <TextReveal
+            text={product.name}
+            el="h1"
+            className="text-3xl font-light uppercase tracking-widest mb-4"
+            delay={0.1}
+            duration={0.6}
+          />
           
+          {/* Preço - Fade-in simples (segurança de conversão) */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className="text-xl mb-6"
+          >
+            {formatPrice(product.price)}
+          </motion.p>
+          
+          {/* Descrição Curta com TextReveal */}
           <div className="border-t border-b py-6 mb-8 text-gray-600 font-light leading-relaxed">
-            {product.description}
+            <TextReveal
+              text={product.description}
+              el="p"
+              className=""
+              delay={0.4}
+              duration={0.6}
+            />
           </div>
 
-          {/* Botão Desabilitado - Lançamento em Breve */}
-          <button 
+          {/* Botão Desabilitado - Lançamento em Breve (Fade-in simples - segurança de conversão) */}
+          <motion.button
             data-sticky-bar-trigger
             disabled
-            className="border border-gray-300 rounded-sm bg-gray-100 text-gray-500 px-6 py-3 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium cursor-not-allowed transition-all duration-500 ease-out">
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+            className="border border-gray-300 rounded-sm bg-gray-100 text-gray-500 px-6 py-3 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium cursor-not-allowed transition-all duration-500 ease-out"
+          >
             Disponível em Breve
-          </button>
+          </motion.button>
 
           {/* Texto Legal ANVISA */}
           <div className="mt-6">

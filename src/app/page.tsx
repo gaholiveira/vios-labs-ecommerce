@@ -2,13 +2,15 @@
 
 import { useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { motion, useInView } from "framer-motion";
+import { useRef } from "react";
 import AboutSection from "@/components/AboutSection";
 import ProductCard from "@/components/ProductCard";
-import FadeInStagger from "@/components/FadeInStagger";
 import { PRODUCTS } from "@/constants/products";
 import Image from "next/image";
 import { useMobileViewportHeight } from "@/hooks/useMobileViewportHeight";
 import { useCart } from "@/context/CartContext";
+import TextReveal from "@/components/ui/text-reveal";
 
 export default function Home() {
   const router = useRouter();
@@ -100,9 +102,20 @@ export default function Home() {
           <span className="uppercase tracking-[0.5em] text-[10px] mb-4 block text-brand-offwhite">
             A ciência da melhor versão
           </span>
-          <h1 className="text-5xl md:text-7xl font-extralight mb-8 uppercase tracking-tighter text-brand-offwhite">
-            Vios 2026
-          </h1>
+          <TextReveal
+            text="Vios 2026"
+            el="h1"
+            className="text-5xl md:text-7xl font-extralight mb-8 uppercase tracking-tighter text-brand-offwhite"
+            delay={0.1}
+            duration={0.8}
+          />
+          <TextReveal
+            text="Bem-vindo à nova era da biotecnologia aplicada ao bem-estar. Produtos de alta performance desenvolvidos com rigor científico e design minimalista."
+            el="p"
+            className="text-brand-offwhite/80 text-sm md:text-base font-light tracking-wide max-w-2xl mx-auto mb-8"
+            delay={0.6}
+            duration={0.6}
+          />
           <button 
             onClick={handleExploreClick}
             className="border border-brand-offwhite rounded-sm px-10 py-4 min-h-[44px] text-xs uppercase tracking-[0.2em] text-brand-offwhite active:bg-brand-green/80 active:text-brand-offwhite active:border-brand-green md:hover:bg-brand-green md:hover:text-brand-offwhite md:hover:border-brand-green transition-all duration-500 ease-out md:transform md:hover:scale-105 font-medium"
@@ -114,21 +127,74 @@ export default function Home() {
 
       {/* Grid de Produtos */}
       <section id="produtos" className="max-w-7xl mx-auto px-4 md:px-6 py-24">
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-x-10 sm:gap-y-16">
-          {PRODUCTS.map((product, index) => (
-            <FadeInStagger 
-              key={product.id} 
-              index={index}
-              className={index === PRODUCTS.length - 1 ? "col-span-2 lg:col-span-1" : ""}
-            >
-              <ProductCard product={product} />
-            </FadeInStagger>
-          ))}
+        {/* Título da Seção com TextReveal */}
+        <div className="text-center mb-16">
+          <TextReveal
+            text="Nossos Produtos"
+            el="h2"
+            className="text-3xl md:text-4xl font-light uppercase tracking-tighter text-brand-softblack mb-4"
+            delay={0.2}
+            duration={0.6}
+          />
         </div>
+
+        {/* Container com stagger para animação em cascata dos cards */}
+        <ProductsGrid products={PRODUCTS} />
       </section>
 
       {/* 2. Seção Sobre (A que acabámos de criar) */}
       <AboutSection />
     </main>
+  );
+}
+
+// Componente separado para o Grid de Produtos com animação em cascata
+function ProductsGrid({ products }: { products: typeof PRODUCTS }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-100px' });
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const cardVariants = {
+    hidden: { 
+      opacity: 0, 
+      y: 20 
+    },
+    show: { 
+      opacity: 1, 
+      y: 0,
+      transition: {
+        duration: 0.5,
+        ease: "easeOut" as const,
+      },
+    },
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      variants={containerVariants}
+      initial="hidden"
+      animate={isInView ? 'show' : 'hidden'}
+      className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-x-10 sm:gap-y-16"
+    >
+      {products.map((product, index) => (
+        <motion.div
+          key={product.id}
+          variants={cardVariants}
+          className={index === products.length - 1 ? "col-span-2 lg:col-span-1" : ""}
+        >
+          <ProductCard product={product} />
+        </motion.div>
+      ))}
+    </motion.div>
   );
 }

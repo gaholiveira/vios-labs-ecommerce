@@ -1,4 +1,7 @@
+'use client';
+
 import { memo } from 'react';
+import TextReveal from '@/components/ui/text-reveal';
 
 function AboutSection() {
   return (
@@ -9,11 +12,14 @@ function AboutSection() {
           A Nossa Essência
         </span>
         
-        {/* Título Principal */}
-        <h2 className="text-brand-softblack text-3xl md:text-4xl font-light uppercase tracking-tighter leading-tight mb-8">
-          Design minimalista para quem <br /> 
-          valoriza o essencial.
-        </h2>
+        {/* Título Principal com TextReveal */}
+        <TextReveal
+          text="Design minimalista para quem valoriza o essencial."
+          el="h2"
+          className="text-brand-softblack text-3xl md:text-4xl font-light uppercase tracking-tighter leading-tight mb-8"
+          delay={0.2}
+          duration={0.6}
+        />
 
         {/* Texto de Apoio */}
         <p className="text-brand-softblack/70 text-sm md:text-base font-light leading-relaxed tracking-wide">
