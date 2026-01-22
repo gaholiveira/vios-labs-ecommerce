@@ -205,7 +205,7 @@ export default function LoteZeroSalesForm({
             Inicie sua Jornada.
           </h1>
           <p className="text-xs sm:text-sm md:text-base font-light text-brand-softblack/70 leading-relaxed">
-            Preencha seus dados para garantir acesso exclusivo ao primeiro lote de produção.
+            Preencha seus dados para garantir acesso exclusivo a esta edição limitada.
           </p>
         </div>
 

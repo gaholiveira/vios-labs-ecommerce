@@ -56,37 +56,48 @@ export default function LoteZeroSplitScreen({
 
         {/* Conteúdo centralizado */}
         <div className="relative z-20 flex flex-col items-center justify-center px-12 w-full">
-          {/* Texto sobreposto: LOTE ZERO [001/500] */}
+          {/* Texto sobreposto: LOTE ZERO - Edição Limitada */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.6 }}
             className="text-center"
           >
-            <h1 className="text-5xl md:text-7xl font-extralight uppercase tracking-[0.1em] text-brand-offwhite mb-8">
+            <h1 className="text-5xl md:text-7xl font-extralight uppercase tracking-[0.1em] text-brand-offwhite mb-6">
               LOTE ZERO
             </h1>
-            <p className="text-2xl md:text-3xl font-light tracking-[0.3em] text-brand-offwhite/80">
-              [001/500]
-            </p>
+            <div className="space-y-3">
+              <p className="text-sm md:text-base font-light tracking-[0.4em] text-brand-offwhite/60 uppercase">
+                Edição Limitada
+              </p>
+              <div className="w-16 h-px bg-brand-offwhite/30 mx-auto"></div>
+              <p className="text-xs md:text-sm font-extralight tracking-[0.5em] text-brand-offwhite/50 uppercase">
+                Exclusivo
+              </p>
+            </div>
           </motion.div>
         </div>
 
-        {/* Rodapé da coluna: Disponibilidade */}
+        {/* Rodapé da coluna: Escassez e Exclusividade */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 1 }}
           className="absolute bottom-8 left-0 right-0 z-20 text-center"
         >
-          <div className="flex items-center justify-center gap-3">
-            {/* Ponto verde pulsando */}
-            <div className="relative">
-              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-              <div className="absolute inset-0 w-2 h-2 bg-green-400 rounded-full animate-ping opacity-75"></div>
+          <div className="flex flex-col items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-2">
+              {/* Indicador de escassez sutil */}
+              <div className="relative">
+                <div className="w-1.5 h-1.5 bg-brand-offwhite/40 rounded-full"></div>
+                <div className="absolute inset-0 w-1.5 h-1.5 bg-brand-offwhite/40 rounded-full animate-pulse opacity-50"></div>
+              </div>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-brand-offwhite/70 font-extralight">
+                Quantidade Limitada
+              </p>
             </div>
-            <p className="text-xs uppercase tracking-wider text-brand-offwhite/90 font-light">
-              Disponibilidade: Imediata
+            <p className="text-[9px] uppercase tracking-[0.4em] text-brand-offwhite/50 font-extralight">
+              Acesso Exclusivo
             </p>
           </div>
         </motion.div>
@@ -118,25 +129,36 @@ export default function LoteZeroSplitScreen({
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-center"
           >
-            <h1 className="text-3xl sm:text-4xl font-extralight uppercase tracking-[0.08em] text-brand-offwhite mb-3 text-center">
+            <h1 className="text-3xl sm:text-4xl font-extralight uppercase tracking-[0.08em] text-brand-offwhite mb-4 text-center">
               LOTE ZERO
             </h1>
-            <p className="text-lg sm:text-xl font-light tracking-[0.2em] text-brand-offwhite/80 text-center">
-              [001/500]
-            </p>
+            <div className="space-y-2">
+              <p className="text-xs sm:text-sm font-light tracking-[0.3em] text-brand-offwhite/60 uppercase">
+                Edição Limitada
+              </p>
+              <div className="w-12 h-px bg-brand-offwhite/30 mx-auto"></div>
+              <p className="text-[10px] sm:text-xs font-extralight tracking-[0.4em] text-brand-offwhite/50 uppercase">
+                Exclusivo
+              </p>
+            </div>
           </motion.div>
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-2 px-4"
+            className="absolute bottom-4 left-0 right-0 flex flex-col items-center justify-center gap-1.5 px-4"
           >
-            <div className="relative">
-              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-              <div className="absolute inset-0 w-2 h-2 bg-green-400 rounded-full animate-ping opacity-75"></div>
+            <div className="flex items-center justify-center gap-2">
+              <div className="relative">
+                <div className="w-1.5 h-1.5 bg-brand-offwhite/40 rounded-full"></div>
+                <div className="absolute inset-0 w-1.5 h-1.5 bg-brand-offwhite/40 rounded-full animate-pulse opacity-50"></div>
+              </div>
+              <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.25em] text-brand-offwhite/70 font-extralight text-center">
+                Quantidade Limitada
+              </p>
             </div>
-            <p className="text-[10px] sm:text-xs uppercase tracking-wider text-brand-offwhite/90 font-light text-center">
-              Disponibilidade: Imediata
+            <p className="text-[8px] sm:text-[9px] uppercase tracking-[0.35em] text-brand-offwhite/50 font-extralight text-center">
+              Acesso Exclusivo
             </p>
           </motion.div>
         </div>
