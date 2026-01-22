@@ -163,11 +163,23 @@ function getRedirectUrl(
 ): string {
   // Password reset sempre vai para update-password
   if (type === 'recovery' || next === '/update-password' || next === '/reset-password') {
-    return `${origin}/update-password`;
+    const url = `${origin}/update-password`;
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔗 URL de redirecionamento (recovery):', url);
+    }
+    return url;
   }
 
   // Confirmação de email ou login normal
-  return `${origin}${next}`;
+  // Garantir que next seja uma rota válida
+  const validNext = next && next.startsWith('/') ? next : '/';
+  const url = `${origin}${validNext}`;
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔗 URL de redirecionamento:', url, { type, next: validNext });
+  }
+  
+  return url;
 }
 
 /**
@@ -229,6 +241,19 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const searchParams = requestUrl.searchParams;
   const origin = requestUrl.origin;
+
+  // Log completo da requisição para debug
+  if (process.env.NODE_ENV === 'development') {
+    console.log('📥 Callback recebido:', {
+      url: requestUrl.toString(),
+      code: searchParams.get('code') ? 'presente' : 'ausente',
+      type: searchParams.get('type'),
+      next: searchParams.get('next'),
+      error: searchParams.get('error'),
+      errorCode: searchParams.get('error_code'),
+      allParams: Object.fromEntries(searchParams.entries()),
+    });
+  }
 
   // Extrair parâmetros da URL
   const params: CallbackParams = {
@@ -339,14 +364,29 @@ export async function GET(request: NextRequest) {
       if (process.env.NODE_ENV === 'development') {
         console.log('✅ Redirecionando para:', redirectUrl, { 
           type: params.type,
+          next: params.next,
           hasSession: !!result.session,
+          origin,
         });
       }
       
       // Garantir que os headers de cookies sejam enviados
-      return NextResponse.redirect(redirectUrl, { 
+      // Usar redirect absoluto para garantir que funciona
+      const redirectResponse = NextResponse.redirect(redirectUrl, { 
         headers: response.headers,
       });
+      
+      // Garantir que cookies sejam preservados no redirect
+      response.cookies.getAll().forEach(cookie => {
+        redirectResponse.cookies.set(cookie.name, cookie.value, {
+          ...cookie,
+          sameSite: 'lax',
+          path: '/',
+          httpOnly: false,
+        });
+      });
+      
+      return redirectResponse;
     }
 
     // Erro: processar tipo de erro
@@ -373,6 +413,17 @@ export async function GET(request: NextRequest) {
   // ==========================================
   // CENÁRIO 3: Sem código nem erro (URL inválida)
   // ==========================================
+  if (process.env.NODE_ENV === 'development') {
+    console.error('❌ Callback sem código nem erro - URL inválida:', requestUrl.toString());
+  }
+  
+  // Se for recovery mas sem código, pode ser que o link já foi usado
+  if (params.type === 'recovery') {
+    return NextResponse.redirect(
+      `${origin}/forgot-password?error=${encodeURIComponent('Link inválido ou já utilizado. Solicite um novo link de redefinição.')}`
+    );
+  }
+  
   return NextResponse.redirect(
     `${origin}/login?error=no-code&message=${encodeURIComponent('Link inválido. Verifique o link recebido por email.')}`
   );

@@ -46,8 +46,15 @@ export default function ForgotPasswordPage() {
         baseUrl = baseUrl.replace('www.', '');
       }
       
+      // URL de callback para recovery - deve ser absoluta e incluir todos os parâmetros
+      const redirectTo = `${baseUrl}/auth/callback?type=recovery&next=/update-password`;
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📧 Enviando email de reset com redirectTo:', redirectTo);
+      }
+      
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${baseUrl}/auth/callback?type=recovery&next=/update-password`,
+        redirectTo: redirectTo,
       });
 
       if (resetError) {
