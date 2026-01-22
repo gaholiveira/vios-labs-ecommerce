@@ -59,8 +59,24 @@ export default function ForgotPasswordPage() {
 
       if (resetError) {
         logDatabaseError('Solicitação de redefinição de senha', resetError);
-        const errorMessage = formatDatabaseError(resetError);
-        setError(errorMessage);
+        
+        // Tratamento específico para rate limit
+        const isRateLimit = 
+          resetError.message?.toLowerCase().includes('rate limit') ||
+          resetError.message?.toLowerCase().includes('rate_limit') ||
+          resetError.message?.toLowerCase().includes('too many requests') ||
+          resetError.code === 'rate_limit_exceeded' ||
+          resetError.status === 429;
+        
+        if (isRateLimit) {
+          setError(
+            'Muitas solicitações foram feitas em pouco tempo. Por favor, aguarde alguns minutos antes de tentar novamente. Isso ajuda a proteger nosso sistema contra abusos.'
+          );
+        } else {
+          const errorMessage = formatDatabaseError(resetError);
+          setError(errorMessage);
+        }
+        
         setLoading(false);
         return;
       }

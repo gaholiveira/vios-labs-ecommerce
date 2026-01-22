@@ -31,6 +31,18 @@ export function formatDatabaseError(error: any): string {
 
   // Se tem message, usar ela
   if (error.message) {
+    const messageLower = error.message.toLowerCase();
+    
+    // Rate limit - prioridade alta
+    if (
+      messageLower.includes('rate limit') ||
+      messageLower.includes('rate_limit') ||
+      messageLower.includes('too many requests') ||
+      messageLower.includes('email rate limit exceeded')
+    ) {
+      return 'Muitas solicitações foram feitas em pouco tempo. Por favor, aguarde alguns minutos antes de tentar novamente. Isso ajuda a proteger nosso sistema contra abusos.';
+    }
+    
     // Mensagens comuns do Supabase com traduções amigáveis
     if (error.message.includes('already registered') || error.message.includes('already exists')) {
       return 'Este e-mail já está cadastrado. Tente fazer login.';
@@ -58,6 +70,11 @@ export function formatDatabaseError(error: any): string {
 
     // Retornar a mensagem original se não for um erro conhecido
     return error.message;
+  }
+  
+  // Verificar também no código e status
+  if (error.code === 'rate_limit_exceeded' || error.status === 429) {
+    return 'Muitas solicitações foram feitas em pouco tempo. Por favor, aguarde alguns minutos antes de tentar novamente. Isso ajuda a proteger nosso sistema contra abusos.';
   }
 
   // Se tem details, usar details + hint

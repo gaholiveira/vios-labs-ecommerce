@@ -79,6 +79,25 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
+      // Tratamento específico para rate limit
+      const isRateLimit = 
+        error.message?.toLowerCase().includes('rate limit') ||
+        error.message?.toLowerCase().includes('rate_limit') ||
+        error.message?.toLowerCase().includes('too many requests') ||
+        error.message?.toLowerCase().includes('email rate limit exceeded') ||
+        error.code === 'rate_limit_exceeded' ||
+        error.status === 429;
+      
+      if (isRateLimit) {
+        return NextResponse.json(
+          { 
+            error: 'Muitas solicitações foram feitas em pouco tempo. Por favor, aguarde alguns minutos antes de tentar novamente. Isso ajuda a proteger nosso sistema contra abusos.',
+            rateLimit: true,
+          },
+          { status: 429 }
+        );
+      }
+      
       // Se o erro for que o usuário já está confirmado ou registrado
       if (
         error.message?.includes('already confirmed') ||
