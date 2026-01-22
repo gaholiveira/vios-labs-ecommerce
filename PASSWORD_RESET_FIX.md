@@ -47,12 +47,16 @@ O problema pode ter várias causas:
 **IMPORTANTE**: Verifique as configurações no Dashboard do Supabase:
 
 1. **Authentication → URL Configuration**:
-   - **Site URL**: Deve ser `https://seu-dominio.com` (sem trailing slash)
-   - **Redirect URLs**: Adicione:
-     - `https://seu-dominio.com/auth/callback`
-     - `https://seu-dominio.com/update-password`
-     - `http://localhost:3000/auth/callback` (para desenvolvimento)
-     - `http://localhost:3000/update-password` (para desenvolvimento)
+   - **Site URL**: Deve ser `https://vioslabs.com.br` (sem trailing slash)
+   - **Redirect URLs**: **ADICIONE ESTAS URLs** (são obrigatórias):
+     - ✅ `https://vioslabs.com.br/auth/callback` (já existe)
+     - ✅ `https://vioslabs.com.br/auth/callback?*` (já existe)
+     - ❌ **FALTA**: `https://vioslabs.com.br/update-password` ⚠️ **ADICIONAR AGORA!**
+     - ❌ **FALTA**: `https://www.vioslabs.com.br/update-password` ⚠️ **ADICIONAR AGORA!**
+     - ✅ `http://localhost:3000/auth/callback` (para desenvolvimento)
+     - ❌ **FALTA**: `http://localhost:3000/update-password` (para desenvolvimento) ⚠️ **ADICIONAR AGORA!**
+
+   **⚠️ PROBLEMA IDENTIFICADO**: A URL `/update-password` não está na lista de Redirect URLs permitidas! Isso faz com que o Supabase bloqueie o redirecionamento e cause o erro "página não encontrada".
 
 2. **Email Templates**:
    - O template de "Reset Password" deve usar a URL do `redirectTo` que enviamos

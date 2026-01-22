@@ -163,9 +163,21 @@ function getRedirectUrl(
 ): string {
   // Password reset sempre vai para update-password
   if (type === 'recovery' || next === '/update-password' || next === '/reset-password') {
+    // Decodificar next se estiver codificado
+    const decodedNext = next ? decodeURIComponent(next) : next;
+    const isUpdatePassword = decodedNext === '/update-password' || decodedNext === 'update-password';
+    
+    // Sempre usar /update-password para recovery
     const url = `${origin}/update-password`;
+    
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔗 URL de redirecionamento (recovery):', url);
+      console.log('🔗 URL de redirecionamento (recovery):', url, {
+        type,
+        next,
+        decodedNext,
+        isUpdatePassword,
+        origin,
+      });
     }
     return url;
   }
@@ -176,7 +188,7 @@ function getRedirectUrl(
   const url = `${origin}${validNext}`;
   
   if (process.env.NODE_ENV === 'development') {
-    console.log('🔗 URL de redirecionamento:', url, { type, next: validNext });
+    console.log('🔗 URL de redirecionamento:', url, { type, next: validNext, origin });
   }
   
   return url;
@@ -240,12 +252,24 @@ async function handlePKCEError(
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const searchParams = requestUrl.searchParams;
-  const origin = requestUrl.origin;
+  
+  // Normalizar origin - remover www se presente para consistência
+  let origin = requestUrl.origin;
+  if (origin.includes('www.')) {
+    origin = origin.replace('www.', '');
+  }
+  
+  // Em produção, garantir que usa HTTPS
+  if (process.env.NODE_ENV === 'production' && origin.startsWith('http://')) {
+    origin = origin.replace('http://', 'https://');
+  }
 
   // Log completo da requisição para debug
   if (process.env.NODE_ENV === 'development') {
     console.log('📥 Callback recebido:', {
       url: requestUrl.toString(),
+      origin: origin,
+      originalOrigin: requestUrl.origin,
       code: searchParams.get('code') ? 'presente' : 'ausente',
       type: searchParams.get('type'),
       next: searchParams.get('next'),
@@ -322,6 +346,18 @@ export async function GET(request: NextRequest) {
 
     const result = await exchangeCodeForSession(supabase, params.code, params.type);
 
+    // Log detalhado do resultado
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📊 Resultado do exchangeCodeForSession:', {
+        success: result.success,
+        hasSession: !!result.session,
+        hasUser: !!result.user,
+        error: result.error?.message,
+        errorCode: result.error?.code,
+        type: params.type,
+      });
+    }
+
     // Sucesso: sessão criada
     if (result.success && result.session) {
       // Para recovery, verificar se a sessão está acessível
@@ -367,26 +403,42 @@ export async function GET(request: NextRequest) {
           next: params.next,
           hasSession: !!result.session,
           origin,
+          redirectUrl,
         });
       }
       
       // Garantir que os headers de cookies sejam enviados
       // Usar redirect absoluto para garantir que funciona
-      const redirectResponse = NextResponse.redirect(redirectUrl, { 
-        headers: response.headers,
-      });
-      
-      // Garantir que cookies sejam preservados no redirect
-      response.cookies.getAll().forEach(cookie => {
-        redirectResponse.cookies.set(cookie.name, cookie.value, {
-          ...cookie,
-          sameSite: 'lax',
-          path: '/',
-          httpOnly: false,
+      try {
+        const redirectResponse = NextResponse.redirect(redirectUrl, { 
+          headers: response.headers,
         });
-      });
+        
+        // Garantir que cookies sejam preservados no redirect
+        response.cookies.getAll().forEach(cookie => {
+          redirectResponse.cookies.set(cookie.name, cookie.value, {
+            ...cookie,
+            sameSite: 'lax',
+            path: '/',
+            httpOnly: false,
+          });
+        });
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Redirect response criado com sucesso');
+        }
+        
+        return redirectResponse;
+      } catch (redirectError) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('❌ Erro ao criar redirect:', redirectError);
+        }
+        // Fallback: redirecionar para forgot-password com erro
+        return NextResponse.redirect(
+          `${origin}/forgot-password?error=${encodeURIComponent('Erro ao processar redirecionamento. Tente novamente.')}`
+        );
+      }
       
-      return redirectResponse;
     }
 
     // Erro: processar tipo de erro
