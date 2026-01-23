@@ -181,11 +181,11 @@ function MobileMenu() {
                 </div>
               </div>
             ) : (
-              /* Usuário Não Logado - Botão Grande "Entrar / Cadastrar" */
+              /* Usuário Não Logado - Botão Grande "Entrar / Cadastrar" (High-End) */
               <Link
                 href="/login"
                 onClick={handleLinkClick}
-                className="block w-full py-4 px-6 text-center text-sm uppercase tracking-[0.3em] font-medium text-white bg-brand-softblack hover:bg-brand-softblack/90 rounded-sm transition-colors"
+                className="block w-full py-5 px-6 text-center text-xs uppercase tracking-[0.4em] font-light text-brand-offwhite bg-brand-green hover:bg-brand-green/90 active:bg-brand-green/95 rounded-sm transition-all duration-300 shadow-sm hover:shadow-md"
               >
                 Entrar / Cadastrar
               </Link>

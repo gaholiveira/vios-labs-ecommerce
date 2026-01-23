@@ -40,6 +40,15 @@ function getStripeClient(): Stripe {
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+// IMPORTANTE: Prevenir redirects que causam erro 307
+// Garantir que a rota aceita apenas POST
+export async function GET() {
+  return NextResponse.json(
+    { error: 'Method not allowed. Webhooks only accept POST requests.' },
+    { status: 405 }
+  );
+}
+
 /**
  * Webhook do Stripe para processar eventos de pagamento
  * 
