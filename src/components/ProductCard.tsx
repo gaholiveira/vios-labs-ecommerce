@@ -152,12 +152,12 @@ function ProductCard({ product }: { product: Product }) {
           )}
         </div>
 
-        {/* Botão Adicionar ao Carrinho */}
+        {/* Botão Adicionar ao Carrinho (Desabilitado) */}
         <button
-          onClick={() => addToCart(product)}
-          className="w-full border border-brand-green rounded-sm bg-brand-green text-brand-offwhite px-6 py-3 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium hover:bg-brand-green/90 active:bg-brand-green/80 transition-all duration-300 mt-2"
+          disabled
+          className="w-full border border-stone-300 rounded-sm bg-stone-200 text-stone-500 px-6 py-3 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium transition-all duration-300 mt-2 cursor-not-allowed"
         >
-          Adicionar ao Carrinho
+          Lançamento em Breve
         </button>
       </div>
     </div>

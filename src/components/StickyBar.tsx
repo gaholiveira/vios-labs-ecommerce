@@ -12,6 +12,7 @@ interface StickyBarProps {
   onAddToCart: () => void;
   isOutOfStock?: boolean;
   onWaitlistClick?: () => void;
+  isPresale?: boolean;
 }
 
 export default function StickyBar({
@@ -20,6 +21,7 @@ export default function StickyBar({
   onAddToCart,
   isOutOfStock = false,
   onWaitlistClick,
+  isPresale = false,
 }: StickyBarProps) {
   const [isVisible, setIsVisible] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -68,13 +70,13 @@ export default function StickyBar({
               </p>
             </div>
 
-            {/* Botão Adicionar ao Carrinho */}
+            {/* Botão Adicionar ao Carrinho (Desabilitado) */}
             <button
-              onClick={onAddToCart}
-              className="flex-shrink-0 border border-brand-green rounded-sm bg-brand-green text-brand-offwhite px-4 py-2.5 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium hover:bg-brand-green/90 active:bg-brand-green/80 transition-all duration-300 whitespace-nowrap"
-              aria-label="Adicionar ao carrinho"
+              disabled
+              className="flex-shrink-0 border border-stone-300 rounded-sm bg-stone-200 text-stone-500 px-4 py-2.5 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium transition-all duration-300 whitespace-nowrap cursor-not-allowed"
+              aria-label="Lançamento em breve"
             >
-              Adicionar
+              Em Breve
             </button>
           </div>
         </motion.div>
