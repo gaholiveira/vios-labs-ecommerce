@@ -34,12 +34,102 @@ export default function LoteZeroSalesForm({
   const [localEmail, setLocalEmail] = useState(initialEmail);
   const [localName, setLocalName] = useState(initialName);
   const [whatsapp, setWhatsapp] = useState('');
+  const [isVip, setIsVip] = useState(false);
+  const [checkingVip, setCheckingVip] = useState(false);
 
   // Sincronizar com props quando mudarem (ex: quando user for detectado)
   useEffect(() => {
     if (initialEmail) setLocalEmail(initialEmail);
     if (initialName) setLocalName(initialName);
   }, [initialEmail, initialName]);
+
+  // Verificar se usuário logado está na lista VIP
+  useEffect(() => {
+    async function checkVipStatus() {
+      if (!user) {
+        setIsVip(false);
+        return;
+      }
+
+      setCheckingVip(true);
+      try {
+        const supabase = createClient();
+        const { data: vipData, error: vipError } = await supabase
+          .from("vip_list")
+          .select("*")
+          .eq("user_id", user.id)
+          .single();
+        
+        if (vipData && !vipError) {
+          setIsVip(true);
+        } else {
+          setIsVip(false);
+        }
+      } catch (err) {
+        console.error('[LOTE ZERO] Erro ao verificar status VIP:', err);
+        setIsVip(false);
+      } finally {
+        setCheckingVip(false);
+      }
+    }
+
+    checkVipStatus();
+  }, [user]);
+
+  // Função para formatar número de telefone brasileiro
+  const formatPhoneNumber = (value: string): string => {
+    // Remove tudo que não é número
+    const numbers = value.replace(/\D/g, '');
+    
+    // Se não houver números, retorna vazio
+    if (numbers.length === 0) {
+      return '';
+    }
+    
+    // Se começar com 55 (código do Brasil), detecta e remove para processar
+    let phoneNumbers = numbers;
+    let hasCountryCode = false;
+    
+    if (numbers.startsWith('55') && numbers.length > 10) {
+      phoneNumbers = numbers.substring(2);
+      hasCountryCode = true;
+    }
+    
+    // Limita a 11 dígitos (DDD + 9 dígitos)
+    if (phoneNumbers.length > 11) {
+      phoneNumbers = phoneNumbers.substring(0, 11);
+    }
+    
+    // Aplica a máscara baseada no tamanho
+    let formatted = '';
+    
+    if (phoneNumbers.length <= 2) {
+      // Apenas DDD
+      formatted = `(${phoneNumbers}`;
+    } else if (phoneNumbers.length <= 6) {
+      // DDD + parte do número
+      formatted = `(${phoneNumbers.substring(0, 2)}) ${phoneNumbers.substring(2)}`;
+    } else if (phoneNumbers.length <= 10) {
+      // DDD + número sem 9º dígito (formato antigo)
+      formatted = `(${phoneNumbers.substring(0, 2)}) ${phoneNumbers.substring(2, 6)}-${phoneNumbers.substring(6)}`;
+    } else {
+      // DDD + número completo com 9º dígito (formato atual)
+      formatted = `(${phoneNumbers.substring(0, 2)}) ${phoneNumbers.substring(2, 7)}-${phoneNumbers.substring(7)}`;
+    }
+    
+    // Adiciona código do país se estava presente no input original
+    if (hasCountryCode) {
+      formatted = `+55 ${formatted}`;
+    }
+    
+    return formatted;
+  };
+
+  // Handler para mudança no campo WhatsApp com formatação automática
+  const handleWhatsAppChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhoneNumber(e.target.value);
+    setWhatsapp(formatted);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +152,13 @@ export default function LoteZeroSalesForm({
     try {
       const emailTrimmed = localEmail.trim().toLowerCase();
       const fullNameTrimmed = localName.trim();
-      const phoneTrimmed = whatsapp.trim() || null;
+      // Remove formatação do telefone, mantendo apenas números
+      const phoneNumbers = whatsapp.replace(/\D/g, '');
+      // Remove código do país (55) se presente, mantendo apenas DDD + número
+      const phoneTrimmed = phoneNumbers.startsWith('55') && phoneNumbers.length > 10 
+        ? phoneNumbers.substring(2) 
+        : phoneNumbers;
+      const phoneFinal = phoneTrimmed.length > 0 ? phoneTrimmed : null;
 
       // ========================================================================
       // USAR API ROUTE SERVER-SIDE PARA GARANTIR INSERÇÃO
@@ -85,7 +181,7 @@ export default function LoteZeroSalesForm({
           email: emailTrimmed,
           user_id: user?.id || null,
           full_name: fullNameTrimmed,
-          phone: phoneTrimmed,
+          phone: phoneFinal,
         }),
       });
 
@@ -159,7 +255,7 @@ export default function LoteZeroSalesForm({
             .upsert({
               id: user.id,
               full_name: fullNameTrimmed || undefined,
-              phone: phoneTrimmed || undefined,
+              phone: phoneFinal || undefined,
               email: emailTrimmed,
               updated_at: new Date().toISOString(),
             }, {
@@ -183,6 +279,152 @@ export default function LoteZeroSalesForm({
       setLoading(false);
     }
   };
+
+  // Loading state enquanto verifica status VIP
+  if (checkingVip) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.4 }}
+        className="min-h-full bg-stone-50 flex items-center justify-center"
+      >
+        <div className="text-center">
+          <svg className="animate-spin h-8 w-8 mx-auto text-brand-softblack mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="text-[10px] uppercase tracking-wider text-brand-softblack/60">Verificando...</p>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // Se usuário está logado e já está na lista VIP, mostrar card de status
+  if (user && isVip) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.4 }}
+        className="min-h-full bg-stone-50"
+      >
+        <div className="p-6 sm:p-8 md:p-12 lg:p-24 max-w-2xl mx-auto pb-16 sm:pb-20 md:pb-24">
+          {/* Logo VIOS pequena no topo */}
+          <div className="mb-6 sm:mb-8 md:mb-12">
+            <h2 className="text-[9px] sm:text-[10px] uppercase tracking-[0.4em] sm:tracking-[0.5em] text-brand-softblack font-light">
+              VIOS
+            </h2>
+          </div>
+
+          {/* Card de Status VIP */}
+          <div className="mb-8 sm:mb-12">
+            <div className="bg-white border border-brand-green/20 rounded-sm p-6 sm:p-8 shadow-sm">
+              <div className="mb-6">
+                <div className="w-16 h-16 mx-auto mb-4 bg-brand-green/10 rounded-full flex items-center justify-center">
+                  <svg
+                    className="w-8 h-8 text-brand-green"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
+                    />
+                  </svg>
+                </div>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-light uppercase tracking-tighter mb-3 sm:mb-4 text-brand-softblack text-center">
+                  Olá, {localName || user.email?.split('@')[0] || 'Membro VIP'}.
+                </h1>
+                <p className="text-xs sm:text-sm md:text-base font-light text-brand-softblack/70 leading-relaxed text-center mb-6">
+                  Você já está na lista prioritária.
+                </p>
+              </div>
+              
+              <a
+                href="https://chat.whatsapp.com/CvWE3TkcMgpGot3wkEtMhJ"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full bg-brand-green text-brand-offwhite py-3 sm:py-4 uppercase tracking-[0.15em] sm:tracking-[0.2em] text-[11px] sm:text-xs font-medium hover:bg-brand-softblack transition-all duration-300 flex items-center justify-center gap-2"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                </svg>
+                Acessar Grupo VIP
+              </a>
+            </div>
+          </div>
+
+          {/* Elementos de Confiança */}
+          <div className="space-y-3 sm:space-y-4 pt-6 sm:pt-8 pb-8 sm:pb-12 md:pb-16 border-t border-gray-200">
+            <div className="flex items-start gap-2 sm:gap-3">
+              <svg
+                className="w-4 h-4 sm:w-5 sm:h-5 text-brand-green shrink-0 mt-0.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
+                />
+              </svg>
+              <p className="text-xs sm:text-sm font-light text-brand-softblack/70 leading-relaxed">
+                Envio Prioritário
+              </p>
+            </div>
+
+            <div className="flex items-start gap-2 sm:gap-3">
+              <svg
+                className="w-4 h-4 sm:w-5 sm:h-5 text-brand-green shrink-0 mt-0.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
+                />
+              </svg>
+              <p className="text-xs sm:text-sm font-light text-brand-softblack/70 leading-relaxed">
+                Embalagem de Colecionador
+              </p>
+            </div>
+
+            <div className="flex items-start gap-2 sm:gap-3">
+              <svg
+                className="w-4 h-4 sm:w-5 sm:h-5 text-brand-green shrink-0 mt-0.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
+                />
+              </svg>
+              <p className="text-xs sm:text-sm font-light text-brand-softblack/70 leading-relaxed">
+                Acesso vitalício à comunidade VIOS
+              </p>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -285,9 +527,9 @@ export default function LoteZeroSalesForm({
             <input
               type="tel"
               value={whatsapp}
-              onChange={(e) => setWhatsapp(e.target.value)}
+              onChange={handleWhatsAppChange}
               className="w-full bg-transparent border-0 border-b border-gray-300 pb-2 sm:pb-3 focus:border-black outline-none transition-colors font-mono text-sm sm:text-base text-brand-softblack placeholder:text-gray-400"
-              placeholder="+55 11 99999-9999"
+              placeholder="(11) 99999-9999"
             />
             <p className="text-[10px] text-brand-softblack/50 mt-1">
               Para receber atualizações exclusivas sobre o Lote Zero
@@ -298,7 +540,7 @@ export default function LoteZeroSalesForm({
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-brand-softblack text-brand-offwhite py-3 sm:py-4 uppercase tracking-[0.15em] sm:tracking-[0.2em] text-[11px] sm:text-xs font-medium hover:bg-brand-softblack/90 active:bg-brand-softblack/80 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed mt-6 sm:mt-8"
+            className="w-full bg-brand-green text-brand-offwhite py-3 sm:py-4 uppercase tracking-[0.15em] sm:tracking-[0.2em] text-[11px] sm:text-xs font-medium hover:bg-brand-softblack transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed mt-6 sm:mt-8"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
@@ -312,6 +554,18 @@ export default function LoteZeroSalesForm({
               'Garantir Meu Acesso'
             )}
           </button>
+
+          {/* Link de Login Discreto - Apenas para usuários não logados */}
+          {!user && (
+            <div className="mt-4 text-center">
+              <p className="text-xs sm:text-sm text-stone-400">
+                Já faz parte da Vios?{' '}
+                <Link href="/login" className="font-medium text-stone-600 hover:text-brand-green transition-colors underline">
+                  Faça Login
+                </Link>
+              </p>
+            </div>
+          )}
         </form>
 
         {/* Mensagem para usuários não logados */}
