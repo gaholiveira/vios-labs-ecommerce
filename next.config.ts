@@ -33,6 +33,17 @@ const nextConfig: NextConfig = {
         port: '3000',
         pathname: '/**',
       },
+      // Permitir imagens do próprio domínio (produção)
+      {
+        protocol: 'https',
+        hostname: 'vioslabs.com.br',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.vioslabs.com.br',
+        pathname: '/**',
+      },
     ],
     // Permitir URLs que começam com / (relativas)
     unoptimized: false,

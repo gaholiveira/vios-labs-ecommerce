@@ -247,7 +247,7 @@ export default function OrdersPage() {
                             {item.product_image ? (
                               <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-sm overflow-hidden border border-stone-100 shrink-0">
                                 <Image
-                                  src={item.product_image.startsWith('/') ? item.product_image : item.product_image}
+                                  src={item.product_image}
                                   alt={item.product_name}
                                   fill
                                   className="object-cover"
