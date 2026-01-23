@@ -282,8 +282,12 @@ export async function POST(req: Request) {
       line_items: lineItems,
       mode: "payment",
       
-      // Payment Methods: Habilitar Card, Pix e Boleto explicitamente
-      payment_method_types: ['card', 'pix', 'boleto'],
+      // Payment Methods: Habilitar Card e Boleto
+      // PIX será adicionado quando habilitado no dashboard do Stripe
+      payment_method_types: ['card', 'boleto'],
+      
+      // Habilitar cupons de desconto
+      allow_promotion_codes: true,
       
       // Customer Information
       customer_email: customerEmail || undefined,

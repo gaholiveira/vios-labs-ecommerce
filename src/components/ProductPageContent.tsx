@@ -494,16 +494,16 @@ function ProductPageContent({ product }: ProductPageContentProps) {
             />
           </div>
 
-          {/* Botão Desabilitado - Lançamento em Breve (Fade-in simples - segurança de conversão) */}
+          {/* Botão Adicionar ao Carrinho (Fade-in simples - segurança de conversão) */}
           <motion.button
             data-sticky-bar-trigger
-            disabled
+            onClick={handleAddToCart}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.1 }}
-            className="border border-gray-300 rounded-sm bg-gray-100 text-gray-500 px-6 py-3 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium cursor-not-allowed transition-all duration-500 ease-out"
+            className="w-full border border-brand-green rounded-sm bg-brand-green text-brand-offwhite px-6 py-3 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium hover:bg-brand-green/90 active:bg-brand-green/80 transition-all duration-500 ease-out"
           >
-            Disponível em Breve
+            Adicionar ao Carrinho
           </motion.button>
 
           {/* Texto Legal ANVISA */}
