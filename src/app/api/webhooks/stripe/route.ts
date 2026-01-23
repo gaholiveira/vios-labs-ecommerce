@@ -264,9 +264,29 @@ async function handleCheckoutSessionCompleted(
       }
       
       // Obter imagem do produto se disponível
-      const productImage = typeof product === 'object' && product && product.images && product.images.length > 0
-        ? product.images[0]
-        : null;
+      // A imagem vem do produto expandido do Stripe
+      let productImage: string | null = null;
+      
+      if (typeof product === 'object' && product) {
+        // Produto expandido - usar images do produto
+        if (product.images && product.images.length > 0) {
+          productImage = product.images[0];
+        }
+      }
+      
+      // Nota: Se o produto não foi expandido, a imagem será null
+      // Isso pode ser atualizado depois usando a API /api/admin/update-order-images
+      
+      // Log para debug (apenas em desenvolvimento)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📦 Processando item do pedido:', {
+          productId,
+          productName,
+          hasImage: !!productImage,
+          imageUrl: productImage,
+          productType: typeof product,
+        });
+      }
 
       return {
         order_id: order.id,
