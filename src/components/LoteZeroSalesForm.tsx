@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { createClient } from '@/utils/supabase/client';
-import { formatDatabaseError, logDatabaseError } from '@/utils/errorHandler';
-import Link from 'next/link';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { createClient } from "@/utils/supabase/client";
+import { formatDatabaseError, logDatabaseError } from "@/utils/errorHandler";
+import Link from "next/link";
 
 interface LoteZeroSalesFormProps {
   user: any;
@@ -33,7 +33,7 @@ export default function LoteZeroSalesForm({
 }: LoteZeroSalesFormProps) {
   const [localEmail, setLocalEmail] = useState(initialEmail);
   const [localName, setLocalName] = useState(initialName);
-  const [whatsapp, setWhatsapp] = useState('');
+  const [whatsapp, setWhatsapp] = useState("");
   const [isVip, setIsVip] = useState(false);
   const [checkingVip, setCheckingVip] = useState(false);
 
@@ -59,14 +59,14 @@ export default function LoteZeroSalesForm({
           .select("*")
           .eq("user_id", user.id)
           .single();
-        
+
         if (vipData && !vipError) {
           setIsVip(true);
         } else {
           setIsVip(false);
         }
       } catch (err) {
-        console.error('[LOTE ZERO] Erro ao verificar status VIP:', err);
+        console.error("[LOTE ZERO] Erro ao verificar status VIP:", err);
         setIsVip(false);
       } finally {
         setCheckingVip(false);
@@ -76,61 +76,6 @@ export default function LoteZeroSalesForm({
     checkVipStatus();
   }, [user]);
 
-  // Função para formatar número de telefone brasileiro
-  const formatPhoneNumber = (value: string): string => {
-    // Remove tudo que não é número
-    const numbers = value.replace(/\D/g, '');
-    
-    // Se não houver números, retorna vazio
-    if (numbers.length === 0) {
-      return '';
-    }
-    
-    // Se começar com 55 (código do Brasil), detecta e remove para processar
-    let phoneNumbers = numbers;
-    let hasCountryCode = false;
-    
-    if (numbers.startsWith('55') && numbers.length > 10) {
-      phoneNumbers = numbers.substring(2);
-      hasCountryCode = true;
-    }
-    
-    // Limita a 11 dígitos (DDD + 9 dígitos)
-    if (phoneNumbers.length > 11) {
-      phoneNumbers = phoneNumbers.substring(0, 11);
-    }
-    
-    // Aplica a máscara baseada no tamanho
-    let formatted = '';
-    
-    if (phoneNumbers.length <= 2) {
-      // Apenas DDD
-      formatted = `(${phoneNumbers}`;
-    } else if (phoneNumbers.length <= 6) {
-      // DDD + parte do número
-      formatted = `(${phoneNumbers.substring(0, 2)}) ${phoneNumbers.substring(2)}`;
-    } else if (phoneNumbers.length <= 10) {
-      // DDD + número sem 9º dígito (formato antigo)
-      formatted = `(${phoneNumbers.substring(0, 2)}) ${phoneNumbers.substring(2, 6)}-${phoneNumbers.substring(6)}`;
-    } else {
-      // DDD + número completo com 9º dígito (formato atual)
-      formatted = `(${phoneNumbers.substring(0, 2)}) ${phoneNumbers.substring(2, 7)}-${phoneNumbers.substring(7)}`;
-    }
-    
-    // Adiciona código do país se estava presente no input original
-    if (hasCountryCode) {
-      formatted = `+55 ${formatted}`;
-    }
-    
-    return formatted;
-  };
-
-  // Handler para mudança no campo WhatsApp com formatação automática
-  const handleWhatsAppChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPhoneNumber(e.target.value);
-    setWhatsapp(formatted);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -138,13 +83,16 @@ export default function LoteZeroSalesForm({
 
     // Validações básicas
     if (!localName.trim()) {
-      onError('Nome completo é obrigatório');
+      onError("Nome completo é obrigatório");
       setLoading(false);
       return;
     }
 
-    if (!localEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(localEmail.trim())) {
-      onError('Email válido é obrigatório');
+    if (
+      !localEmail.trim() ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(localEmail.trim())
+    ) {
+      onError("Email válido é obrigatório");
       setLoading(false);
       return;
     }
@@ -152,96 +100,102 @@ export default function LoteZeroSalesForm({
     try {
       const emailTrimmed = localEmail.trim().toLowerCase();
       const fullNameTrimmed = localName.trim();
-      // Remove formatação do telefone, mantendo apenas números
-      const phoneNumbers = whatsapp.replace(/\D/g, '');
-      // Remove código do país (55) se presente, mantendo apenas DDD + número
-      const phoneTrimmed = phoneNumbers.startsWith('55') && phoneNumbers.length > 10 
-        ? phoneNumbers.substring(2) 
-        : phoneNumbers;
-      const phoneFinal = phoneTrimmed.length > 0 ? phoneTrimmed : null;
+      const phoneTrimmed = whatsapp.trim() || null;
 
       // ========================================================================
       // USAR API ROUTE SERVER-SIDE PARA GARANTIR INSERÇÃO
       // A API route usa service role key e contorna políticas RLS
       // ========================================================================
 
-      console.log('[LOTE ZERO] Enviando dados para API:', {
+      console.log("[LOTE ZERO] Enviando dados para API:", {
         email: emailTrimmed,
         user_id: user?.id || null,
         full_name: fullNameTrimmed,
         phone: phoneTrimmed,
       });
 
-      const response = await fetch('/api/vip-list', {
-        method: 'POST',
+      const response = await fetch("/api/vip-list", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           email: emailTrimmed,
           user_id: user?.id || null,
           full_name: fullNameTrimmed,
-          phone: phoneFinal,
+          phone: phoneTrimmed,
         }),
       });
 
       // Verificar se a resposta é JSON válido
       let result;
-      const contentType = response.headers.get('content-type');
-      
-      if (contentType && contentType.includes('application/json')) {
+      const contentType = response.headers.get("content-type");
+
+      if (contentType && contentType.includes("application/json")) {
         try {
           result = await response.json();
         } catch (jsonError) {
-          console.error('[LOTE ZERO] Erro ao parsear JSON da resposta:', jsonError);
+          console.error(
+            "[LOTE ZERO] Erro ao parsear JSON da resposta:",
+            jsonError,
+          );
           const text = await response.text();
-          console.error('[LOTE ZERO] Resposta da API (texto):', text);
-          onError('Erro ao processar resposta do servidor. Tente novamente.');
+          console.error("[LOTE ZERO] Resposta da API (texto):", text);
+          onError("Erro ao processar resposta do servidor. Tente novamente.");
           setLoading(false);
           return;
         }
       } else {
         // Se não for JSON, tentar ler como texto
         const text = await response.text();
-        console.error('[LOTE ZERO] Resposta não é JSON:', text);
-        onError('Erro ao processar resposta do servidor. Tente novamente.');
+        console.error("[LOTE ZERO] Resposta não é JSON:", text);
+        onError("Erro ao processar resposta do servidor. Tente novamente.");
         setLoading(false);
         return;
       }
 
       // Verificar se houve erro
       if (!response.ok) {
-        console.error('[LOTE ZERO] Erro da API:', {
+        console.error("[LOTE ZERO] Erro da API:", {
           status: response.status,
           statusText: response.statusText,
           result,
         });
-        onError(result?.error || `Erro ${response.status}: ${response.statusText || 'Erro ao processar sua inscrição. Tente novamente.'}`);
+        onError(
+          result?.error ||
+            `Erro ${response.status}: ${response.statusText || "Erro ao processar sua inscrição. Tente novamente."}`,
+        );
         setLoading(false);
         return;
       }
 
       // Log do resultado para debugging
-      console.log('[LOTE ZERO] Resposta da API:', {
+      console.log("[LOTE ZERO] Resposta da API:", {
         ok: response.ok,
         status: response.status,
         result,
-        hasSuccess: 'success' in (result || {}),
+        hasSuccess: "success" in (result || {}),
         successValue: result?.success,
       });
 
       // Verificar se result existe e não está vazio
-      if (!result || typeof result !== 'object' || Object.keys(result).length === 0) {
-        console.error('[LOTE ZERO] Resultado vazio ou inválido:', result);
-        onError('Resposta inválida do servidor. Tente novamente.');
+      if (
+        !result ||
+        typeof result !== "object" ||
+        Object.keys(result).length === 0
+      ) {
+        console.error("[LOTE ZERO] Resultado vazio ou inválido:", result);
+        onError("Resposta inválida do servidor. Tente novamente.");
         setLoading(false);
         return;
       }
 
       // Verificar se result.success existe e é true
       if (result.success !== true) {
-        console.error('[LOTE ZERO] API retornou sucesso=false:', result);
-        onError(result?.error || 'Erro ao processar sua inscrição. Tente novamente.');
+        console.error("[LOTE ZERO] API retornou sucesso=false:", result);
+        onError(
+          result?.error || "Erro ao processar sua inscrição. Tente novamente.",
+        );
         setLoading(false);
         return;
       }
@@ -252,30 +206,39 @@ export default function LoteZeroSalesForm({
         if (localName.trim() || whatsapp.trim()) {
           const { error: profileError } = await supabase
             .from("profiles")
-            .upsert({
-              id: user.id,
-              full_name: fullNameTrimmed || undefined,
-              phone: phoneFinal || undefined,
-              email: emailTrimmed,
-              updated_at: new Date().toISOString(),
-            }, {
-              onConflict: "id"
-            });
+            .upsert(
+              {
+                id: user.id,
+                full_name: fullNameTrimmed || undefined,
+                phone: phoneTrimmed || undefined,
+                email: emailTrimmed,
+                updated_at: new Date().toISOString(),
+              },
+              {
+                onConflict: "id",
+              },
+            );
 
           if (profileError) {
-            console.warn('[LOTE ZERO] Aviso ao atualizar perfil:', profileError);
+            console.warn(
+              "[LOTE ZERO] Aviso ao atualizar perfil:",
+              profileError,
+            );
             // Não bloquear o sucesso se o perfil falhar
           }
         }
       }
 
-      console.log('[LOTE ZERO] ✅ Dados salvos na VIP list com sucesso!', result.data);
+      console.log(
+        "[LOTE ZERO] ✅ Dados salvos na VIP list com sucesso!",
+        result.data,
+      );
       onSuccess();
       setLoading(false);
     } catch (err: any) {
-      console.error('[LOTE ZERO] Exceção não tratada:', err);
-      logDatabaseError('Exceção ao processar inscrição (Lote Zero)', err);
-      onError(err?.message || 'Erro inesperado. Tente novamente.');
+      console.error("[LOTE ZERO] Exceção não tratada:", err);
+      logDatabaseError("Exceção ao processar inscrição (Lote Zero)", err);
+      onError(err?.message || "Erro inesperado. Tente novamente.");
       setLoading(false);
     }
   };
@@ -290,11 +253,29 @@ export default function LoteZeroSalesForm({
         className="min-h-full bg-stone-50 flex items-center justify-center"
       >
         <div className="text-center">
-          <svg className="animate-spin h-8 w-8 mx-auto text-brand-softblack mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          <svg
+            className="animate-spin h-8 w-8 mx-auto text-brand-softblack mb-4"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
           </svg>
-          <p className="text-[10px] uppercase tracking-wider text-brand-softblack/60">Verificando...</p>
+          <p className="text-[10px] uppercase tracking-wider text-brand-softblack/60">
+            Verificando...
+          </p>
         </div>
       </motion.div>
     );
@@ -337,13 +318,13 @@ export default function LoteZeroSalesForm({
                   </svg>
                 </div>
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-light uppercase tracking-tighter mb-3 sm:mb-4 text-brand-softblack text-center">
-                  Olá, {localName || user.email?.split('@')[0] || 'Membro VIP'}.
+                  Olá, {localName || user.email?.split("@")[0] || "Membro VIP"}.
                 </h1>
                 <p className="text-xs sm:text-sm md:text-base font-light text-brand-softblack/70 leading-relaxed text-center mb-6">
                   Você já está na lista prioritária.
                 </p>
               </div>
-              
+
               <a
                 href="https://chat.whatsapp.com/CvWE3TkcMgpGot3wkEtMhJ"
                 target="_blank"
@@ -355,7 +336,7 @@ export default function LoteZeroSalesForm({
                   fill="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
                 </svg>
                 Acessar Grupo VIP
               </a>
@@ -447,7 +428,8 @@ export default function LoteZeroSalesForm({
             Inicie sua Jornada.
           </h1>
           <p className="text-xs sm:text-sm md:text-base font-light text-brand-softblack/70 leading-relaxed">
-            Preencha seus dados para garantir acesso exclusivo a esta edição limitada.
+            Preencha seus dados para garantir acesso exclusivo a esta edição
+            limitada.
           </p>
         </div>
 
@@ -462,11 +444,15 @@ export default function LoteZeroSalesForm({
         {user && (
           <div className="mb-6 p-3 sm:p-4 bg-brand-green/10 border border-brand-green/20 rounded-sm">
             <p className="text-xs sm:text-sm text-brand-softblack/80">
-              Logado como: <span className="font-medium break-all">{user.email}</span>
+              Logado como:{" "}
+              <span className="font-medium break-all">{user.email}</span>
             </p>
             <p className="text-[10px] sm:text-xs text-brand-softblack/60 mt-1">
-              Você pode editar seus dados abaixo ou{' '}
-              <Link href="/profile" className="underline hover:text-brand-green transition-colors">
+              Você pode editar seus dados abaixo ou{" "}
+              <Link
+                href="/profile"
+                className="underline hover:text-brand-green transition-colors"
+              >
                 atualizar seu perfil
               </Link>
             </p>
@@ -474,7 +460,10 @@ export default function LoteZeroSalesForm({
         )}
 
         {/* Formulário */}
-        <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8 mb-8 sm:mb-12">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-6 sm:space-y-8 mb-8 sm:mb-12"
+        >
           {/* Nome Completo */}
           <div>
             <label className="text-[9px] sm:text-[10px] uppercase tracking-widest block mb-2 sm:mb-3 text-brand-softblack/60 font-light">
@@ -507,7 +496,7 @@ export default function LoteZeroSalesForm({
               }}
               disabled={!!user} // Desabilitar se estiver logado
               className={`w-full bg-transparent border-0 border-b border-gray-300 pb-2 sm:pb-3 focus:border-black outline-none transition-colors font-mono text-sm sm:text-base text-brand-softblack placeholder:text-gray-400 ${
-                user ? 'opacity-70 cursor-not-allowed' : ''
+                user ? "opacity-70 cursor-not-allowed" : ""
               }`}
               placeholder="seu@email.com"
               required
@@ -527,9 +516,9 @@ export default function LoteZeroSalesForm({
             <input
               type="tel"
               value={whatsapp}
-              onChange={handleWhatsAppChange}
+              onChange={(e) => setWhatsapp(e.target.value)}
               className="w-full bg-transparent border-0 border-b border-gray-300 pb-2 sm:pb-3 focus:border-black outline-none transition-colors font-mono text-sm sm:text-base text-brand-softblack placeholder:text-gray-400"
-              placeholder="(11) 99999-9999"
+              placeholder="+55 11 99999-9999"
             />
             <p className="text-[10px] text-brand-softblack/50 mt-1">
               Para receber atualizações exclusivas sobre o Lote Zero
@@ -544,14 +533,30 @@ export default function LoteZeroSalesForm({
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin h-4 w-4"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
                 Processando...
               </span>
             ) : (
-              'Garantir Meu Acesso'
+              "Garantir Meu Acesso"
             )}
           </button>
 
@@ -559,8 +564,11 @@ export default function LoteZeroSalesForm({
           {!user && (
             <div className="mt-4 text-center">
               <p className="text-xs sm:text-sm text-stone-400">
-                Já faz parte da Vios?{' '}
-                <Link href="/login" className="font-medium text-stone-600 hover:text-brand-green transition-colors underline">
+                Já faz parte da Vios?{" "}
+                <Link
+                  href="/login"
+                  className="font-medium text-stone-600 hover:text-brand-green transition-colors underline"
+                >
                   Faça Login
                 </Link>
               </p>
@@ -572,7 +580,8 @@ export default function LoteZeroSalesForm({
         {!user && (
           <div className="mb-8 p-4 bg-brand-green/5 border border-brand-green/20 rounded-sm">
             <p className="text-xs sm:text-sm text-brand-softblack/70 mb-2">
-              💡 <strong>Dica:</strong> Crie uma conta para acompanhar seu pedido e ter acesso exclusivo a futuros lançamentos.
+              💡 <strong>Dica:</strong> Crie uma conta para acompanhar seu
+              pedido e ter acesso exclusivo a futuros lançamentos.
             </p>
             <Link
               href="/register"

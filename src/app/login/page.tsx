@@ -1,16 +1,18 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { createClient } from '@/utils/supabase/client';
-import { formatDatabaseError, logDatabaseError } from '@/utils/errorHandler';
-import Link from 'next/link';
-import { useCart } from '@/context/CartContext';
-import { isEmailNotConfirmedError } from '@/utils/auth';
-import ResendConfirmationEmail from '@/components/auth/ResendConfirmationEmail';
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
+import { formatDatabaseError, logDatabaseError } from "@/utils/errorHandler";
+import Link from "next/link";
+import { useCart } from "@/context/CartContext";
+import { isEmailNotConfirmedError } from "@/utils/auth";
+import ResendConfirmationEmail from "@/components/auth/ResendConfirmationEmail";
+import GoogleAuthButton from "@/components/google-auth-button";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -20,112 +22,105 @@ export default function LoginPage() {
   const { showToast } = useCart();
 
   useEffect(() => {
-    // Verificar search params apenas no cliente
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      
-      if (params.get('registered') === 'true') {
-        const message = params.get('message') || 'Conta criada com sucesso! Verifique seu e-mail para confirmar.';
-        showToast(message);
-        router.replace('/login');
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get("registered") === "true") {
+      showToast(params.get("message") || "Conta criada! Verifique seu e-mail.");
+      router.replace("/login");
+    }
+
+    if (params.get("password-reset") === "true") {
+      showToast("Senha redefinida! Você já pode fazer login.");
+      router.replace("/login");
+    }
+
+    if (params.get("email-confirmed") === "true") {
+      const message = params.get("message") || "Email confirmado! Faça login.";
+      setError(null);
+      setShowEmailConfirmed(true);
+      showToast(message);
+      router.replace("/login");
+      const timer = setTimeout(() => setShowEmailConfirmed(false), 8000);
+      return () => clearTimeout(timer);
+    }
+
+    if (params.get("error")) {
+      const errorMsg = params.get("message") || params.get("error");
+      if (errorMsg && !errorMsg.includes("confirmado") && !errorMsg.includes("email")) {
+        setError(errorMsg);
       }
-      
-      if (params.get('password-reset') === 'true') {
-        showToast('Senha redefinida com sucesso! Você já pode fazer login.');
-        router.replace('/login');
-      }
-      
-      // Tratar caso de email já confirmado (link já usado/expirado mas email confirmado)
-      if (params.get('email-confirmed') === 'true') {
-        const message = params.get('message') || 'Seu email já está confirmado! Faça login com suas credenciais para continuar.';
-        // Mostrar como mensagem de sucesso (não erro) mas destacada
-        setError(null); // Limpar erros
-        setShowEmailConfirmed(true); // Mostrar banner
-        showToast(message);
-        router.replace('/login'); // Limpar URL após alguns segundos
-        // Esconder banner após 8 segundos
-        setTimeout(() => {
-          setShowEmailConfirmed(false);
-        }, 8000);
-      }
-      
-      if (params.get('error')) {
-        const errorMsg = params.get('message') || params.get('error');
-        // Não mostrar como erro se for sobre email confirmado
-        if (errorMsg && !errorMsg.includes('confirmado') && !errorMsg.includes('email')) {
-          setError(errorMsg || 'Erro de autenticação');
-        }
-      }
-      
-      const redirect = params.get('redirect');
-      if (redirect) {
-        sessionStorage.setItem('redirect', redirect);
-      }
+    }
+
+    const redirect = params.get("redirect");
+    if (redirect) {
+      sessionStorage.setItem("redirect", redirect);
     }
   }, [router, showToast]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+  const handleLogin = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (loading) return;
 
-    try {
-      const supabase = createClient();
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
+      setLoading(true);
+      setError(null);
 
-      if (authError) {
-        logDatabaseError('Login', authError);
-        const errorMessage = formatDatabaseError(authError);
-        
-        // Verificar se o erro é de email não confirmado
-        if (isEmailNotConfirmedError(authError)) {
-          setShowEmailNotConfirmed(true);
-          setError('Por favor, confirme seu email antes de fazer login. Verifique sua caixa de entrada.');
+      try {
+        const supabase = createClient();
+        const { data, error: authError } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+
+        if (authError) {
+          logDatabaseError("Login", authError);
+          const errorMessage = formatDatabaseError(authError);
+
+          if (isEmailNotConfirmedError(authError)) {
+            setShowEmailNotConfirmed(true);
+            setError("Por favor, confirme seu email antes de fazer login.");
+            setLoading(false);
+            return;
+          }
+
+          const isInvalidCredentials =
+            errorMessage.includes("Invalid") ||
+            errorMessage.includes("credenciais") ||
+            errorMessage.includes("inválida");
+
+          showToast(isInvalidCredentials ? "Credenciais inválidas" : errorMessage);
+          setError(isInvalidCredentials ? "Credenciais inválidas. Verifique seu email e senha." : errorMessage);
           setLoading(false);
           return;
         }
-        
-        // Usar toast para erros de login
-        if (errorMessage.includes('Invalid') || errorMessage.includes('credenciais') || errorMessage.includes('inválida')) {
-          showToast('Credenciais inválidas');
-          setError('Credenciais inválidas. Verifique seu email e senha.');
-        } else {
-          showToast(errorMessage);
-          setError(errorMessage);
+
+        if (data.user) {
+          // Associar pedidos de guest checkout (silencioso)
+          try {
+            await supabase.rpc("associate_my_guest_orders");
+          } catch {
+            // Ignora erros (pode não existir pedidos)
+          }
+
+          const redirect = sessionStorage.getItem("redirect");
+          if (redirect) {
+            sessionStorage.removeItem("redirect");
+            router.push(redirect);
+          } else {
+            router.push("/");
+          }
+          router.refresh();
         }
-        
+      } catch (err) {
+        logDatabaseError("Exceção ao fazer login", err);
+        showToast("Erro ao fazer login");
         setLoading(false);
-        return;
       }
-
-      if (data.user) {
-        // Associar pedidos de guest checkout ao usuário (se houver)
-        try {
-          await supabase.rpc('associate_my_guest_orders');
-        } catch (assocError) {
-          // Silenciosamente ignora erros de associação (pode não existir pedidos)
-        }
-
-        // Verificar se há redirect salvo
-        const redirect = sessionStorage.getItem('redirect');
-        if (redirect) {
-          sessionStorage.removeItem('redirect');
-          router.push(redirect);
-        } else {
-          router.push('/');
-        }
-        router.refresh();
-      }
-    } catch (err) {
-      logDatabaseError('Exceção ao fazer login', err);
-      const errorMessage = formatDatabaseError(err);
-      showToast(errorMessage || 'Erro ao fazer login');
-      setLoading(false);
-    }
-  };
+    },
+    [email, password, loading, router, showToast]
+  );
 
   return (
     <div className="min-h-screen bg-brand-offwhite flex items-center justify-center px-4 md:px-6 py-24">
@@ -287,6 +282,24 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+
+          {/* Separador */}
+          <div className="flex items-center gap-4 my-6">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-[10px] uppercase tracking-widest text-stone-400 font-medium">
+              ou
+            </span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
+          {/* Login Social com Google */}
+          <GoogleAuthButton
+            label="Continuar com Google"
+            onError={(errorMsg) => {
+              setError(errorMsg);
+              showToast(errorMsg);
+            }}
+          />
 
           {/* Links Secundários */}
           <div className="mt-8 pt-6 border-t border-gray-200 space-y-3">

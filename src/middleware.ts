@@ -8,6 +8,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // IMPORTANTE: Pular middleware para auth callback
+  // O callback precisa processar o código OAuth/PKCE antes de qualquer refresh de sessão
+  if (request.nextUrl.pathname.startsWith('/auth/callback')) {
+    return NextResponse.next();
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })

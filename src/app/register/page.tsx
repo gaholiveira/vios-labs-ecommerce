@@ -1,12 +1,14 @@
-'use client';
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { createClient } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Mail } from 'lucide-react';
-import { formatDatabaseError, logDatabaseError } from '@/utils/errorHandler';
-import { useCart } from '@/context/CartContext';
+"use client";
+
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Mail } from "lucide-react";
+import { formatDatabaseError, logDatabaseError } from "@/utils/errorHandler";
+import { useCart } from "@/context/CartContext";
+import GoogleAuthButton from "@/components/google-auth-button";
 
 interface FormErrors {
   full_name?: string;
@@ -16,9 +18,9 @@ interface FormErrors {
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
-    full_name: '',
-    email: '',
-    password: '',
+    full_name: "",
+    email: "",
+    password: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -301,6 +303,24 @@ export default function RegisterPage() {
                     )}
                   </button>
                 </form>
+
+                {/* Separador */}
+                <div className="flex items-center gap-4 my-6">
+                  <div className="flex-1 h-px bg-gray-200" />
+                  <span className="text-[10px] uppercase tracking-widest text-stone-400 font-medium">
+                    ou
+                  </span>
+                  <div className="flex-1 h-px bg-gray-200" />
+                </div>
+
+                {/* Login Social com Google */}
+                <GoogleAuthButton
+                  label="Registrar com Google"
+                  onError={(errorMsg) => {
+                    setError(errorMsg);
+                    showToast(errorMsg);
+                  }}
+                />
 
                 {/* Link para Login */}
                 <div className="mt-8 pt-6 border-t border-gray-200">

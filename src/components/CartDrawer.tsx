@@ -8,6 +8,7 @@ import { useCart } from '@/context/CartContext';
 import { formatPrice } from '@/utils/format';
 import ShippingMeter from '@/components/cart/ShippingMeter';
 import { useAuth } from '@/hooks/useAuth';
+import GoogleAuthButton from '@/components/google-auth-button';
 
 function CartDrawer() {
   const { cart, isOpen, setIsOpen, removeFromCart, updateQuantity, totalPrice } = useCart();
@@ -273,6 +274,26 @@ function CartDrawer() {
                   Frete calculado no checkout
                 </p>
               </div>
+
+              {/* Login rápido para guests - discreto */}
+              {!user && (
+                <div className="mb-4 pb-4 border-b border-gray-200">
+                  <p className="text-[10px] text-center text-stone-500 uppercase tracking-wider mb-3">
+                    Acesse sua conta para acompanhar pedidos
+                  </p>
+                  <GoogleAuthButton
+                    label="Entrar com Google"
+                    className="mb-2"
+                  />
+                  <Link
+                    href="/login"
+                    onClick={handleCloseCart}
+                    className="block text-center text-[10px] text-stone-400 hover:text-brand-green transition-colors"
+                  >
+                    ou entre com email e senha
+                  </Link>
+                </div>
+              )}
               
               <button
                 onClick={handleCheckout}
