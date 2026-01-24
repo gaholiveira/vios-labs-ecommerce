@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import LoteZeroSalesForm from './LoteZeroSalesForm';
+import TextReveal from '@/components/ui/text-reveal';
 
 interface LoteZeroSplitScreenProps {
   user: any;
@@ -57,25 +58,34 @@ export default function LoteZeroSplitScreen({
         {/* Conteúdo centralizado */}
         <div className="relative z-20 flex flex-col items-center justify-center px-12 w-full">
           {/* Texto sobreposto: LOTE ZERO - Edição Limitada */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="text-center"
-          >
-            <h1 className="text-5xl md:text-7xl font-extralight uppercase tracking-[0.1em] text-brand-offwhite mb-6">
-              LOTE ZERO
-            </h1>
-            <div className="space-y-3">
+          <div className="text-center">
+            <TextReveal
+              text="LOTE ZERO"
+              el="h1"
+              className="text-5xl md:text-7xl font-extralight uppercase tracking-[0.1em] text-brand-offwhite mb-6"
+              delay={0.6}
+              duration={0.8}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 1.2 }}
+              className="space-y-3"
+            >
               <p className="text-sm md:text-base font-light tracking-[0.4em] text-brand-offwhite/60 uppercase">
                 Edição Limitada
               </p>
-              <div className="w-16 h-px bg-brand-offwhite/30 mx-auto"></div>
+              <motion.div 
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ duration: 0.6, delay: 1.4 }}
+                className="w-16 h-px bg-brand-offwhite/30 mx-auto origin-center"
+              />
               <p className="text-xs md:text-sm font-extralight tracking-[0.5em] text-brand-offwhite/50 uppercase">
                 Exclusivo
               </p>
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </div>
 
         {/* Rodapé da coluna: Escassez e Exclusividade */}
@@ -123,25 +133,34 @@ export default function LoteZeroSplitScreen({
         </div>
         <div className="absolute inset-0 bg-black/20 z-10"></div>
         <div className="relative z-20 flex flex-col items-center justify-center h-full px-4 py-8">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-center"
-          >
-            <h1 className="text-3xl sm:text-4xl font-extralight uppercase tracking-[0.08em] text-brand-offwhite mb-4 text-center">
-              LOTE ZERO
-            </h1>
-            <div className="space-y-2">
+          <div className="text-center">
+            <TextReveal
+              text="LOTE ZERO"
+              el="h1"
+              className="text-3xl sm:text-4xl font-extralight uppercase tracking-[0.08em] text-brand-offwhite mb-4 text-center"
+              delay={0.2}
+              duration={0.6}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
+              className="space-y-2"
+            >
               <p className="text-xs sm:text-sm font-light tracking-[0.3em] text-brand-offwhite/60 uppercase">
                 Edição Limitada
               </p>
-              <div className="w-12 h-px bg-brand-offwhite/30 mx-auto"></div>
+              <motion.div 
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ duration: 0.5, delay: 0.8 }}
+                className="w-12 h-px bg-brand-offwhite/30 mx-auto origin-center"
+              />
               <p className="text-[10px] sm:text-xs font-extralight tracking-[0.4em] text-brand-offwhite/50 uppercase">
                 Exclusivo
               </p>
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
