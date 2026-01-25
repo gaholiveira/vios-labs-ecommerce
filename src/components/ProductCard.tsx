@@ -24,7 +24,11 @@ function ProductCard({ product }: { product: Product }) {
     const starId = `half-star-${product.id}`;
 
     return (
-      <div className="flex items-center gap-0.5" role="img" aria-label={`Avaliação: ${rating} de 5 estrelas`}>
+      <div
+        className="flex items-center gap-0.5"
+        role="img"
+        aria-label={`Avaliação: ${rating} de 5 estrelas`}
+      >
         {Array.from({ length: fullStars }, (_, i) => (
           <svg
             key={`full-${i}`}
@@ -68,7 +72,7 @@ function ProductCard({ product }: { product: Product }) {
   };
 
   return (
-    <div className="group flex flex-col">
+    <div className="group flex flex-col md:transition-all md:duration-500 md:ease-out md:hover:-translate-y-1 md:hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)]">
       {/* Container da Imagem com Badge e Overlay */}
       <Link
         href={`/produto/${product.id}`}
@@ -82,6 +86,8 @@ function ProductCard({ product }: { product: Product }) {
           className="object-cover transition-transform duration-700 group-hover:scale-105"
           loading="lazy"
           quality={85}
+          placeholder="blur"
+          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
         />
 
         {/* Badge */}
@@ -103,9 +109,9 @@ function ProductCard({ product }: { product: Product }) {
         </div>
 
         {/* Overlay no Hover com Texto "Ver Detalhes" */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-          <div className="bg-brand-offwhite px-6 py-3 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-            <span className="text-[10px] uppercase tracking-wider text-brand-softblack font-medium">
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500 ease-out flex items-center justify-center opacity-0 group-hover:opacity-100">
+          <div className="bg-brand-offwhite px-6 py-3 transform translate-y-4 group-hover:translate-y-0 transition-all duration-500 ease-out">
+            <span className="text-[10px] uppercase tracking-wider text-brand-softblack font-light">
               Ver Detalhes
             </span>
           </div>
@@ -123,7 +129,7 @@ function ProductCard({ product }: { product: Product }) {
 
         {/* Nome do Produto */}
         <Link href={`/produto/${product.id}`}>
-          <h3 className="text-xs sm:text-sm uppercase tracking-wider font-medium text-brand-softblack hover:text-brand-green transition-colors leading-tight">
+          <h3 className="text-xs sm:text-sm uppercase tracking-wider font-light text-brand-softblack hover:text-brand-green transition-colors duration-500 ease-out leading-tight">
             {product.name}
           </h3>
         </Link>
@@ -152,12 +158,12 @@ function ProductCard({ product }: { product: Product }) {
           )}
         </div>
 
-        {/* Botão Adicionar ao Carrinho (Desabilitado) */}
+        {/* Botão Adicionar ao Carrinho (Desabilitado) - Estilo Minimalista de Luxo */}
         <button
           disabled
-          className="w-full border border-stone-300 rounded-sm bg-stone-200 text-stone-500 px-6 py-3 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium transition-all duration-300 mt-2 cursor-not-allowed"
+          className="w-full border border-brand-green/30 rounded-sm bg-brand-offwhite/50 text-brand-softblack/60 px-6 py-3 min-h-[44px] uppercase tracking-wider text-xs font-light transition-all duration-500 ease-out mt-2 cursor-not-allowed"
         >
-          Lançamento em Breve
+          Aguardando Lote Zero
         </button>
       </div>
     </div>

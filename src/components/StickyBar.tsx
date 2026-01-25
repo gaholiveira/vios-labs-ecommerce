@@ -38,7 +38,7 @@ export default function StickyBar({
 
     // Encontrar o botão original na página
     const originalButton = document.querySelector(
-      '[data-sticky-bar-trigger]'
+      "[data-sticky-bar-trigger]",
     ) as HTMLButtonElement;
 
     if (originalButton) {
@@ -74,9 +74,9 @@ export default function StickyBar({
             <button
               disabled
               className="flex-shrink-0 border border-stone-300 rounded-sm bg-stone-200 text-stone-500 px-4 py-2.5 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium transition-all duration-300 whitespace-nowrap cursor-not-allowed"
-              aria-label="Lançamento em breve"
+              aria-label="Aguardando Lote Zero"
             >
-              Em Breve
+              Lote Zero
             </button>
           </div>
         </motion.div>

@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { motion, useInView } from 'framer-motion';
-import { useRef, useMemo, useEffect, useState } from 'react';
+import { motion, useInView } from "framer-motion";
+import { useRef, useMemo, useEffect, useState } from "react";
 
 interface TextRevealProps {
   text: string;
-  el?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'div' | 'span';
+  el?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p" | "div" | "span";
   className?: string;
   delay?: number;
   duration?: number;
@@ -13,13 +13,13 @@ interface TextRevealProps {
 
 export default function TextReveal({
   text,
-  el: Element = 'h1',
-  className = '',
+  el: Element = "h1",
+  className = "",
   delay = 0,
   duration = 0.5,
 }: TextRevealProps) {
   const ref = useRef<HTMLSpanElement>(null);
-  const isInView = useInView(ref, { once: true, margin: '0px', amount: 0.1 });
+  const isInView = useInView(ref, { once: true, margin: "0px", amount: 0.1 });
   const [shouldAnimate, setShouldAnimate] = useState(false);
 
   // Verificar se o elemento já está visível no mount (para hero section no topo)
@@ -45,7 +45,7 @@ export default function TextReveal({
   }, [isInView]);
 
   // Quebrar texto em palavras
-  const words = useMemo(() => text.split(' '), [text]);
+  const words = useMemo(() => text.split(" "), [text]);
 
   // Container variants com stagger
   const containerVariants = {
@@ -64,12 +64,12 @@ export default function TextReveal({
     hidden: {
       opacity: 0,
       y: 20,
-      filter: 'blur(10px)',
+      filter: "blur(10px)",
     },
     visible: {
       opacity: 1,
       y: 0,
-      filter: 'blur(0px)',
+      filter: "blur(0px)",
       transition: {
         duration: duration,
         ease: "easeOut" as const,
@@ -84,7 +84,7 @@ export default function TextReveal({
     <>
       {/* Texto completo para leitores de tela e SEO */}
       <span className="sr-only">{text}</span>
-      
+
       {/* Elemento com classe aplicada */}
       <ElementComponent className={className}>
         {/* Motion span com ref para useInView - este é o container animado */}
@@ -93,7 +93,7 @@ export default function TextReveal({
           aria-hidden="true"
           variants={containerVariants}
           initial="hidden"
-          animate={shouldAnimate || isInView ? 'visible' : 'hidden'}
+          animate={shouldAnimate || isInView ? "visible" : "hidden"}
           className="inline-block"
         >
           {words.map((word, index) => (
@@ -101,7 +101,7 @@ export default function TextReveal({
               key={`${word}-${index}`}
               variants={wordVariants}
               className="inline-block"
-              style={{ marginRight: index < words.length - 1 ? '0.25em' : '0' }}
+              style={{ marginRight: index < words.length - 1 ? "0.25em" : "0" }}
             >
               {word}
             </motion.span>

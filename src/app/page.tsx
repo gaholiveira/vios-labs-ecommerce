@@ -38,7 +38,8 @@ export default function Home() {
       // PRIORIDADE 2: Se há erros relacionados a OTP expirado ou acesso negado (password reset)
       if (error === "access_denied" && errorCode === "otp_expired") {
         // Redirecionar para forgot-password com mensagem amigável
-        const message = "Link de redefinição de senha expirado ou inválido. Por favor, solicite um novo link.";
+        const message =
+          "Link de redefinição de senha expirado ou inválido. Por favor, solicite um novo link.";
         router.replace(`/forgot-password?error=${encodeURIComponent(message)}`);
         return;
       }
@@ -61,21 +62,24 @@ export default function Home() {
 
   // Handler para scroll suave - Memoizado
   const handleExploreClick = useCallback(() => {
-    const productsSection = document.getElementById('produtos');
+    const productsSection = document.getElementById("produtos");
     if (productsSection) {
-      productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      productsSection.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, []);
 
   // Memoizar estilo de altura do viewport
-  const heroStyle = useMemo(() => ({
-    height: viewportHeight ? `${viewportHeight}px` : '100svh'
-  }), [viewportHeight]);
+  const heroStyle = useMemo(
+    () => ({
+      height: viewportHeight ? `${viewportHeight}px` : "100svh",
+    }),
+    [viewportHeight],
+  );
 
   return (
     <main>
       {/* Hero Section */}
-      <section 
+      <section
         className="relative w-full flex items-center justify-center overflow-hidden bg-brand-softblack"
         style={heroStyle}
       >
@@ -97,31 +101,44 @@ export default function Home() {
         {/* Overlay para escurecer a imagem e destacar o texto */}
         <div className="absolute inset-0 bg-black/30 z-[1]" />
 
-        {/* Conteúdo do Banner */}
+        {/* Conteúdo do Banner com micro-interações */}
         <div className="relative z-10 text-center px-4">
-          <span className="uppercase tracking-[0.5em] text-[10px] mb-4 block text-brand-offwhite">
-            A ciência da melhor versão
-          </span>
-          <TextReveal
-            text="Vios 2026"
-            el="h1"
-            className="text-5xl md:text-7xl font-extralight mb-8 uppercase tracking-tighter text-brand-offwhite"
-            delay={0.1}
-            duration={0.8}
-          />
-          <TextReveal
-            text="Bem-vindo à nova era da biotecnologia aplicada ao bem-estar. Produtos de alta performance desenvolvidos com rigor científico e design minimalista."
-            el="p"
-            className="text-brand-offwhite/80 text-sm md:text-base font-light tracking-wide max-w-2xl mx-auto mb-8"
-            delay={0.6}
-            duration={0.6}
-          />
-          <button 
-            onClick={handleExploreClick}
-            className="border border-brand-offwhite rounded-sm px-10 py-4 min-h-[44px] text-xs uppercase tracking-[0.2em] text-brand-offwhite active:bg-brand-green/80 active:text-brand-offwhite active:border-brand-green md:hover:bg-brand-green md:hover:text-brand-offwhite md:hover:border-brand-green transition-all duration-500 ease-out md:transform md:hover:scale-105 font-medium"
-          >
-            Explorar Loja
-          </button>
+          <div className="max-w-4xl mx-auto md:transform md:transition-all md:duration-500 md:ease-out md:hover:-translate-y-1 md:hover:shadow-[0_20px_40px_rgba(0,0,0,0.15)]">
+            {/* Pré-título com micro-interação */}
+            <span className="inline-block uppercase tracking-[0.5em] text-[10px] mb-4 md:mb-6 block text-brand-offwhite md:transition-all md:duration-500 md:ease-out md:hover:-translate-y-1">
+              A ciência da melhor versão
+            </span>
+
+            {/* Título Principal */}
+            <div className="md:transition-all md:duration-500 md:ease-out md:hover:-translate-y-1">
+              <TextReveal
+                text="Vios 2026"
+                el="h1"
+                className="text-5xl md:text-7xl font-extralight mb-6 md:mb-8 uppercase tracking-tighter text-brand-offwhite"
+                delay={0.1}
+                duration={0.8}
+              />
+            </div>
+
+            {/* Subtítulo com micro-interação */}
+            <div className="md:transition-all md:duration-500 md:ease-out md:hover:-translate-y-1">
+              <TextReveal
+                text="Bem-vindo à nova era da biotecnologia aplicada ao bem-estar. Produtos de alta performance desenvolvidos com rigor científico e design minimalista."
+                el="p"
+                className="text-brand-offwhite/80 text-sm md:text-base font-light tracking-wide max-w-2xl mx-auto mb-8 md:mb-10"
+                delay={0.6}
+                duration={0.6}
+              />
+            </div>
+
+            {/* Botão CTA Minimalista de Luxo */}
+            <button
+              onClick={handleExploreClick}
+              className="border border-brand-offwhite/90 rounded-sm px-10 md:px-12 py-4 md:py-5 min-h-[44px] text-xs md:text-sm uppercase tracking-wider text-brand-offwhite font-light active:bg-brand-green active:text-brand-offwhite active:border-brand-green md:hover:bg-brand-green md:hover:text-brand-offwhite md:hover:border-brand-green md:hover:shadow-[0_10px_30px_rgba(10,51,35,0.25)] md:transition-all md:duration-500 md:ease-out md:transform md:hover:-translate-y-1"
+            >
+              Explorar Loja
+            </button>
+          </div>
         </div>
       </section>
 
@@ -151,7 +168,7 @@ export default function Home() {
 // Componente separado para o Grid de Produtos com animação em cascata
 function ProductsGrid({ products }: { products: typeof PRODUCTS }) {
   const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: '-100px' });
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -164,12 +181,12 @@ function ProductsGrid({ products }: { products: typeof PRODUCTS }) {
   };
 
   const cardVariants = {
-    hidden: { 
-      opacity: 0, 
-      y: 20 
+    hidden: {
+      opacity: 0,
+      y: 20,
     },
-    show: { 
-      opacity: 1, 
+    show: {
+      opacity: 1,
       y: 0,
       transition: {
         duration: 0.5,
@@ -183,14 +200,16 @@ function ProductsGrid({ products }: { products: typeof PRODUCTS }) {
       ref={ref}
       variants={containerVariants}
       initial="hidden"
-      animate={isInView ? 'show' : 'hidden'}
+      animate={isInView ? "show" : "hidden"}
       className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-x-10 sm:gap-y-16"
     >
       {products.map((product, index) => (
         <motion.div
           key={product.id}
           variants={cardVariants}
-          className={index === products.length - 1 ? "col-span-2 lg:col-span-1" : ""}
+          className={
+            index === products.length - 1 ? "col-span-2 lg:col-span-1" : ""
+          }
         >
           <ProductCard product={product} />
         </motion.div>

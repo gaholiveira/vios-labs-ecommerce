@@ -1,20 +1,74 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import { Search, Command, Home, BookOpen, Sparkles, User, Package, X } from 'lucide-react';
-import { PRODUCTS, Product } from '@/constants/products';
-import { formatPrice } from '@/utils/format';
-import Image from 'next/image';
-import Link from 'next/link';
+import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Search,
+  Command,
+  Home,
+  BookOpen,
+  Sparkles,
+  User,
+  Package,
+  X,
+} from "lucide-react";
+import { PRODUCTS, Product } from "@/constants/products";
+import { formatPrice } from "@/utils/format";
+import Image from "next/image";
+import Link from "next/link";
 
 // Palavras-chave adicionais para cada produto
 const productKeywords: Record<string, string[]> = {
-  'prod_1': ['pele', 'brilho', 'estética', 'vegano', 'morango', 'goma', 'dérmica', 'tapioca', 'pectina'],
-  'prod_2': ['sono', 'melatonina', 'repouso', 'maracujá', 'relaxamento', 'circadiano', 'descanso', 'dormir'],
-  'prod_3': ['magnésio', 'equilíbrio', 'ossos', 'neuromuscular', 'homeostase', 'mineral', 'ósssea'],
-  'prod_4': ['energia', 'performance', 'foco', 'termogênese', 'atividade física', 'resistência', 'estimulante', 'cognitiva'],
-  'prod_5': ['mobilidade', 'articulações', 'músculos', 'movimento', 'inflamação', 'lubrificação', 'estrutural', 'articular'],
+  prod_1: [
+    "pele",
+    "brilho",
+    "estética",
+    "vegano",
+    "morango",
+    "goma",
+    "dérmica",
+    "tapioca",
+    "pectina",
+  ],
+  prod_2: [
+    "sono",
+    "melatonina",
+    "repouso",
+    "maracujá",
+    "relaxamento",
+    "circadiano",
+    "descanso",
+    "dormir",
+  ],
+  prod_3: [
+    "magnésio",
+    "equilíbrio",
+    "ossos",
+    "neuromuscular",
+    "homeostase",
+    "mineral",
+    "ósssea",
+  ],
+  prod_4: [
+    "energia",
+    "performance",
+    "foco",
+    "termogênese",
+    "atividade física",
+    "resistência",
+    "estimulante",
+    "cognitiva",
+  ],
+  prod_5: [
+    "mobilidade",
+    "articulações",
+    "músculos",
+    "movimento",
+    "inflamação",
+    "lubrificação",
+    "estrutural",
+    "articular",
+  ],
 };
 
 // Função de busca
@@ -24,18 +78,22 @@ function searchProducts(query: string): Product[] {
   const searchTerm = query.toLowerCase().trim();
   const searchWords = searchTerm.split(/\s+/);
 
-  return PRODUCTS.filter(product => {
+  return PRODUCTS.filter((product) => {
     const nameMatch = product.name.toLowerCase().includes(searchTerm);
-    const descriptionMatch = product.description.toLowerCase().includes(searchTerm);
+    const descriptionMatch = product.description
+      .toLowerCase()
+      .includes(searchTerm);
     const keywords = productKeywords[product.id] || [];
-    const keywordMatch = keywords.some(keyword => 
-      keyword.toLowerCase().includes(searchTerm) || 
-      searchWords.some(word => keyword.toLowerCase().includes(word))
+    const keywordMatch = keywords.some(
+      (keyword) =>
+        keyword.toLowerCase().includes(searchTerm) ||
+        searchWords.some((word) => keyword.toLowerCase().includes(word)),
     );
-    const wordMatch = searchWords.every(word => 
-      product.name.toLowerCase().includes(word) ||
-      product.description.toLowerCase().includes(word) ||
-      keywords.some(keyword => keyword.toLowerCase().includes(word))
+    const wordMatch = searchWords.every(
+      (word) =>
+        product.name.toLowerCase().includes(word) ||
+        product.description.toLowerCase().includes(word) ||
+        keywords.some((keyword) => keyword.toLowerCase().includes(word)),
     );
 
     return nameMatch || descriptionMatch || keywordMatch || wordMatch;
@@ -44,16 +102,16 @@ function searchProducts(query: string): Product[] {
 
 // Links de navegação rápida
 const quickLinks = [
-  { href: '/', label: 'Início', icon: Home },
-  { href: '/sobre', label: 'Sobre Nós', icon: BookOpen },
-  { href: '/lote-zero', label: 'Lote Zero', icon: Sparkles },
-  { href: '/profile', label: 'Minha Conta', icon: User },
-  { href: '/orders', label: 'Meus Pedidos', icon: Package },
+  { href: "/", label: "Início", icon: Home },
+  { href: "/sobre", label: "Sobre Nós", icon: BookOpen },
+  { href: "/lote-zero", label: "Lote Zero", icon: Sparkles },
+  { href: "/profile", label: "Minha Conta", icon: User },
+  { href: "/orders", label: "Meus Pedidos", icon: Package },
 ];
 
 export default function SiteSearch() {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const router = useRouter();
 
   // Buscar produtos
@@ -65,32 +123,32 @@ export default function SiteSearch() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // CMD+K no Mac, CTRL+K no Windows/Linux
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setOpen((prev) => !prev);
       }
       // ESC para fechar
-      if (e.key === 'Escape' && open) {
+      if (e.key === "Escape" && open) {
         setOpen(false);
-        setQuery('');
+        setQuery("");
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown, { passive: true });
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown, { passive: true });
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open]);
 
   // Resetar query ao fechar
   useEffect(() => {
     if (!open) {
-      setQuery('');
+      setQuery("");
     }
   }, [open]);
 
   const handleSelect = (href: string) => {
     router.push(href);
     setOpen(false);
-    setQuery('');
+    setQuery("");
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -98,12 +156,14 @@ export default function SiteSearch() {
     // Apenas no desktop com backdrop visível
     if (e.target === e.currentTarget && window.innerWidth >= 768) {
       setOpen(false);
-      setQuery('');
+      setQuery("");
     }
   };
 
-  const isMac = typeof window !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-  const cmdKey = isMac ? '⌘' : 'Ctrl';
+  const isMac =
+    typeof window !== "undefined" &&
+    navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+  const cmdKey = isMac ? "⌘" : "Ctrl";
 
   return (
     <>
@@ -146,7 +206,10 @@ export default function SiteSearch() {
           <div className="relative flex flex-col w-screen h-screen md:w-full md:h-auto md:max-w-2xl md:max-h-[80vh] bg-[#faf9f6] md:border md:border-[#082f1e]/10 md:shadow-sm rounded-none md:rounded-lg overflow-hidden translate-y-0 md:translate-y-0">
             {/* Header com Input */}
             <div className="flex items-center gap-3 px-4 py-4 md:py-3 border-b border-[#082f1e]/10">
-              <Search className="w-4 h-4 md:w-4 text-[#082f1e] shrink-0" strokeWidth={1.5} />
+              <Search
+                className="w-4 h-4 md:w-4 text-[#082f1e] shrink-0"
+                strokeWidth={1.5}
+              />
               <input
                 type="text"
                 value={query}
@@ -159,7 +222,7 @@ export default function SiteSearch() {
               <button
                 onClick={() => {
                   setOpen(false);
-                  setQuery('');
+                  setQuery("");
                 }}
                 className="md:hidden min-h-[44px] min-w-[44px] flex items-center justify-center text-[#082f1e] active:opacity-70 transition-opacity"
                 aria-label="Fechar busca"
@@ -190,7 +253,10 @@ export default function SiteSearch() {
                           onClick={() => handleSelect(link.href)}
                           className="group w-full flex items-center gap-3 px-3 py-3 md:py-2 text-left text-sm text-stone-600 hover:bg-[#082f1e]/5 hover:text-[#082f1e] rounded-sm transition-all duration-200 border-l-2 border-transparent hover:border-[#082f1e]"
                         >
-                          <IconComponent className="w-4 h-4 text-[#082f1e] group-hover:text-[#082f1e]" strokeWidth={1.5} />
+                          <IconComponent
+                            className="w-4 h-4 text-[#082f1e] group-hover:text-[#082f1e]"
+                            strokeWidth={1.5}
+                          />
                           <span>{link.label}</span>
                         </button>
                       );
@@ -214,7 +280,7 @@ export default function SiteSearch() {
                             href={`/produto/${product.id}`}
                             onClick={() => {
                               setOpen(false);
-                              setQuery('');
+                              setQuery("");
                             }}
                             className="group flex items-center gap-3 px-3 py-3 md:py-2 text-left hover:bg-[#082f1e]/5 rounded-sm transition-all duration-200 border-l-2 border-transparent hover:border-[#082f1e]"
                           >
@@ -248,7 +314,8 @@ export default function SiteSearch() {
                         Nenhum resultado encontrado para &quot;{query}&quot;
                       </p>
                       <p className="text-xs text-stone-400">
-                        Tente buscar por: pele, sono, magnésio, energia, mobilidade
+                        Tente buscar por: pele, sono, magnésio, energia,
+                        mobilidade
                       </p>
                     </div>
                   )}
@@ -262,15 +329,17 @@ export default function SiteSearch() {
                     Sugestões de Busca
                   </div>
                   <div className="flex flex-wrap gap-2 px-2">
-                    {['pele', 'sono', 'magnésio', 'energia', 'mobilidade'].map((suggestion) => (
-                      <button
-                        key={suggestion}
-                        onClick={() => setQuery(suggestion)}
-                        className="px-3 py-1 text-xs uppercase tracking-wider border border-[#082f1e]/20 text-[#082f1e] bg-transparent hover:bg-[#082f1e] hover:text-white transition-colors rounded-sm"
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
+                    {["pele", "sono", "magnésio", "energia", "mobilidade"].map(
+                      (suggestion) => (
+                        <button
+                          key={suggestion}
+                          onClick={() => setQuery(suggestion)}
+                          className="px-3 py-1 text-xs uppercase tracking-wider border border-[#082f1e]/20 text-[#082f1e] bg-transparent hover:bg-[#082f1e] hover:text-white transition-colors rounded-sm"
+                        >
+                          {suggestion}
+                        </button>
+                      ),
+                    )}
                   </div>
                 </div>
               )}
@@ -281,16 +350,22 @@ export default function SiteSearch() {
               <div className="flex items-center justify-between text-[10px] text-[#082f1e]/60">
                 <div className="flex items-center gap-4">
                   <span className="flex items-center gap-1">
-                    <kbd className="px-1 py-0.5 bg-white border border-[#082f1e]/10 rounded">↑↓</kbd>
+                    <kbd className="px-1 py-0.5 bg-white border border-[#082f1e]/10 rounded">
+                      ↑↓
+                    </kbd>
                     <span>Navegar</span>
                   </span>
                   <span className="flex items-center gap-1">
-                    <kbd className="px-1 py-0.5 bg-white border border-[#082f1e]/10 rounded">↵</kbd>
+                    <kbd className="px-1 py-0.5 bg-white border border-[#082f1e]/10 rounded">
+                      ↵
+                    </kbd>
                     <span>Selecionar</span>
                   </span>
                 </div>
                 <span className="flex items-center gap-1">
-                  <kbd className="px-1 py-0.5 bg-white border border-[#082f1e]/10 rounded">ESC</kbd>
+                  <kbd className="px-1 py-0.5 bg-white border border-[#082f1e]/10 rounded">
+                    ESC
+                  </kbd>
                   <span>Fechar</span>
                 </span>
               </div>
