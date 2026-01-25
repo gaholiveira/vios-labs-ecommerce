@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     // Fallback: Usar signUp com senha temporária
     // Isso enviará email de confirmação se o usuário existir e não estiver confirmado
     // Se o usuário já estiver confirmado, retornará erro mas não criará conta duplicada
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email: email.trim(),
       password: `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`, // Senha temporária única
       options: {

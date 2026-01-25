@@ -167,8 +167,6 @@ async function handleCheckoutSessionCompleted(
                        session.customer_details?.email || 
                        (metadata.customerEmail && metadata.customerEmail !== 'null' ? metadata.customerEmail : null);
     
-    const isGuest = metadata.isGuest === 'true' || !userId;
-
     // Validar que temos um email do cliente (OBRIGATÓRIO)
     if (!customerEmail || customerEmail === 'null') {
       console.error('❌ Missing customer email in session:', {

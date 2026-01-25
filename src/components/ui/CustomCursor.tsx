@@ -107,7 +107,7 @@ export default function CustomCursor() {
             }
             return true;
           }
-        } catch (e) {
+        } catch {
           // Ignorar erros de estilo computado
         }
 
@@ -199,7 +199,7 @@ export default function CustomCursor() {
             setIsHovering(false);
           }
         }
-      } catch (error) {
+      } catch {
         // Em caso de erro (elemento removido do DOM, etc), resetar para estado normal
         if (isHovering) {
           setIsHovering(false);

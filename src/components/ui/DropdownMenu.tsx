@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback, memo } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 interface DropdownMenuItem {

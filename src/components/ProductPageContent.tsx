@@ -10,6 +10,7 @@ import StickyBar from "@/components/StickyBar";
 import KeyIngredients from "@/components/KeyIngredients";
 import WaitlistModal from "@/components/WaitlistModal";
 import TextReveal from "@/components/ui/text-reveal";
+import { ShareButton } from "@/components/shop/ShareButton";
 import { Product } from "@/constants/products";
 import { useAuth } from "@/hooks/useAuth";
 import type { InventoryStatus } from "@/types/database";
@@ -680,6 +681,18 @@ function ProductPageContent({ product }: ProductPageContentProps) {
           >
             Aguardando Lote Zero
           </motion.button>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.15 }}
+            className="flex justify-center mt-4"
+          >
+            <ShareButton
+              title={product.name}
+              text={`${product.name} — VIOS LABS. ${product.category}.`}
+            />
+          </motion.div>
 
           {/* Trust Badges */}
           <div className="flex items-center justify-center gap-4 mt-4">

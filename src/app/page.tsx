@@ -24,7 +24,6 @@ export default function Home() {
       const code = params.get("code");
       const error = params.get("error");
       const errorCode = params.get("error_code");
-      const errorDescription = params.get("error_description");
 
       // PRIORIDADE 1: Se há um código na URL (Supabase enviou para home ao invés de /auth/callback)
       // Redirecionar para /auth/callback preservando todos os parâmetros
@@ -164,7 +163,6 @@ export default function Home() {
     </main>
   );
 }
-
 // Componente separado para o Grid de Produtos com animação em cascata
 function ProductsGrid({ products }: { products: typeof PRODUCTS }) {
   const ref = useRef<HTMLDivElement>(null);

@@ -49,7 +49,7 @@ export default function OrdersPage() {
     try {
       setAssociating(true);
       // Chamar a função do Supabase para associar pedidos
-      const { data, error } = await supabase.rpc('associate_my_guest_orders');
+      const { error } = await supabase.rpc('associate_my_guest_orders');
       if (error) {
         // Função pode não existir ainda se o SQL não foi executado
         if (error.code === '42883' || error.message?.includes('does not exist')) {

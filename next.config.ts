@@ -53,7 +53,10 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   // swcMinify removido - SWC é o minificador padrão no Next.js 16+
-  
+  ...(process.env.NODE_ENV === "production" && {
+    compiler: { removeConsole: { exclude: ["error", "warn"] } },
+  }),
+
   // Otimizações experimentais para melhor performance (compatível com Turbopack)
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion'],

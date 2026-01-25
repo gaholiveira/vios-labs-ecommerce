@@ -111,7 +111,7 @@ export default function LoteZeroPage() {
               setAlreadyVip(true);
               setSubmitted(true);
             }
-          } catch (vipErr) {
+          } catch {
             // Tabela não existe ou não está na lista - continua normalmente
           }
 
