@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { formatDatabaseError, logDatabaseError } from "@/utils/errorHandler";
+import { formatPhone } from "@/utils/format";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 
@@ -100,7 +101,8 @@ export default function LoteZeroSalesForm({
     try {
       const emailTrimmed = localEmail.trim().toLowerCase();
       const fullNameTrimmed = localName.trim();
-      const phoneTrimmed = whatsapp.trim() || null;
+      // Remove formatação do telefone antes de enviar (apenas números)
+      const phoneTrimmed = whatsapp.trim() ? whatsapp.replace(/\D/g, '') : null;
 
       // ========================================================================
       // USAR API ROUTE SERVER-SIDE PARA GARANTIR INSERÇÃO
@@ -511,9 +513,12 @@ export default function LoteZeroSalesForm({
             <input
               type="tel"
               value={whatsapp}
-              onChange={(e) => setWhatsapp(e.target.value)}
+              onChange={(e) => {
+                const formatted = formatPhone(e.target.value);
+                setWhatsapp(formatted);
+              }}
               className="w-full bg-transparent border-0 border-b border-gray-300 pb-2 sm:pb-3 focus:border-black outline-none transition-colors font-mono text-sm sm:text-base text-brand-softblack placeholder:text-gray-400"
-              placeholder="+55 11 99999-9999"
+              placeholder="(11) 99999-9999"
             />
             <p className="text-[10px] text-brand-softblack/50 mt-1">
               Para receber atualizações exclusivas sobre o Lote Zero
@@ -555,7 +560,7 @@ export default function LoteZeroSalesForm({
             )}
           </button>
 
-          {/* Link de Login Discreto - Apenas para usuários não logados */}
+          {/* Link de Login e Criar Conta - Apenas para usuários não logados */}
           {!user && (
             <div className="mt-4 text-center">
               <p className="text-xs sm:text-sm text-stone-400">
@@ -566,26 +571,18 @@ export default function LoteZeroSalesForm({
                 >
                   Faça Login
                 </Link>
+                {" ou "}
+                <Link
+                  href="/register"
+                  className="font-medium text-stone-600 hover:text-brand-green transition-colors underline"
+                >
+                  crie uma conta
+                </Link>
+                {" para acompanhar seu pedido e ter acesso exclusivo a futuros lançamentos."}
               </p>
             </div>
           )}
         </form>
-
-        {/* Mensagem para usuários não logados */}
-        {!user && (
-          <div className="mb-8 p-4 bg-brand-green/5 border border-brand-green/20 rounded-sm">
-            <p className="text-xs sm:text-sm text-brand-softblack/70 mb-2">
-              💡 <strong>Dica:</strong> Crie uma conta para acompanhar seu
-              pedido e ter acesso exclusivo a futuros lançamentos.
-            </p>
-            <Link
-              href="/register"
-              className="text-[10px] sm:text-xs uppercase tracking-widest text-brand-green hover:underline font-medium"
-            >
-              Criar conta →
-            </Link>
-          </div>
-        )}
 
         {/* Elementos de Confiança */}
         <div className="space-y-3 sm:space-y-4 pt-6 sm:pt-8 pb-8 sm:pb-12 md:pb-16 border-t border-gray-200">
