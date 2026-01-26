@@ -49,4 +49,4 @@ Your goal is to build a "Pharmaceutical Luxury" e-commerce platform that is perf
 Before outputting code, ask yourself:
 1. Is this type-safe?
 2. Is this performant (Server Component vs Client Component)?
-3. Does this look "High-End"?
+3. Does this look "High-End"? 
