@@ -7,6 +7,7 @@ import { formatDatabaseError, logDatabaseError } from '@/utils/errorHandler';
 import Link from 'next/link';
 import { Lock, CheckCircle2 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import AuthPageSkeleton from '@/components/ui/AuthPageSkeleton';
 
 export default function UpdatePasswordPage() {
   const [password, setPassword] = useState('');
@@ -163,23 +164,7 @@ export default function UpdatePasswordPage() {
 
   // Loading state enquanto verifica sessão
   if (checkingSession) {
-    return (
-      <div className="min-h-screen bg-brand-offwhite flex items-center justify-center px-6 py-24">
-        <div className="text-center">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <svg className="animate-spin h-8 w-8 mx-auto text-brand-softblack mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <p className="text-[10px] uppercase tracking-wider text-brand-softblack/60">A verificar...</p>
-          </motion.div>
-        </div>
-      </div>
-    );
+    return <AuthPageSkeleton />;
   }
 
   // Erro de sessão inválida

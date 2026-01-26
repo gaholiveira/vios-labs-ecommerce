@@ -8,7 +8,7 @@ export interface SupabaseError {
   code?: string;
 }
 
-export function formatDatabaseError(error: any): string {
+export function formatDatabaseError(error: unknown): string {
   if (!error) {
     return 'Erro desconhecido. Tente novamente.';
   }
@@ -29,61 +29,66 @@ export function formatDatabaseError(error: any): string {
     return error.message;
   }
 
-  // Se tem message, usar ela
-  if (error.message) {
-    const messageLower = error.message.toLowerCase();
+  // Se é um objeto com propriedades conhecidas
+  if (typeof error === 'object' && error !== null) {
+    const errorObj = error as SupabaseError & { status?: number };
     
-    // Rate limit - prioridade alta
-    if (
-      messageLower.includes('rate limit') ||
-      messageLower.includes('rate_limit') ||
-      messageLower.includes('too many requests') ||
-      messageLower.includes('email rate limit exceeded')
-    ) {
+    // Se tem message, usar ela
+    if (errorObj.message) {
+      const messageLower = errorObj.message.toLowerCase();
+      
+      // Rate limit - prioridade alta
+      if (
+        messageLower.includes('rate limit') ||
+        messageLower.includes('rate_limit') ||
+        messageLower.includes('too many requests') ||
+        messageLower.includes('email rate limit exceeded')
+      ) {
+        return 'Muitas solicitações foram feitas em pouco tempo. Por favor, aguarde alguns minutos antes de tentar novamente. Isso ajuda a proteger nosso sistema contra abusos.';
+      }
+      
+      // Mensagens comuns do Supabase com traduções amigáveis
+      if (errorObj.message.includes('already registered') || errorObj.message.includes('already exists')) {
+        return 'Este e-mail já está cadastrado. Tente fazer login.';
+      }
+      
+      if (errorObj.message.includes('password')) {
+        return 'A senha não atende aos requisitos de segurança.';
+      }
+      
+      if (errorObj.message.includes('email')) {
+        return 'E-mail inválido. Verifique e tente novamente.';
+      }
+
+      if (errorObj.message.includes('duplicate key')) {
+        return 'Este registro já existe no banco de dados.';
+      }
+
+      if (errorObj.message.includes('foreign key')) {
+        return 'Erro de referência: registro relacionado não encontrado.';
+      }
+
+      if (errorObj.message.includes('permission denied') || errorObj.message.includes('row-level security')) {
+        return 'Permissão negada. Verifique as políticas de segurança do banco de dados.';
+      }
+
+      // Retornar a mensagem original se não for um erro conhecido
+      return errorObj.message;
+    }
+    
+    // Verificar também no código e status
+    if (errorObj.code === 'rate_limit_exceeded' || errorObj.status === 429) {
       return 'Muitas solicitações foram feitas em pouco tempo. Por favor, aguarde alguns minutos antes de tentar novamente. Isso ajuda a proteger nosso sistema contra abusos.';
     }
-    
-    // Mensagens comuns do Supabase com traduções amigáveis
-    if (error.message.includes('already registered') || error.message.includes('already exists')) {
-      return 'Este e-mail já está cadastrado. Tente fazer login.';
-    }
-    
-    if (error.message.includes('password')) {
-      return 'A senha não atende aos requisitos de segurança.';
-    }
-    
-    if (error.message.includes('email')) {
-      return 'E-mail inválido. Verifique e tente novamente.';
-    }
 
-    if (error.message.includes('duplicate key')) {
-      return 'Este registro já existe no banco de dados.';
+    // Se tem details, usar details + hint
+    const details = errorObj.details || '';
+    const hint = errorObj.hint || '';
+    const code = errorObj.code || '';
+
+    if (details || hint) {
+      return `${details || 'Erro no banco de dados'}${hint ? ` (${hint})` : ''}${code ? ` [Código: ${code}]` : ''}`;
     }
-
-    if (error.message.includes('foreign key')) {
-      return 'Erro de referência: registro relacionado não encontrado.';
-    }
-
-    if (error.message.includes('permission denied') || error.message.includes('row-level security')) {
-      return 'Permissão negada. Verifique as políticas de segurança do banco de dados.';
-    }
-
-    // Retornar a mensagem original se não for um erro conhecido
-    return error.message;
-  }
-  
-  // Verificar também no código e status
-  if (error.code === 'rate_limit_exceeded' || error.status === 429) {
-    return 'Muitas solicitações foram feitas em pouco tempo. Por favor, aguarde alguns minutos antes de tentar novamente. Isso ajuda a proteger nosso sistema contra abusos.';
-  }
-
-  // Se tem details, usar details + hint
-  const details = error.details || '';
-  const hint = error.hint || '';
-  const code = error.code || '';
-
-  if (details || hint) {
-    return `${details || 'Erro no banco de dados'}${hint ? ` (${hint})` : ''}${code ? ` [Código: ${code}]` : ''}`;
   }
 
   // Fallback: converter objeto para string para debug
@@ -93,7 +98,7 @@ export function formatDatabaseError(error: any): string {
 /**
  * Loga erro detalhado no console para debug
  */
-export function logDatabaseError(context: string, error: any) {
+export function logDatabaseError(context: string, error: unknown) {
   console.group(`❌ Erro de Banco de Dados: ${context}`);
   
   // Se o erro é uma string, mostrar diretamente
@@ -104,16 +109,17 @@ export function logDatabaseError(context: string, error: any) {
   } 
   // Se é um objeto com propriedades conhecidas
   else if (error && typeof error === 'object') {
+    const errorObj = error as SupabaseError & { status?: number };
     console.error('Tipo: Objeto');
-    console.error('Mensagem:', error.message || '(sem mensagem)');
-    console.error('Detalhes:', error.details || '(sem detalhes)');
-    console.error('Hint:', error.hint || '(sem hint)');
-    console.error('Código:', error.code || '(sem código)');
-    console.error('Status:', error.status || '(sem status)');
+    console.error('Mensagem:', errorObj.message || '(sem mensagem)');
+    console.error('Detalhes:', errorObj.details || '(sem detalhes)');
+    console.error('Hint:', errorObj.hint || '(sem hint)');
+    console.error('Código:', errorObj.code || '(sem código)');
+    console.error('Status:', errorObj.status || '(sem status)');
     console.error('Erro completo:', error);
     
     // Se é um erro do Supabase, mostrar informações adicionais
-    if (error.message && error.message.includes('Database error')) {
+    if (errorObj.message && errorObj.message.includes('Database error')) {
       console.warn('⚠️ Este parece ser um erro genérico. Verifique:');
       console.warn('  1. Se as tabelas foram criadas corretamente no Supabase');
       console.warn('  2. Se as políticas RLS estão configuradas');

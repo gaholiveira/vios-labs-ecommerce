@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useCallback, useMemo } from "react";
+import { useEffect, useCallback, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
 import AboutSection from "@/components/AboutSection";
 import ProductCard from "@/components/ProductCard";
 import { PRODUCTS } from "@/constants/products";
@@ -16,6 +15,7 @@ export default function Home() {
   const router = useRouter();
   const viewportHeight = useMobileViewportHeight();
   const { showToast } = useCart();
+  const [isScrolling, setIsScrolling] = useState(false);
 
   useEffect(() => {
     // Detectar códigos de autenticação e erros na URL
@@ -63,7 +63,35 @@ export default function Home() {
   const handleExploreClick = useCallback(() => {
     const productsSection = document.getElementById("produtos");
     if (productsSection) {
+      setIsScrolling(true);
+      
+      // Função para verificar se chegou na seção de produtos
+      const checkScrollPosition = () => {
+        const rect = productsSection.getBoundingClientRect();
+        const isInView = rect.top <= 150 && rect.bottom >= -50;
+        
+        if (isInView) {
+          setIsScrolling(false);
+          return true;
+        }
+        return false;
+      };
+      
+      // Scroll suave
       productsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      
+      // Verificar posição periodicamente durante o scroll
+      const scrollInterval = setInterval(() => {
+        if (checkScrollPosition()) {
+          clearInterval(scrollInterval);
+        }
+      }, 50);
+      
+      // Timeout de segurança para remover o blur caso o scroll não seja detectado
+      setTimeout(() => {
+        setIsScrolling(false);
+        clearInterval(scrollInterval);
+      }, 2000);
     }
   }, []);
 
@@ -76,14 +104,19 @@ export default function Home() {
   );
 
   return (
-    <main>
+    <main className="relative">
+      {/* Overlay com blur durante o scroll */}
+      {isScrolling && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 transition-opacity duration-300 pointer-events-none" />
+      )}
+      
       {/* Hero Section */}
       <section
-        className="relative w-full flex items-center justify-center overflow-hidden bg-brand-softblack"
+        className="group relative w-full flex items-center justify-center overflow-hidden bg-brand-softblack"
         style={heroStyle}
       >
         {/* Usando o componente Image do Next.js para máxima performance */}
-        <div className="absolute inset-0 transform-gpu will-change-transform">
+        <div className="absolute inset-0 transform-gpu will-change-transform md:transition-transform md:duration-700 md:ease-out md:group-hover:scale-105">
           <Image
             src="/images/hero-foto.jpg"
             alt="Vios 2026 Hero"
@@ -98,18 +131,18 @@ export default function Home() {
         </div>
 
         {/* Overlay para escurecer a imagem e destacar o texto */}
-        <div className="absolute inset-0 bg-black/30 z-[1]" />
+        <div className="absolute inset-0 bg-black/30 z-[1] md:transition-opacity md:duration-500 md:ease-out md:group-hover:bg-black/25" />
 
         {/* Conteúdo do Banner com micro-interações */}
         <div className="relative z-10 text-center px-4">
-          <div className="max-w-4xl mx-auto md:transform md:transition-all md:duration-500 md:ease-out md:hover:-translate-y-1 md:hover:shadow-[0_20px_40px_rgba(0,0,0,0.15)]">
+          <div className="max-w-4xl mx-auto md:transition-transform md:duration-500 md:ease-out md:group-hover:-translate-y-2">
             {/* Pré-título com micro-interação */}
-            <span className="inline-block uppercase tracking-[0.5em] text-[10px] mb-4 md:mb-6 block text-brand-offwhite md:transition-all md:duration-500 md:ease-out md:hover:-translate-y-1">
+            <span className="block uppercase tracking-[0.5em] text-[10px] mb-4 md:mb-6 text-brand-offwhite md:transition-all md:duration-500 md:ease-out">
               A ciência da melhor versão
             </span>
 
             {/* Título Principal */}
-            <div className="md:transition-all md:duration-500 md:ease-out md:hover:-translate-y-1">
+            <div className="md:transition-all md:duration-500 md:ease-out">
               <TextReveal
                 text="Vios 2026"
                 el="h1"
@@ -120,11 +153,11 @@ export default function Home() {
             </div>
 
             {/* Subtítulo com micro-interação */}
-            <div className="md:transition-all md:duration-500 md:ease-out md:hover:-translate-y-1">
+            <div className="md:transition-all md:duration-500 md:ease-out">
               <TextReveal
                 text="Bem-vindo à nova era da biotecnologia aplicada ao bem-estar. Produtos de alta performance desenvolvidos com rigor científico e design minimalista."
                 el="p"
-                className="text-brand-offwhite/80 text-sm md:text-base font-light tracking-wide max-w-2xl mx-auto mb-8 md:mb-10"
+                className="text-brand-offwhite/80 text-sm md:text-base font-light tracking-wide max-w-2xl mx-auto mb-8 md:mb-10 md:transition-opacity md:duration-500 md:ease-out md:group-hover:text-brand-offwhite/90"
                 delay={0.6}
                 duration={0.6}
               />
@@ -133,7 +166,7 @@ export default function Home() {
             {/* Botão CTA Minimalista de Luxo */}
             <button
               onClick={handleExploreClick}
-              className="border border-brand-offwhite/90 rounded-sm px-10 md:px-12 py-4 md:py-5 min-h-[44px] text-xs md:text-sm uppercase tracking-wider text-brand-offwhite font-light active:bg-brand-green active:text-brand-offwhite active:border-brand-green md:hover:bg-brand-green md:hover:text-brand-offwhite md:hover:border-brand-green md:hover:shadow-[0_10px_30px_rgba(10,51,35,0.25)] md:transition-all md:duration-500 md:ease-out md:transform md:hover:-translate-y-1"
+              className="border border-brand-offwhite/90 rounded-sm px-10 md:px-12 py-4 md:py-5 min-h-[44px] text-xs md:text-sm uppercase tracking-wider text-brand-offwhite font-light active:bg-brand-green active:text-brand-offwhite active:border-brand-green md:hover:bg-brand-green md:hover:text-brand-offwhite md:hover:border-brand-green md:transition-all md:duration-500 md:ease-out md:transform md:group-hover:-translate-y-1"
             >
               Explorar Loja
             </button>

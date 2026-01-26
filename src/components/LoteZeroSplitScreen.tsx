@@ -1,11 +1,11 @@
 "use client";
 
-import { motion } from "framer-motion";
 import Image from "next/image";
 import LoteZeroSalesForm from "./LoteZeroSalesForm";
+import type { User } from "@supabase/supabase-js";
 
 interface LoteZeroSplitScreenProps {
-  user: any;
+  user: User | null;
   email: string;
   name: string;
   onEmailChange: (email: string) => void;
@@ -30,14 +30,9 @@ export default function LoteZeroSplitScreen({
   error,
 }: LoteZeroSplitScreenProps) {
   return (
-    <main className="min-h-screen flex flex-col md:flex-row md:h-screen">
+    <main className="min-h-screen flex flex-col md:flex-row">
       {/* Coluna Esquerda (50%) - Fixa - Fundo Deep Forest Green */}
-      <motion.div
-        initial={{ y: "100%", opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 1, ease: "easeOut" }}
-        className="hidden md:flex md:w-1/2 bg-brand-green relative overflow-hidden"
-      >
+      <div className="hidden md:flex md:w-1/2 md:sticky md:top-0 md:h-screen bg-brand-green relative overflow-hidden">
         {/* Imagem do Produto ou Composição Abstrata */}
         <div className="absolute inset-0 z-0">
           <Image
@@ -57,12 +52,7 @@ export default function LoteZeroSplitScreen({
         {/* Conteúdo centralizado */}
         <div className="relative z-20 flex flex-col items-center justify-center px-12 w-full">
           {/* Texto sobreposto: LOTE ZERO - Edição Limitada */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="text-center"
-          >
+          <div className="text-center">
             <h1 className="text-5xl md:text-7xl font-extralight uppercase tracking-[0.1em] text-brand-offwhite mb-6">
               LOTE ZERO
             </h1>
@@ -75,16 +65,11 @@ export default function LoteZeroSplitScreen({
                 Exclusivo
               </p>
             </div>
-          </motion.div>
+          </div>
         </div>
 
         {/* Rodapé da coluna: Escassez e Exclusividade */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 1 }}
-          className="absolute bottom-8 left-0 right-0 z-20 text-center"
-        >
+        <div className="absolute bottom-8 left-0 right-0 z-20 text-center">
           <div className="flex flex-col items-center justify-center gap-2">
             <div className="flex items-center justify-center gap-2">
               {/* Indicador de escassez sutil */}
@@ -100,16 +85,11 @@ export default function LoteZeroSplitScreen({
               Acesso Exclusivo
             </p>
           </div>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
       {/* Versão Mobile: Imagem Hero no topo */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="md:hidden relative h-[50vh] min-h-[300px] bg-brand-green overflow-hidden"
-      >
+      <div className="md:hidden relative h-[50vh] min-h-[300px] bg-brand-green overflow-hidden">
         <div className="absolute inset-0">
           <Image
             src="/images/hero-foto.jpg"
@@ -123,12 +103,7 @@ export default function LoteZeroSplitScreen({
         </div>
         <div className="absolute inset-0 bg-black/20 z-10"></div>
         <div className="relative z-20 flex flex-col items-center justify-center h-full px-4 py-8">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-center"
-          >
+          <div className="text-center">
             <h1 className="text-3xl sm:text-4xl font-extralight uppercase tracking-[0.08em] text-brand-offwhite mb-4 text-center">
               LOTE ZERO
             </h1>
@@ -141,13 +116,8 @@ export default function LoteZeroSplitScreen({
                 Exclusivo
               </p>
             </div>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="absolute bottom-4 left-0 right-0 flex flex-col items-center justify-center gap-1.5 px-4"
-          >
+          </div>
+          <div className="absolute bottom-4 left-0 right-0 flex flex-col items-center justify-center gap-1.5 px-4">
             <div className="flex items-center justify-center gap-2">
               <div className="relative">
                 <div className="w-1.5 h-1.5 bg-brand-offwhite/40 rounded-full"></div>
@@ -160,19 +130,12 @@ export default function LoteZeroSplitScreen({
             <p className="text-[8px] sm:text-[9px] uppercase tracking-[0.35em] text-brand-offwhite/50 font-extralight text-center">
               Acesso Exclusivo
             </p>
-          </motion.div>
+          </div>
         </div>
-      </motion.div>
+      </div>
 
-      {/* Coluna Direita (50%) - Scrollável - Fundo Off-White */}
-      <div
-        className="md:w-1/2 w-full md:h-screen md:overflow-y-auto md:overflow-x-hidden flex-1 md:flex-none"
-        data-lenis-prevent="true"
-        style={{
-          scrollBehavior: "auto",
-          WebkitOverflowScrolling: "touch",
-        }}
-      >
+      {/* Coluna Direita (50%) - Fundo Off-White */}
+      <div className="md:w-1/2 w-full flex-1 md:flex-none">
         <LoteZeroSalesForm
           user={user}
           email={email}

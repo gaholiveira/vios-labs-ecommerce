@@ -5,9 +5,9 @@ export default function SobrePage() {
   return (
     <main className="bg-brand-offwhite">
       {/* Hero Section */}
-      <section className="relative h-[60svh] md:h-[70svh] w-full flex items-center justify-center overflow-hidden bg-brand-softblack">
+      <section className="group relative h-[60svh] md:h-[70svh] w-full flex items-center justify-center overflow-hidden bg-brand-softblack">
         {/* Imagem de fundo */}
-        <div className="absolute inset-0 transform-gpu will-change-transform">
+        <div className="absolute inset-0 transform-gpu will-change-transform md:transition-transform md:duration-700 md:ease-out md:group-hover:scale-105">
           <Image
             src="/images/fundadores.png"
             alt="Vios Labs História"
@@ -20,18 +20,20 @@ export default function SobrePage() {
         </div>
 
         {/* Overlay para escurecer a imagem e destacar o texto */}
-        <div className="absolute inset-0 bg-black/30 z-[1]" />
+        <div className="absolute inset-0 bg-black/30 z-[1] md:transition-opacity md:duration-500 md:ease-out md:group-hover:bg-black/25" />
 
         <div className="relative z-10 text-center px-4">
-          <span className="uppercase tracking-[0.5em] text-[10px] mb-4 block text-brand-offwhite opacity-80">
-            A nossa jornada
-          </span>
-          <h1 className="text-5xl md:text-7xl font-extralight mb-8 uppercase tracking-tighter text-brand-offwhite">
-            Nossa História
-          </h1>
-          <p className="text-brand-offwhite/70 text-sm md:text-base font-light tracking-wide max-w-2xl mx-auto">
-            A ciência da melhor versão de si mesmo
-          </p>
+          <div className="max-w-4xl mx-auto md:transition-transform md:duration-500 md:ease-out md:group-hover:-translate-y-2">
+            <span className="block uppercase tracking-[0.5em] text-[10px] mb-4 text-brand-offwhite opacity-80 md:transition-all md:duration-500 md:ease-out">
+              A nossa jornada
+            </span>
+            <h1 className="text-5xl md:text-7xl font-extralight mb-8 uppercase tracking-tighter text-brand-offwhite">
+              Nossa História
+            </h1>
+            <p className="text-brand-offwhite/70 text-sm md:text-base font-light tracking-wide max-w-2xl mx-auto md:transition-opacity md:duration-500 md:ease-out md:group-hover:text-brand-offwhite/90">
+              A ciência da melhor versão de si mesmo
+            </p>
+          </div>
         </div>
       </section>
 
@@ -90,82 +92,88 @@ export default function SobrePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div className="text-center">
-              <div className="mb-6 text-brand-green">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-12 h-12 mx-auto"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
-                  />
-                </svg>
+            <div className="group text-center rounded-xl p-6 transition-all duration-500 ease-out hover:bg-[#F7F6F2]">
+              <div className="transition-transform duration-500 ease-out group-hover:-translate-y-2">
+                <div className="mb-6 text-brand-green">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-12 h-12 mx-auto"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-brand-softblack text-lg font-medium uppercase tracking-[0.2em] mb-4 group-hover:text-brand-green transition-colors duration-500 ease-out">
+                  Transparência
+                </h3>
+                <p className="text-brand-softblack/60 text-sm font-light leading-relaxed">
+                  Acreditamos em comunicação clara e honesta. Você sempre saberá
+                  exatamente o que está usando e por quê.
+                </p>
               </div>
-              <h3 className="text-brand-softblack text-lg font-medium uppercase tracking-[0.2em] mb-4">
-                Transparência
-              </h3>
-              <p className="text-brand-softblack/60 text-sm font-light leading-relaxed">
-                Acreditamos em comunicação clara e honesta. Você sempre saberá
-                exatamente o que está usando e por quê.
-              </p>
             </div>
 
-            <div className="text-center">
-              <div className="mb-6 text-brand-green">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-12 h-12 mx-auto"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
-                  />
-                </svg>
+            <div className="group text-center rounded-xl p-6 transition-all duration-500 ease-out hover:bg-[#F7F6F2]">
+              <div className="transition-transform duration-500 ease-out group-hover:-translate-y-2">
+                <div className="mb-6 text-brand-green">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-12 h-12 mx-auto"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-brand-softblack text-lg font-medium uppercase tracking-[0.2em] mb-4 group-hover:text-brand-green transition-colors duration-500 ease-out">
+                  Excelência
+                </h3>
+                <p className="text-brand-softblack/60 text-sm font-light leading-relaxed">
+                  Cada produto passa por rigorosos testes de qualidade e eficácia.
+                  Comprometemo-nos apenas com o melhor.
+                </p>
               </div>
-              <h3 className="text-brand-softblack text-lg font-medium uppercase tracking-[0.2em] mb-4">
-                Excelência
-              </h3>
-              <p className="text-brand-softblack/60 text-sm font-light leading-relaxed">
-                Cada produto passa por rigorosos testes de qualidade e eficácia.
-                Comprometemo-nos apenas com o melhor.
-              </p>
             </div>
 
-            <div className="text-center">
-              <div className="mb-6 text-brand-green">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-12 h-12 mx-auto"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418"
-                  />
-                </svg>
+            <div className="group text-center rounded-xl p-6 transition-all duration-500 ease-out hover:bg-[#F7F6F2]">
+              <div className="transition-transform duration-500 ease-out group-hover:-translate-y-2">
+                <div className="mb-6 text-brand-green">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-12 h-12 mx-auto"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-brand-softblack text-lg font-medium uppercase tracking-[0.2em] mb-4 group-hover:text-brand-green transition-colors duration-500 ease-out">
+                  Sustentabilidade
+                </h3>
+                <p className="text-brand-softblack/60 text-sm font-light leading-relaxed">
+                  Respeitamos o planeta em cada decisão. Nossos processos são
+                  pensados para minimizar impacto ambiental.
+                </p>
               </div>
-              <h3 className="text-brand-softblack text-lg font-medium uppercase tracking-[0.2em] mb-4">
-                Sustentabilidade
-              </h3>
-              <p className="text-brand-softblack/60 text-sm font-light leading-relaxed">
-                Respeitamos o planeta em cada decisão. Nossos processos são
-                pensados para minimizar impacto ambiental.
-              </p>
             </div>
           </div>
         </div>

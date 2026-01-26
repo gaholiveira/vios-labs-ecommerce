@@ -8,20 +8,25 @@ import { createClient } from '@/utils/supabase/client';
 /**
  * Verifica se um erro de autenticação indica email não confirmado
  */
-export function isEmailNotConfirmedError(error: any): boolean {
+export function isEmailNotConfirmedError(error: unknown): boolean {
   if (!error) return false;
   
-  const errorMessage = error.message?.toLowerCase() || '';
-  const errorCode = error.status?.toString() || '';
+  if (typeof error === 'object' && error !== null) {
+    const errorObj = error as { message?: string; status?: number };
+    const errorMessage = errorObj.message?.toLowerCase() || '';
+    const errorCode = errorObj.status?.toString() || '';
+    
+    // Códigos e mensagens que indicam email não confirmado
+    return (
+      errorMessage.includes('email not confirmed') ||
+      errorMessage.includes('email_not_confirmed') ||
+      errorMessage.includes('confirmation') ||
+      errorCode === '401' ||
+      errorObj.status === 401
+    );
+  }
   
-  // Códigos e mensagens que indicam email não confirmado
-  return (
-    errorMessage.includes('email not confirmed') ||
-    errorMessage.includes('email_not_confirmed') ||
-    errorMessage.includes('confirmation') ||
-    errorCode === '401' ||
-    error.status === 401
-  );
+  return false;
 }
 
 /**
@@ -44,8 +49,9 @@ export async function resendConfirmationEmail(email: string): Promise<{ success:
     }
 
     return { success: true, message: data.message };
-  } catch (err: any) {
-    return { success: false, error: err?.message || 'Erro ao reenviar email' };
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Erro ao reenviar email';
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -74,16 +80,19 @@ export async function handleLogout(): Promise<void> {
   }
 }
 
+import type { User } from '@supabase/supabase-js';
+
 /**
  * Verifica se o usuário está autenticado
  */
-export async function checkAuth(): Promise<{ user: any | null; error: string | null }> {
+export async function checkAuth(): Promise<{ user: User | null; error: string | null }> {
   try {
     const supabase = createClient();
     const { data: { user }, error } = await supabase.auth.getUser();
     
     return { user, error: error?.message || null };
-  } catch (err: any) {
-    return { user: null, error: err?.message || 'Erro ao verificar autenticação' };
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Erro ao verificar autenticação';
+    return { user: null, error: errorMessage };
   }
 }

@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/client";
 import { User } from "@supabase/supabase-js";
 import ComingSoon from "@/components/ComingSoon";
 import LoteZeroSplitScreen from "@/components/LoteZeroSplitScreen";
+import LoteZeroSkeleton from "@/components/LoteZeroSkeleton";
 
 export default function LoteZeroPage() {
   const [email, setEmail] = useState("");
@@ -139,35 +140,7 @@ export default function LoteZeroPage() {
 
   // Verificando se as vendas estão abertas
   if (checkingSalesOpen) {
-    return (
-      <main className="min-h-screen bg-brand-softblack flex items-center justify-center">
-        <div className="text-center">
-          <svg
-            className="animate-spin h-8 w-8 mx-auto text-brand-offwhite mb-4"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            ></circle>
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
-          <p className="text-[10px] uppercase tracking-wider text-brand-offwhite/60">
-            A verificar...
-          </p>
-        </div>
-      </main>
-    );
+    return <LoteZeroSkeleton />;
   }
 
   // Se as vendas não estiverem abertas, mostrar Coming Soon
@@ -177,35 +150,7 @@ export default function LoteZeroPage() {
 
   // Loading state (apenas se vendas estiverem abertas)
   if (checkingAuth) {
-    return (
-      <main className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="text-center">
-          <svg
-            className="animate-spin h-8 w-8 mx-auto text-brand-softblack mb-4"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            ></circle>
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
-          <p className="text-[10px] uppercase tracking-wider text-brand-softblack/60">
-            A verificar...
-          </p>
-        </div>
-      </main>
-    );
+    return <LoteZeroSkeleton />;
   }
 
   // Estado de sucesso

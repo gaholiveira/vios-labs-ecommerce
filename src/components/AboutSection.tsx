@@ -61,11 +61,11 @@ export default function AboutSection({ image }: AboutSectionProps) {
       className="bg-brand-offwhite py-24 px-6"
     >
       <div
-        className={`max-w-6xl mx-auto flex flex-col ${hasImage ? "md:flex-row md:items-center md:gap-16" : ""}`}
+        className={`group max-w-6xl mx-auto flex flex-col ${hasImage ? "md:flex-row md:items-center md:gap-16" : ""} md:transition-all md:duration-500 md:ease-out md:hover:bg-[#F7F6F2] md:rounded-xl md:p-8`}
       >
         {/* Coluna de texto */}
         <motion.div
-          className={`max-w-3xl mx-auto flex-1 ${hasImage ? "md:mx-0 text-center md:text-left" : "text-center"}`}
+          className={`max-w-3xl mx-auto flex-1 ${hasImage ? "md:mx-0 text-center md:text-left" : "text-center"} md:transition-transform md:duration-500 md:ease-out md:group-hover:-translate-y-1`}
           variants={containerVariants}
           initial="hidden"
           animate={isInView ? "visible" : "hidden"}
@@ -79,7 +79,7 @@ export default function AboutSection({ image }: AboutSectionProps) {
 
           <motion.h2
             variants={focusRevealVariants}
-            className="text-brand-softblack text-3xl md:text-4xl font-light uppercase tracking-tighter leading-tight mb-8"
+            className="text-brand-softblack text-3xl md:text-4xl font-light uppercase tracking-tighter leading-tight mb-8 md:transition-colors md:duration-500 md:ease-out md:group-hover:text-brand-green"
           >
             Design minimalista para quem valoriza o essencial.
           </motion.h2>
@@ -98,7 +98,7 @@ export default function AboutSection({ image }: AboutSectionProps) {
           <motion.div variants={focusRevealVariants} className="mt-10">
             <a
               href="/sobre"
-              className="inline-block text-brand-softblack text-[10px] uppercase tracking-wider font-light border-b border-brand-green/80 pb-2 hover:text-brand-green hover:border-brand-green md:hover:-translate-y-0.5 md:hover:shadow-[0_10px_24px_rgba(10,51,35,0.12)] transition-all duration-500 ease-out"
+              className="inline-block text-brand-softblack text-[10px] uppercase tracking-wider font-light border-b border-brand-green/80 pb-2 hover:text-brand-green hover:border-brand-green transition-all duration-500 ease-out"
             >
               Conheça a nossa história
             </a>
@@ -109,7 +109,7 @@ export default function AboutSection({ image }: AboutSectionProps) {
         {image && (
           <div className="hidden md:block flex-1 max-w-md md:mx-0 mt-12 md:mt-0 overflow-hidden rounded-sm">
             <motion.div
-              className="relative aspect-[4/5] w-full"
+              className="relative aspect-[4/5] w-full md:transition-transform md:duration-700 md:ease-out md:group-hover:scale-105"
               style={{ y: imageY }}
             >
               <Image

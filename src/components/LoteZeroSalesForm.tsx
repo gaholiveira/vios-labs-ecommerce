@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import { formatDatabaseError, logDatabaseError } from "@/utils/errorHandler";
 import Link from "next/link";
+import type { User } from "@supabase/supabase-js";
 
 interface LoteZeroSalesFormProps {
-  user: any;
+  user: User | null;
   email: string;
   name: string;
   onEmailChange: (email: string) => void;
@@ -79,7 +79,7 @@ export default function LoteZeroSalesForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    onError(null as any);
+    onError("");
 
     // Validações básicas
     if (!localName.trim()) {
@@ -235,10 +235,11 @@ export default function LoteZeroSalesForm({
       );
       onSuccess();
       setLoading(false);
-    } catch (err: any) {
+    } catch (err) {
       console.error("[LOTE ZERO] Exceção não tratada:", err);
       logDatabaseError("Exceção ao processar inscrição (Lote Zero)", err);
-      onError(err?.message || "Erro inesperado. Tente novamente.");
+      const errorMessage = err instanceof Error ? err.message : "Erro inesperado. Tente novamente.";
+      onError(errorMessage);
       setLoading(false);
     }
   };
@@ -246,50 +247,49 @@ export default function LoteZeroSalesForm({
   // Loading state enquanto verifica status VIP
   if (checkingVip) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.4 }}
-        className="min-h-full bg-stone-50 flex items-center justify-center"
-      >
-        <div className="text-center">
-          <svg
-            className="animate-spin h-8 w-8 mx-auto text-brand-softblack mb-4"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            ></circle>
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
-          <p className="text-[10px] uppercase tracking-wider text-brand-softblack/60">
-            Verificando...
-          </p>
+      <div className="min-h-full bg-stone-50 flex flex-col items-center justify-center px-6 py-12 md:py-24">
+        <div className="w-full max-w-md space-y-8">
+          {/* Skeleton do título */}
+          <div className="space-y-4 text-center">
+            <div className="h-8 w-48 bg-stone-200 rounded-sm mx-auto animate-pulse" />
+            <div className="h-4 w-64 bg-stone-200/60 rounded-sm mx-auto animate-pulse" />
+          </div>
+
+          {/* Skeleton do formulário */}
+          <div className="space-y-6">
+            {/* Campo Nome */}
+            <div className="space-y-2">
+              <div className="h-3 w-16 bg-stone-200/60 rounded-sm animate-pulse" />
+              <div className="h-12 w-full bg-stone-200 rounded-sm animate-pulse" />
+            </div>
+
+            {/* Campo Email */}
+            <div className="space-y-2">
+              <div className="h-3 w-20 bg-stone-200/60 rounded-sm animate-pulse" />
+              <div className="h-12 w-full bg-stone-200 rounded-sm animate-pulse" />
+            </div>
+
+            {/* Botão */}
+            <div className="h-12 w-full bg-stone-200 rounded-sm animate-pulse" />
+          </div>
+
+          {/* Skeleton de informações adicionais */}
+          <div className="space-y-4 pt-8">
+            <div className="h-px w-full bg-stone-200" />
+            <div className="space-y-2">
+              <div className="h-3 w-full bg-stone-200/60 rounded-sm animate-pulse" />
+              <div className="h-3 w-3/4 bg-stone-200/60 rounded-sm animate-pulse" />
+            </div>
+          </div>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
   // Se usuário está logado e já está na lista VIP, mostrar card de status
   if (user && isVip) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.4 }}
-        className="min-h-full bg-stone-50"
-      >
+      <div className="min-h-full bg-stone-50">
         <div className="p-6 sm:p-8 md:p-12 lg:p-24 max-w-2xl mx-auto pb-16 sm:pb-20 md:pb-24">
           {/* Logo VIOS pequena no topo */}
           <div className="mb-6 sm:mb-8 md:mb-12">
@@ -403,17 +403,12 @@ export default function LoteZeroSalesForm({
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.8, delay: 0.4 }}
-      className="min-h-full bg-stone-50"
-    >
+    <div className="min-h-full bg-stone-50">
       <div className="p-6 sm:p-8 md:p-12 lg:p-24 max-w-2xl mx-auto pb-16 sm:pb-20 md:pb-24">
         {/* Logo VIOS pequena no topo */}
         <div className="mb-6 sm:mb-8 md:mb-12">
@@ -652,6 +647,6 @@ export default function LoteZeroSalesForm({
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

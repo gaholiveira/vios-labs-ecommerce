@@ -72,7 +72,7 @@ function ProductCard({ product }: { product: Product }) {
   };
 
   return (
-    <div className="group flex flex-col md:transition-all md:duration-500 md:ease-out md:hover:-translate-y-1 md:hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)]">
+    <div className="group flex flex-col">
       {/* Container da Imagem com Badge e Overlay */}
       <Link
         href={`/produto/${product.id}`}
@@ -83,7 +83,7 @@ function ProductCard({ product }: { product: Product }) {
           alt={product.name}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover transition-transform duration-700 group-hover:scale-105"
+          className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
           loading="lazy"
           quality={85}
           placeholder="blur"
@@ -129,7 +129,7 @@ function ProductCard({ product }: { product: Product }) {
 
         {/* Nome do Produto */}
         <Link href={`/produto/${product.id}`}>
-          <h3 className="text-xs sm:text-sm uppercase tracking-wider font-light text-brand-softblack hover:text-brand-green transition-colors duration-500 ease-out leading-tight">
+          <h3 className="text-xs sm:text-sm uppercase tracking-wider font-light text-brand-softblack group-hover:text-brand-green transition-colors duration-500 ease-out leading-tight">
             {product.name}
           </h3>
         </Link>
