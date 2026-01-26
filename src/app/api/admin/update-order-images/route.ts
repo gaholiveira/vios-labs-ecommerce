@@ -37,8 +37,12 @@ const productImageMap = new Map(
 
 export async function POST(req: NextRequest) {
   try {
-    // Em produção, adicione autenticação aqui!
-    // Por exemplo, verificar um token de admin ou service role
+    // ⚠️ SEGURANÇA: Verificar token de admin em produção
+    // Em produção, descomente e configure:
+    // const adminToken = req.headers.get('x-admin-token');
+    // if (adminToken !== process.env.ADMIN_SECRET_TOKEN) {
+    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // }
     
     const supabaseAdmin = getSupabaseAdmin();
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 

@@ -1,19 +1,104 @@
 'use client';
 
-import { useEffect, Suspense } from 'react';
+import { useEffect, Suspense, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Check, Mail, ArrowRight } from 'lucide-react';
+import { Check, Mail, ArrowRight, Package, Loader2 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { createClient } from '@/utils/supabase/client';
 
 function SuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
   const { clearCart } = useCart();
+  const [orderStatus, setOrderStatus] = useState<'checking' | 'found' | 'not_found' | 'error'>('checking');
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const attemptsRef = useRef(0);
 
+  // Limpar carrinho
   useEffect(() => {
     clearCart();
   }, [clearCart]);
+
+  // Verificar se usuário está logado
+  useEffect(() => {
+    const checkAuth = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsUserLoggedIn(!!user);
+    };
+    checkAuth();
+  }, []);
+
+  // Verificar se pedido foi criado
+  useEffect(() => {
+    if (!sessionId) {
+      setOrderStatus('error');
+      return;
+    }
+
+    const maxAttempts = 15; // 15 tentativas = 30 segundos (2s cada)
+    attemptsRef.current = 0;
+    let isCancelled = false;
+
+    const checkOrder = async () => {
+      if (isCancelled) return;
+      
+      attemptsRef.current++;
+      
+      try {
+        const response = await fetch(`/api/orders/verify?session_id=${sessionId}`);
+        const data = await response.json();
+
+        if (isCancelled) return;
+
+        if (data.exists) {
+          setOrderStatus('found');
+          setOrderId(data.orderId);
+          if (pollingRef.current) {
+            clearTimeout(pollingRef.current);
+            pollingRef.current = null;
+          }
+        } else if (attemptsRef.current < maxAttempts) {
+          // Tentar novamente após 2 segundos
+          pollingRef.current = setTimeout(() => {
+            checkOrder();
+          }, 2000);
+        } else {
+          // Timeout após maxAttempts
+          setOrderStatus('not_found');
+          pollingRef.current = null;
+        }
+      } catch (error) {
+        if (isCancelled) return;
+        
+        console.error('Erro ao verificar pedido:', error);
+        if (attemptsRef.current < maxAttempts) {
+          // Tentar novamente após 2 segundos
+          pollingRef.current = setTimeout(() => {
+            checkOrder();
+          }, 2000);
+        } else {
+          setOrderStatus('error');
+          pollingRef.current = null;
+        }
+      }
+    };
+
+    // Primeira verificação imediata
+    checkOrder();
+
+    // Cleanup
+    return () => {
+      isCancelled = true;
+      if (pollingRef.current) {
+        clearTimeout(pollingRef.current);
+        pollingRef.current = null;
+      }
+    };
+  }, [sessionId]);
 
   return (
     <main className="min-h-screen bg-[#faf9f6] flex items-center justify-center px-4 md:px-6 py-24 md:py-32">
@@ -50,8 +135,29 @@ function SuccessContent() {
           </div>
         </div>
 
+        {/* Status do Pedido */}
+        {orderStatus === 'checking' && (
+          <div className="w-full bg-white border border-stone-100 rounded-xl p-6 md:p-8 mb-6 shadow-sm">
+            <div className="flex items-center justify-center gap-3 text-stone-600">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <p className="text-sm">Processando seu pedido...</p>
+            </div>
+          </div>
+        )}
+
         {/* Ações */}
         <div className="space-y-4 w-full max-w-sm">
+          {/* Botão Ver Meus Pedidos (se logado e pedido encontrado) */}
+          {isUserLoggedIn && orderStatus === 'found' && (
+            <Link href="/orders" className="block w-full">
+              <button className="w-full py-4 md:py-5 bg-[#082f1e] text-white hover:bg-[#082f1e]/90 transition-all duration-300 rounded-sm uppercase tracking-widest text-xs font-medium flex items-center justify-center gap-2 group">
+                <Package className="w-4 h-4" />
+                Ver Meus Pedidos
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </Link>
+          )}
+
           <Link href="/" className="block w-full">
             <button className="w-full py-4 md:py-5 border border-[#082f1e] text-[#082f1e] bg-transparent hover:bg-[#082f1e] hover:text-white transition-all duration-300 rounded-sm uppercase tracking-widest text-xs font-medium flex items-center justify-center gap-2 group">
               Continuar Comprando
@@ -60,13 +166,15 @@ function SuccessContent() {
           </Link>
           
           {/* Link para criar conta (Estratégia Guest Checkout) */}
-          <div className="pt-6 text-xs text-stone-400 max-w-sm mx-auto">
-            Ainda não tem conta?{' '}
-            <Link href="/register" className="text-[#082f1e] underline underline-offset-4 hover:opacity-80 transition-opacity">
-              Crie sua senha
-            </Link>{' '}
-            com o mesmo e-mail para acompanhar este pedido.
-          </div>
+          {!isUserLoggedIn && (
+            <div className="pt-6 text-xs text-stone-400 max-w-sm mx-auto">
+              Ainda não tem conta?{' '}
+              <Link href="/register" className="text-[#082f1e] underline underline-offset-4 hover:opacity-80 transition-opacity">
+                Crie sua senha
+              </Link>{' '}
+              com o mesmo e-mail para acompanhar este pedido.
+            </div>
+          )}
 
           {/* Link para Concierge (Opcional) */}
           <div className="pt-2">
