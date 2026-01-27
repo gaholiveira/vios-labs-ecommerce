@@ -63,12 +63,14 @@ export async function POST(request: NextRequest) {
     const fullNameTrimmed = full_name.trim();
     const phoneTrimmed = phone?.trim() || null;
 
-    console.log('[VIP LIST API] Processando requisição:', {
-      email: emailTrimmed,
-      user_id: user_id || 'null',
-      full_name: fullNameTrimmed,
-      hasPhone: !!phoneTrimmed,
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[VIP LIST API] Processando requisição:', {
+        email: emailTrimmed,
+        user_id: user_id || 'null',
+        full_name: fullNameTrimmed,
+        hasPhone: !!phoneTrimmed,
+      });
+    }
 
     // Preparar dados para inserção
     // Incluímos phone se fornecido - se a coluna não existir, o erro será tratado
@@ -163,7 +165,9 @@ export async function POST(request: NextRequest) {
         result.error.code === '42703';
       
       if (isPhoneError) {
-        console.log('[VIP LIST API] Erro relacionado à coluna phone detectado, tentando novamente sem phone');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[VIP LIST API] Erro relacionado à coluna phone detectado, tentando novamente sem phone');
+        }
         // Garantir que não há phone no vipData
         const { phone: _, ...dataWithoutPhone } = vipData;
         
@@ -228,11 +232,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[VIP LIST API] ✅ Sucesso ao salvar na VIP list:', {
-      email: emailTrimmed,
-      user_id: user_id || 'null',
-      vip_id: result.data.id,
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[VIP LIST API] ✅ Sucesso ao salvar na VIP list:', {
+        email: emailTrimmed,
+        user_id: user_id || 'null',
+        vip_id: result.data.id,
+      });
+    }
 
     return NextResponse.json({
       success: true,

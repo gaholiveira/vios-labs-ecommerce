@@ -71,7 +71,9 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    console.log(`📦 Encontrados ${itemsWithoutImage.length} itens sem imagem`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`📦 Encontrados ${itemsWithoutImage.length} itens sem imagem`);
+    }
 
     // 2. Atualizar cada item com a imagem do produto
     let updated = 0;
@@ -107,7 +109,9 @@ export async function POST(req: NextRequest) {
         errors.push(`Erro ao atualizar item ${item.id}: ${updateError.message}`);
       } else {
         updated++;
-        console.log(`✅ Imagem atualizada para item ${item.id} (produto: ${item.product_id})`);
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`✅ Imagem atualizada para item ${item.id} (produto: ${item.product_id})`);
+        }
       }
     }
 

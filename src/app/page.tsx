@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { motion, useInView } from "framer-motion";
 import AboutSection from "@/components/AboutSection";
 import ProductCard from "@/components/ProductCard";
+import KitCard from "@/components/KitCard";
 import { PRODUCTS } from "@/constants/products";
+import { KITS } from "@/constants/kits";
 import Image from "next/image";
 import { useMobileViewportHeight } from "@/hooks/useMobileViewportHeight";
 import { useCart } from "@/context/CartContext";
@@ -191,6 +193,26 @@ export default function Home() {
         <ProductsGrid products={PRODUCTS} />
       </section>
 
+      {/* Seção de Kits e Protocolos */}
+      <section id="kits" className="max-w-7xl mx-auto px-4 md:px-6 py-24">
+        {/* Título da Seção com TextReveal */}
+        <div className="text-center mb-16">
+          <TextReveal
+            text="Protocolos & Kits"
+            el="h2"
+            className="text-3xl md:text-4xl font-light uppercase tracking-tighter text-brand-softblack mb-4"
+            delay={0.2}
+            duration={0.6}
+          />
+          <p className="text-brand-softblack/70 text-sm md:text-base font-light tracking-wide max-w-2xl mx-auto mt-4">
+            Combinações científicas desenvolvidas para sinergia máxima
+          </p>
+        </div>
+
+        {/* Grid de Kits */}
+        <KitsGrid kits={KITS} />
+      </section>
+
       {/* 2. Seção Sobre (A que acabámos de criar) */}
       <AboutSection />
     </main>
@@ -243,6 +265,55 @@ function ProductsGrid({ products }: { products: typeof PRODUCTS }) {
           }
         >
           <ProductCard product={product} />
+        </motion.div>
+      ))}
+    </motion.div>
+  );
+}
+
+// Componente separado para o Grid de Kits com animação em cascata
+function KitsGrid({ kits }: { kits: typeof KITS }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15,
+      },
+    },
+  };
+
+  const cardVariants = {
+    hidden: {
+      opacity: 0,
+      y: 30,
+      scale: 0.95,
+    },
+    show: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: 0.6,
+        ease: "easeOut" as const,
+      },
+    },
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      variants={containerVariants}
+      initial="hidden"
+      animate={isInView ? "show" : "hidden"}
+      className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-x-10 sm:gap-y-16"
+    >
+      {kits.map((kit) => (
+        <motion.div key={kit.id} variants={cardVariants} className="h-full">
+          <KitCard kit={kit} />
         </motion.div>
       ))}
     </motion.div>

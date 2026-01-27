@@ -109,12 +109,14 @@ export default function LoteZeroSalesForm({
       // A API route usa service role key e contorna políticas RLS
       // ========================================================================
 
-      console.log("[LOTE ZERO] Enviando dados para API:", {
-        email: emailTrimmed,
-        user_id: user?.id || null,
-        full_name: fullNameTrimmed,
-        phone: phoneTrimmed,
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.log("[LOTE ZERO] Enviando dados para API:", {
+          email: emailTrimmed,
+          user_id: user?.id || null,
+          full_name: fullNameTrimmed,
+          phone: phoneTrimmed,
+        });
+      }
 
       const response = await fetch("/api/vip-list", {
         method: "POST",
@@ -171,14 +173,16 @@ export default function LoteZeroSalesForm({
         return;
       }
 
-      // Log do resultado para debugging
-      console.log("[LOTE ZERO] Resposta da API:", {
-        ok: response.ok,
-        status: response.status,
-        result,
-        hasSuccess: "success" in (result || {}),
-        successValue: result?.success,
-      });
+      // Log do resultado para debugging (apenas em desenvolvimento)
+      if (process.env.NODE_ENV === 'development') {
+        console.log("[LOTE ZERO] Resposta da API:", {
+          ok: response.ok,
+          status: response.status,
+          result,
+          hasSuccess: "success" in (result || {}),
+          successValue: result?.success,
+        });
+      }
 
       // Verificar se result existe e não está vazio
       if (
@@ -231,10 +235,12 @@ export default function LoteZeroSalesForm({
         }
       }
 
-      console.log(
-        "[LOTE ZERO] ✅ Dados salvos na VIP list com sucesso!",
-        result.data,
-      );
+      if (process.env.NODE_ENV === 'development') {
+        console.log(
+          "[LOTE ZERO] ✅ Dados salvos na VIP list com sucesso!",
+          result.data,
+        );
+      }
       onSuccess();
       setLoading(false);
     } catch (err) {

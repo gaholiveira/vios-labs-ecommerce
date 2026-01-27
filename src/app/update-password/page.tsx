@@ -75,7 +75,9 @@ export default function UpdatePasswordPage() {
 
             // Sessão válida - usuário pode prosseguir
             if (process.env.NODE_ENV === 'development') {
-              console.log('✅ Sessão válida encontrada para recovery (tentativa', attempts + 1, ')');
+              if (process.env.NODE_ENV === 'development') {
+                console.log('✅ Sessão válida encontrada para recovery (tentativa', attempts + 1, ')');
+              }
             }
             setHasValidSession(true);
             setCheckingSession(false);
@@ -86,7 +88,9 @@ export default function UpdatePasswordPage() {
           attempts++;
           if (attempts < maxAttempts) {
             if (process.env.NODE_ENV === 'development') {
-              console.log(`⚠️ Sessão não encontrada (tentativa ${attempts}), tentando novamente...`);
+              if (process.env.NODE_ENV === 'development') {
+                console.log(`⚠️ Sessão não encontrada (tentativa ${attempts}), tentando novamente...`);
+              }
             }
             await new Promise(resolve => setTimeout(resolve, 500));
           }

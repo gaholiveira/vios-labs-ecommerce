@@ -56,6 +56,8 @@ function CartDrawer() {
         price: item.price,
         quantity: item.quantity,
         image: item.image,
+        kitProducts: item.kitProducts,
+        isKit: item.isKit,
       }));
 
       // Preparar dados do usuário (se logado) ou null para guest checkout
@@ -203,37 +205,60 @@ function CartDrawer() {
                           key={item.id}
                           className="flex gap-4 pb-4 border-b border-gray-100 last:border-0"
                         >
-                          {/* Imagem do Produto */}
-                          <Link
-                            href={`/produto/${item.id}`}
-                            onClick={handleCloseCart}
-                            className="relative w-20 h-24 flex-shrink-0 bg-gray-100 rounded-sm overflow-hidden group"
+                          {/* Imagem do Produto/Kit */}
+                          <div
+                            className={`relative w-20 h-24 flex-shrink-0 bg-gray-100 rounded-sm overflow-hidden ${!item.isKit ? 'group' : ''}`}
                           >
-                            <Image
-                              src={item.image}
-                              alt={item.name}
-                              fill
-                              sizes="80px"
-                              className="object-cover group-hover:scale-105 transition-transform"
-                              loading="lazy"
-                              quality={75}
-                            />
-                          </Link>
+                            {!item.isKit ? (
+                              <Link
+                                href={`/produto/${item.id}`}
+                                onClick={handleCloseCart}
+                                className="block w-full h-full"
+                              >
+                                <Image
+                                  src={item.image}
+                                  alt={item.name}
+                                  fill
+                                  sizes="80px"
+                                  className="object-cover group-hover:scale-105 transition-transform"
+                                  loading="lazy"
+                                  quality={75}
+                                />
+                              </Link>
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-offwhite to-brand-champagne/30">
+                                <span className="text-[8px] uppercase tracking-wider text-brand-gold font-light text-center px-2">
+                                  {item.category}
+                                </span>
+                              </div>
+                            )}
+                          </div>
 
-                          {/* Informações do Produto */}
+                          {/* Informações do Produto/Kit */}
                           <div className="flex-1 min-w-0">
-                            <Link
-                              href={`/produto/${item.id}`}
-                              onClick={handleCloseCart}
-                              className="block"
-                            >
-                              <h3 className="text-sm uppercase font-medium text-brand-softblack hover:text-brand-green transition-colors line-clamp-2">
+                            {!item.isKit ? (
+                              <Link
+                                href={`/produto/${item.id}`}
+                                onClick={handleCloseCart}
+                                className="block"
+                              >
+                                <h3 className="text-sm uppercase font-medium text-brand-softblack hover:text-brand-green transition-colors line-clamp-2">
+                                  {item.name}
+                                </h3>
+                              </Link>
+                            ) : (
+                              <h3 className="text-sm uppercase font-medium text-brand-gold line-clamp-2">
                                 {item.name}
                               </h3>
-                            </Link>
+                            )}
 
                             <p className="text-xs text-gray-500 mt-1">
                               {formatPrice(item.price)}
+                              {item.isKit && (
+                                <span className="ml-2 text-[10px] text-brand-green">
+                                  Kit
+                                </span>
+                              )}
                             </p>
 
                             {/* Controles de Quantidade */}

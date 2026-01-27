@@ -244,7 +244,16 @@ async function handleCheckoutSessionCompleted(
     // Order created successfully
 
     // Criar os itens do pedido
-    const orderItems = lineItems.data.map((lineItem) => {
+    const orderItems: Array<{
+      order_id: string;
+      product_id: string;
+      product_name: string;
+      quantity: number;
+      price: number;
+      product_image: string | null;
+    }> = [];
+
+    for (const lineItem of lineItems.data) {
       // Extrair informações do produto
       const product = lineItem.price?.product as Stripe.Product | string | undefined;
       const productName = typeof product === 'object' && product
@@ -262,7 +271,6 @@ async function handleCheckoutSessionCompleted(
       }
       
       // Obter imagem do produto se disponível
-      // A imagem vem do produto expandido do Stripe
       let productImage: string | null = null;
       
       if (typeof product === 'object' && product) {
@@ -272,29 +280,64 @@ async function handleCheckoutSessionCompleted(
         }
       }
       
-      // Nota: Se o produto não foi expandido, a imagem será null
-      // Isso pode ser atualizado depois usando a API /api/admin/update-order-images
-      
+      // Verificar se é um kit
+      const isKit = typeof product === 'object' && product?.metadata?.is_kit === 'true';
+      const kitProducts = typeof product === 'object' && product?.metadata?.kit_products
+        ? product.metadata.kit_products.split(',')
+        : [];
+
+      if (isKit && kitProducts.length > 0) {
+        // É um kit - criar order_items para cada produto do kit
+        const kitPrice = lineItem.price?.unit_amount ? lineItem.price.unit_amount / 100 : 0;
+        const kitQuantity = lineItem.quantity || 1;
+
+        // Criar item principal do kit
+        orderItems.push({
+          order_id: order.id,
+          product_id: productId,
+          product_name: productName,
+          quantity: kitQuantity,
+          price: kitPrice,
+          product_image: productImage,
+        });
+
+        // Criar order_items para cada produto do kit (para histórico e estoque)
+        // Preço será 0 pois o preço já está no item do kit
+        for (const kitProductId of kitProducts) {
+          orderItems.push({
+            order_id: order.id,
+            product_id: kitProductId.trim(),
+            product_name: `${productName} - ${kitProductId.trim()}`,
+            quantity: kitQuantity,
+            price: 0, // Preço já está no item do kit
+            product_image: null,
+          });
+        }
+      } else {
+        // Produto individual - criar normalmente
+        orderItems.push({
+          order_id: order.id,
+          product_id: productId,
+          product_name: productName,
+          quantity: lineItem.quantity || 1,
+          price: lineItem.price?.unit_amount ? lineItem.price.unit_amount / 100 : 0,
+          product_image: productImage,
+        });
+      }
+
       // Log para debug (apenas em desenvolvimento)
       if (process.env.NODE_ENV === 'development') {
         console.log('📦 Processando item do pedido:', {
           productId,
           productName,
+          isKit,
+          kitProducts: isKit ? kitProducts : null,
           hasImage: !!productImage,
           imageUrl: productImage,
           productType: typeof product,
         });
       }
-
-      return {
-        order_id: order.id,
-        product_id: productId,
-        product_name: productName,
-        quantity: lineItem.quantity || 1,
-        price: lineItem.price?.unit_amount ? lineItem.price.unit_amount / 100 : 0, // Converter de centavos para reais
-        product_image: productImage,
-      };
-    });
+    }
 
     // Inserir todos os itens do pedido
     const { error: itemsError } = await supabaseAdmin
@@ -330,7 +373,9 @@ async function handleCheckoutSessionCompleted(
         // Ou se a reserva já foi processada
       } else {
         // Reserva confirmada com sucesso
-        console.log('✅ Inventory reservation confirmed for order:', order.id);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Inventory reservation confirmed for order:', order.id);
+        }
       }
     } catch (inventoryError: any) {
       console.error('⚠️ Error in inventory confirmation:', inventoryError.message);

@@ -21,6 +21,9 @@ interface CartItem {
   price: number;
   quantity: number;
   image?: string;
+  // Para kits, armazena os IDs dos produtos que compõem o kit
+  kitProducts?: string[];
+  isKit?: boolean;
 }
 
 interface CheckoutRequestBody {
@@ -247,56 +250,231 @@ export async function POST(req: Request) {
     // ============================================================================
 
     const supabaseAdmin = getSupabaseAdmin();
-    let tempSessionId: string | null = null; // ID temporário para reserva (será substituído pelo session.id real)
+    let tempSessionId: string | null = null; // ID temporário base para reservas
+    const tempReservationIds: string[] = []; // IDs únicos de cada reserva
 
     try {
       // Primeiro: Tentar reservar estoque para TODOS os itens
-      // Usamos um ID temporário único para as reservas
+      // Usamos um ID temporário base único para agrupar as reservas
       tempSessionId = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
       for (const item of items) {
-        const { data, error } = await supabaseAdmin.rpc("reserve_inventory", {
-          p_product_id: item.id,
-          p_quantity: item.quantity,
-          p_stripe_session_id: tempSessionId, // ID temporário
-          p_customer_email: customerEmail || null,
-          p_user_id: userId || null,
-        });
+        // Se for um kit, reservar estoque para cada produto do kit
+        if (item.isKit && item.kitProducts && item.kitProducts.length > 0) {
+          // Para cada produto do kit, reservar estoque
+          for (const productId of item.kitProducts) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log("[CHECKOUT] Reservando estoque para produto do kit:", {
+                kit_name: item.name,
+                product_id: productId,
+                quantity: item.quantity,
+              });
+            }
 
-        if (error) {
-          console.error("[CHECKOUT ERROR] Erro ao reservar estoque:", error);
-          // Se erro ao reservar, liberar todas as reservas já feitas e retornar erro
-          await releaseAllReservations(supabaseAdmin, tempSessionId);
-          return NextResponse.json(
-            {
-              error: `Erro ao reservar estoque para ${item.name}. Tente novamente.`,
-              product: item.name,
-            },
-            { status: 500 },
-          );
-        }
+            // Criar um ID único para cada reserva (para evitar constraint UNIQUE)
+            const uniqueReservationId = `${tempSessionId}_${productId}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+            tempReservationIds.push(uniqueReservationId);
 
-        const reserveResult = data as ReserveInventoryResponse;
+            try {
+              const { data, error } = await supabaseAdmin.rpc("reserve_inventory", {
+                p_product_id: productId,
+                p_quantity: item.quantity, // Quantidade do kit = quantidade de cada produto
+                p_stripe_session_id: uniqueReservationId, // ID único para cada reserva
+                p_customer_email: customerEmail || null,
+                p_user_id: userId || null,
+              });
 
-        if (!reserveResult.success) {
-          console.error("[CHECKOUT ERROR] Estoque insuficiente:", {
-            product_id: item.id,
-            requested: item.quantity,
-            available: reserveResult.available,
+              if (error) {
+                console.error("[CHECKOUT ERROR] Erro ao reservar estoque do kit:", {
+                  error,
+                  product_id: productId,
+                  kit_name: item.name,
+                  error_message: error.message,
+                  error_code: error.code,
+                  error_details: error,
+                  error_hint: error.hint,
+                });
+                
+                // Verificar se o produto existe no banco
+                const { data: productCheck, error: checkError } = await supabaseAdmin
+                  .from('inventory')
+                  .select('product_id, stock_quantity')
+                  .eq('product_id', productId)
+                  .maybeSingle();
+                
+                console.error("[CHECKOUT ERROR] Verificação de produto:", {
+                  product_id: productId,
+                  exists: !!productCheck,
+                  product_data: productCheck,
+                  check_error: checkError,
+                });
+                
+                // Liberar todas as reservas já feitas
+                for (const reservationId of tempReservationIds) {
+                  await releaseAllReservations(supabaseAdmin, reservationId);
+                }
+                
+                // Verificar se a função RPC existe
+                if (error.code === '42883' || error.message?.includes('function') || error.message?.includes('does not exist')) {
+                  return NextResponse.json(
+                    {
+                      error: `Função de reserva de estoque não encontrada. Entre em contato com o suporte técnico.`,
+                      product: item.name,
+                      product_id: productId,
+                    },
+                    { status: 500 },
+                  );
+                }
+                
+                const errorMessage = productCheck 
+                  ? `Erro ao reservar estoque para ${item.name}. Tente novamente.`
+                  : `Produto ${productId} não encontrado no sistema de estoque. Entre em contato com o suporte.`;
+                
+                return NextResponse.json(
+                  {
+                    error: errorMessage,
+                    product: item.name,
+                    product_id: productId,
+                  },
+                  { status: 500 },
+                );
+              }
+
+              // Validar que data existe e tem o formato correto
+              if (!data) {
+                console.error("[CHECKOUT ERROR] Resposta vazia da função reserve_inventory:", {
+                  product_id: productId,
+                  kit_name: item.name,
+                });
+                // Liberar todas as reservas já feitas
+                for (const reservationId of tempReservationIds) {
+                  await releaseAllReservations(supabaseAdmin, reservationId);
+                }
+                return NextResponse.json(
+                  {
+                    error: `Erro ao processar reserva de estoque para ${item.name}. Tente novamente.`,
+                    product: item.name,
+                    product_id: productId,
+                  },
+                  { status: 500 },
+                );
+              }
+
+              const reserveResult = data as ReserveInventoryResponse;
+
+              if (!reserveResult || !reserveResult.success) {
+                const errorMsg = reserveResult?.error || 'Erro desconhecido ao reservar estoque';
+                
+                console.error("[CHECKOUT ERROR] Falha na reserva de estoque do kit:", {
+                  product_id: productId,
+                  kit_name: item.name,
+                  requested: item.quantity,
+                  available: reserveResult?.available,
+                  error: errorMsg,
+                  reserve_result: reserveResult,
+                });
+
+                // Liberar todas as reservas já feitas
+                for (const reservationId of tempReservationIds) {
+                  await releaseAllReservations(supabaseAdmin, reservationId);
+                }
+
+                return NextResponse.json(
+                  {
+                    error: reserveResult?.error === 'Product not found in inventory'
+                      ? `Produto do kit não encontrado no sistema de estoque. Entre em contato com o suporte.`
+                      : `Estoque insuficiente para ${item.name}. ${errorMsg}`,
+                    product: item.name,
+                    requested: item.quantity,
+                    available: reserveResult?.available || 0,
+                  },
+                  { status: 409 },
+                );
+              }
+
+              if (process.env.NODE_ENV === 'development') {
+                console.log("[CHECKOUT] Estoque reservado com sucesso para produto do kit:", {
+                  product_id: productId,
+                  reservation_id: reserveResult.reservation_id,
+                });
+              }
+            } catch (rpcError: any) {
+              console.error("[CHECKOUT ERROR] Exceção ao chamar reserve_inventory:", {
+                error: rpcError,
+                product_id: productId,
+                kit_name: item.name,
+                error_message: rpcError?.message,
+                error_stack: rpcError?.stack,
+              });
+              
+              // Liberar todas as reservas já feitas
+              for (const reservationId of tempReservationIds) {
+                await releaseAllReservations(supabaseAdmin, reservationId);
+              }
+              
+              return NextResponse.json(
+                {
+                  error: `Erro ao processar reserva de estoque para ${item.name}. Tente novamente.`,
+                  product: item.name,
+                  product_id: productId,
+                },
+                { status: 500 },
+              );
+            }
+          }
+        } else {
+          // Produto individual - reservar normalmente
+          // Criar um ID único para cada reserva de produto individual também
+          const uniqueReservationId = `${tempSessionId}_${item.id}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+          tempReservationIds.push(uniqueReservationId);
+          
+          const { data, error } = await supabaseAdmin.rpc("reserve_inventory", {
+            p_product_id: item.id,
+            p_quantity: item.quantity,
+            p_stripe_session_id: uniqueReservationId, // ID único para cada reserva
+            p_customer_email: customerEmail || null,
+            p_user_id: userId || null,
           });
 
-          // Liberar todas as reservas já feitas
-          await releaseAllReservations(supabaseAdmin, tempSessionId);
+          if (error) {
+            console.error("[CHECKOUT ERROR] Erro ao reservar estoque:", error);
+            // Liberar todas as reservas já feitas
+            for (const reservationId of tempReservationIds) {
+              await releaseAllReservations(supabaseAdmin, reservationId);
+            }
+            return NextResponse.json(
+              {
+                error: `Erro ao reservar estoque para ${item.name}. Tente novamente.`,
+                product: item.name,
+              },
+              { status: 500 },
+            );
+          }
 
-          return NextResponse.json(
-            {
-              error: `Estoque insuficiente para ${item.name}`,
-              product: item.name,
+          const reserveResult = data as ReserveInventoryResponse;
+
+          if (!reserveResult.success) {
+            console.error("[CHECKOUT ERROR] Estoque insuficiente:", {
+              product_id: item.id,
               requested: item.quantity,
-              available: reserveResult.available || 0,
-            },
-            { status: 409 },
-          );
+              available: reserveResult.available,
+            });
+
+            // Liberar todas as reservas já feitas
+            for (const reservationId of tempReservationIds) {
+              await releaseAllReservations(supabaseAdmin, reservationId);
+            }
+
+            return NextResponse.json(
+              {
+                error: `Estoque insuficiente para ${item.name}`,
+                product: item.name,
+                requested: item.quantity,
+                available: reserveResult.available || 0,
+              },
+              { status: 409 },
+            );
+          }
         }
       }
 
@@ -307,13 +485,24 @@ export async function POST(req: Request) {
         (item) => {
           const imageUrl = normalizeImageUrl(item.image, origin);
 
+          // Preparar metadata do produto
+          const productMetadata: Record<string, string> = {
+            product_id: item.id,
+          };
+
+          // Se for um kit, adicionar informações dos produtos do kit
+          if (item.isKit && item.kitProducts && item.kitProducts.length > 0) {
+            productMetadata.is_kit = 'true';
+            productMetadata.kit_products = item.kitProducts.join(',');
+          }
+
           return {
             price_data: {
               currency: "brl",
               product_data: {
                 name: item.name,
                 images: imageUrl ? [imageUrl] : [],
-                metadata: { product_id: item.id },
+                metadata: productMetadata,
               },
               unit_amount: Math.round(item.price * 100),
             },
@@ -352,20 +541,70 @@ export async function POST(req: Request) {
 
       // Atualizar reservas com o session.id real do Stripe
       // Isso garante que o webhook possa encontrar as reservas corretas
+      // NOTA: A constraint UNIQUE em stripe_session_id foi removida para permitir
+      // múltiplas reservas para a mesma sessão (kits com múltiplos produtos)
       try {
-        const { error: updateError } = await supabaseAdmin
-          .from('inventory_reservations')
-          .update({ stripe_session_id: session.id })
-          .eq('stripe_session_id', tempSessionId)
-          .eq('status', 'active');
+        // Atualizar todas as reservas usando os IDs temporários únicos
+        if (tempReservationIds.length > 0) {
+          // Atualizar uma por uma para evitar problemas de constraint (se ainda existir)
+          let updateErrors: any[] = [];
+          
+          for (const reservationId of tempReservationIds) {
+            const { error: updateError } = await supabaseAdmin
+              .from('inventory_reservations')
+              .update({ stripe_session_id: session.id })
+              .eq('stripe_session_id', reservationId)
+              .eq('status', 'active');
 
-        if (updateError) {
-          throw updateError;
+            if (updateError) {
+              console.error(`[CHECKOUT ERROR] Erro ao atualizar reserva ${reservationId}:`, updateError);
+              updateErrors.push({ reservationId, error: updateError });
+            }
+          }
+
+          // Se houver erros, mas não for constraint UNIQUE, continuar
+          // Se for constraint UNIQUE, significa que a constraint ainda existe no banco
+          const hasUniqueConstraintError = updateErrors.some(
+            e => e.error?.code === '23505' || e.error?.message?.includes('unique constraint')
+          );
+
+          if (hasUniqueConstraintError && updateErrors.length > 0) {
+            if (process.env.NODE_ENV === 'development') {
+              console.error("[CHECKOUT ERROR] Constraint UNIQUE ainda existe no banco. Execute o script fix_inventory_reservations_constraint.sql");
+            }
+            // Continuar mesmo assim - as reservas foram criadas com sucesso
+            // O webhook pode usar os IDs temporários ou podemos ajustar depois
+          } else if (updateErrors.length > 0) {
+            // Outros erros - tratar como falha
+            throw updateErrors[0].error;
+          }
+        } else {
+          // Fallback: atualizar usando o tempSessionId base (para produtos individuais)
+          const { error: updateError } = await supabaseAdmin
+            .from('inventory_reservations')
+            .update({ stripe_session_id: session.id })
+            .eq('stripe_session_id', tempSessionId)
+            .eq('status', 'active');
+
+          if (updateError) {
+            // Se for erro de constraint UNIQUE, apenas logar (reserva já existe)
+            if (updateError.code === '23505' || updateError.message?.includes('unique constraint')) {
+              console.warn("[CHECKOUT WARNING] Constraint UNIQUE ainda existe. Reserva pode já estar atualizada.");
+            } else {
+              throw updateError;
+            }
+          }
         }
       } catch (updateError) {
         console.error("[CHECKOUT ERROR] Erro ao atualizar session_id nas reservas:", updateError);
         // Se falhar ao atualizar, liberar todas as reservas e expirar sessão
-        await releaseAllReservations(supabaseAdmin, tempSessionId);
+        // Liberar todas as reservas usando os IDs temporários
+        for (const reservationId of tempReservationIds) {
+          await releaseAllReservations(supabaseAdmin, reservationId);
+        }
+        if (tempSessionId) {
+          await releaseAllReservations(supabaseAdmin, tempSessionId);
+        }
         await stripe.checkout.sessions.expire(session.id).catch(() => {});
         return NextResponse.json(
           { error: "Erro ao processar reserva de estoque. Tente novamente." },
@@ -381,7 +620,13 @@ export async function POST(req: Request) {
       );
       
       // Em caso de erro inesperado, liberar todas as reservas
-      await releaseAllReservations(supabaseAdmin, tempSessionId);
+      // Liberar todas as reservas usando os IDs temporários
+      for (const reservationId of tempReservationIds) {
+        await releaseAllReservations(supabaseAdmin, reservationId);
+      }
+      if (tempSessionId) {
+        await releaseAllReservations(supabaseAdmin, tempSessionId);
+      }
 
       return NextResponse.json(
         { error: "Erro ao processar checkout. Tente novamente." },
