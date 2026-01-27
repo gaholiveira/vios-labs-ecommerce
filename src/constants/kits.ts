@@ -24,7 +24,7 @@ const kitsData = [
   },
   {
     id: 'kit_2',
-    name: 'Protocolo Essencial VIOS',
+    name: 'Protocolo Essencial Vios',
     products: ['prod_1', 'prod_4', 'prod_2'], // Glow + Pulse + Sleep
     description: 'O tripé da vitalidade: estética, cognição e restauração.',
     badge: 'protocolo' as const,

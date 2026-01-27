@@ -22,6 +22,23 @@ function CartDrawer() {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { user } = useAuth(); // Obter usuário atual (pode ser null para guests)
 
+  // Resetar estados de loading quando o componente é montado novamente ou quando o usuário volta
+  useEffect(() => {
+    // Resetar ao montar (caso o usuário tenha voltado)
+    setIsCheckingOut(false);
+
+    // Resetar quando o usuário usa o botão voltar do navegador
+    const handlePopState = () => {
+      setIsCheckingOut(false);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
   // Prevenir scroll quando carrinho está aberto
   useEffect(() => {
     if (isOpen) {

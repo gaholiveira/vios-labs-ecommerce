@@ -16,7 +16,7 @@ function KitCard({ kit }: { kit: Kit }) {
   };
 
   return (
-    <div className="group flex flex-col h-full">
+    <div className="group flex flex-col">
       {/* Container da Imagem do Kit */}
       <div className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden mb-6">
         {kit.image ? (
@@ -62,19 +62,19 @@ function KitCard({ kit }: { kit: Kit }) {
       </div>
 
       {/* Informações do Kit */}
-      <div className="flex flex-col gap-3 flex-1">
+      <div className="flex flex-col gap-3">
         {/* Categoria/Badge */}
         <p className="text-[10px] uppercase tracking-[0.2em] text-brand-gold font-light">
           {kit.badge === 'kit' ? 'Kit' : 'Protocolo'}
         </p>
 
-        {/* Nome do Kit */}
-        <h3 className="text-xs sm:text-sm uppercase tracking-wider font-light text-brand-gold group-hover:text-brand-green transition-colors duration-500 ease-out leading-tight">
+        {/* Nome do Kit - altura fixa para evitar que empurre o botão ao comprimir */}
+        <h3 className="text-xs sm:text-sm uppercase tracking-wider font-light text-brand-gold group-hover:text-brand-green transition-colors duration-500 ease-out leading-tight h-10 sm:h-12 flex items-start overflow-hidden">
           {kit.name}
         </h3>
 
-        {/* Frase de Apoio */}
-        <p className="text-xs font-light text-brand-softblack/70 leading-relaxed">
+        {/* Frase de Apoio - altura fixa para consistência */}
+        <p className="text-xs font-light text-brand-softblack/70 leading-relaxed h-[3.5rem] overflow-hidden">
           {kit.description}
         </p>
 
@@ -95,7 +95,7 @@ function KitCard({ kit }: { kit: Kit }) {
           )}
         </div>
 
-        {/* Botão Adicionar ao Carrinho */}
+        {/* Botão Adicionar ao Carrinho - Mesmo estilo do ProductCard */}
         <button
           onClick={handleAddToCart}
           disabled

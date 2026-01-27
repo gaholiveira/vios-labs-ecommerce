@@ -14,6 +14,23 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const { showToast } = useCart();
 
+  // Resetar loading quando o componente é montado novamente ou quando o usuário volta
+  useEffect(() => {
+    // Resetar ao montar (caso o usuário tenha voltado)
+    setLoading(false);
+
+    // Resetar quando o usuário usa o botão voltar do navegador
+    const handlePopState = () => {
+      setLoading(false);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
   useEffect(() => {
     // Verificar se há erro na URL (vindo do callback ou home page)
     if (typeof window !== "undefined") {

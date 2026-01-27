@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 
 interface WaitlistModalProps {
@@ -22,6 +22,23 @@ export default function WaitlistModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
+
+  // Resetar loading quando o componente é montado novamente ou quando o usuário volta
+  useEffect(() => {
+    // Resetar ao montar (caso o usuário tenha voltado)
+    setIsSubmitting(false);
+
+    // Resetar quando o usuário usa o botão voltar do navegador
+    const handlePopState = () => {
+      setIsSubmitting(false);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -312,7 +312,7 @@ function KitsGrid({ kits }: { kits: typeof KITS }) {
       className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-x-10 sm:gap-y-16"
     >
       {kits.map((kit) => (
-        <motion.div key={kit.id} variants={cardVariants} className="h-full">
+        <motion.div key={kit.id} variants={cardVariants}>
           <KitCard kit={kit} />
         </motion.div>
       ))}

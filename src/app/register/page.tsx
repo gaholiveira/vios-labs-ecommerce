@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -29,6 +29,23 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false);
   const router = useRouter();
   const { showToast } = useCart();
+
+  // Resetar loading quando o componente é montado novamente ou quando o usuário volta
+  useEffect(() => {
+    // Resetar ao montar (caso o usuário tenha voltado)
+    setLoading(false);
+
+    // Resetar quando o usuário usa o botão voltar do navegador
+    const handlePopState = () => {
+      setLoading(false);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
 
   // Validação do formulário
   const validateForm = (): boolean => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { resendConfirmationEmail } from "@/utils/auth";
 
 interface ResendConfirmationEmailProps {
@@ -19,6 +19,23 @@ export default function ResendConfirmationEmail({
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Resetar loading quando o componente é montado novamente ou quando o usuário volta
+  useEffect(() => {
+    // Resetar ao montar (caso o usuário tenha voltado)
+    setLoading(false);
+
+    // Resetar quando o usuário usa o botão voltar do navegador
+    const handlePopState = () => {
+      setLoading(false);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
 
   const handleResend = async () => {
     setLoading(true);

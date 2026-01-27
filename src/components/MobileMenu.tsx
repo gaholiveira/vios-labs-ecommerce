@@ -16,6 +16,25 @@ function MobileMenu() {
   const [loading, setLoading] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
+  // Resetar loading quando o componente é montado novamente ou quando o usuário volta
+  useEffect(() => {
+    // Resetar ao montar (caso o usuário tenha voltado)
+    setLoading(false);
+    setLoggingOut(false);
+
+    // Resetar quando o usuário usa o botão voltar do navegador
+    const handlePopState = () => {
+      setLoading(false);
+      setLoggingOut(false);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
   // Prevenir scroll quando menu está aberto
   useEffect(() => {
     if (isMenuOpen) {

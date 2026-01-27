@@ -22,6 +22,23 @@ export default function UpdatePasswordPage() {
   const router = useRouter();
   const { showToast } = useCart();
 
+  // Resetar loading quando o componente é montado novamente ou quando o usuário volta
+  useEffect(() => {
+    // Resetar ao montar (caso o usuário tenha voltado)
+    setLoading(false);
+
+    // Resetar quando o usuário usa o botão voltar do navegador
+    const handlePopState = () => {
+      setLoading(false);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
   useEffect(() => {
     // Verificar se o usuário tem uma sessão válida de recovery
     async function checkSession() {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, memo } from "react";
+import { useState, useCallback, memo, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 
 interface GoogleAuthButtonProps {
@@ -28,6 +28,23 @@ function GoogleAuthButton({
   className = "",
 }: GoogleAuthButtonProps) {
   const [loading, setLoading] = useState(false);
+
+  // Resetar loading quando o componente é montado novamente ou quando o usuário volta
+  useEffect(() => {
+    // Resetar ao montar (caso o usuário tenha voltado)
+    setLoading(false);
+
+    // Resetar quando o usuário usa o botão voltar do navegador
+    const handlePopState = () => {
+      setLoading(false);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
 
   const handleGoogleLogin = useCallback(async () => {
     if (loading) return;
