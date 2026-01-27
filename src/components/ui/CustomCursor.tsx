@@ -259,11 +259,12 @@ export default function CustomCursor() {
           transform: 'translate(-50%, -50%)',
         }}
       >
-        {/* Estado Normal: Dot Sólido Verde - 8px */}
+        {/* Estado Normal: Dot Sólido Metallic Gold - 12px */}
         <motion.div
-          className="w-2 h-2 rounded-full"
+          className="w-3 h-3 rounded-full"
           style={{
-            backgroundColor: '#082f1e',
+            backgroundColor: '#C9A961',
+            boxShadow: '0 0 8px rgba(201, 169, 97, 0.4), 0 0 4px rgba(201, 169, 97, 0.6)',
           }}
           animate={{
             scale: isHovering ? 0 : 1,
@@ -272,17 +273,18 @@ export default function CustomCursor() {
           transition={{ duration: 0.15, ease: 'easeOut' }}
         />
 
-        {/* Estado Hover: Anel Verde Oco (Mira) - 32px - Centralizado */}
+        {/* Estado Hover: Anel Metallic Gold Oco (Mira) - 44px - Centralizado */}
         <motion.div
           className="absolute rounded-full border bg-transparent"
           style={{
-            width: '32px',
-            height: '32px',
+            width: '44px',
+            height: '44px',
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            borderColor: '#082f1e',
-            borderWidth: '1px',
+            borderColor: '#C9A961',
+            borderWidth: '1.5px',
+            boxShadow: '0 0 12px rgba(201, 169, 97, 0.3), 0 0 6px rgba(201, 169, 97, 0.5)',
           }}
           animate={{
             scale: isHovering ? 1 : 0,

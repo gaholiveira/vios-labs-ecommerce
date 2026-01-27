@@ -220,7 +220,7 @@ export default function LoteZeroPage() {
               </svg>
               Acessar Grupo VIP
             </a>
-            <p className="text-xs text-brand-softblack/50 mt-3 font-light">
+            <p className="text-xs text-brand-gold/80 mt-3 font-light">
               Junte-se à comunidade exclusiva e receba atualizações em primeira mão
             </p>
           </div>

@@ -670,16 +670,25 @@ function ProductPageContent({ product }: ProductPageContentProps) {
             />
           </div>
 
-          {/* Botão de Compra (Desabilitado) */}
+          {/* Botão de Compra */}
           <motion.button
             data-sticky-bar-trigger
-            disabled
+            onClick={handleAddToCart}
+            disabled={isOutOfStock || isLoadingInventory}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.1 }}
-            className="w-full border border-stone-300 rounded-sm bg-stone-200 text-stone-500 px-6 py-3 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium transition-all duration-500 ease-out cursor-not-allowed"
+            className={`w-full border rounded-sm px-6 py-3 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium transition-all duration-500 ease-out ${
+              isOutOfStock || isLoadingInventory
+                ? "border-stone-300 bg-stone-200 text-stone-500 cursor-not-allowed"
+                : "border-brand-green bg-brand-green text-brand-offwhite hover:bg-brand-softblack hover:border-brand-softblack"
+            }`}
           >
-            Aguardando Lote Zero
+            {isLoadingInventory
+              ? "Carregando..."
+              : isOutOfStock
+              ? "Fora de Estoque"
+              : "Adicionar ao Carrinho"}
           </motion.button>
 
           <motion.div
@@ -713,7 +722,7 @@ function ProductPageContent({ product }: ProductPageContentProps) {
                   d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
                 />
               </svg>
-              <span className="text-[10px] uppercase tracking-wider font-light">
+              <span className="text-[10px] uppercase tracking-wider font-light text-brand-gold">
                 Compra Segura
               </span>
             </div>
@@ -733,7 +742,7 @@ function ProductPageContent({ product }: ProductPageContentProps) {
               >
                 <path d="M9.207 16.454C9.207 17.86 8.095 19 6.724 19s-2.483-1.14-2.483-2.546m4.966 0c0-1.405-1.112-2.545-2.483-2.545s-2.483 1.14-2.483 2.545m4.966 0h5.586m-10.552 0H3V6a1 1 0 0 1 1-1h9.793a1 1 0 0 1 1 1v2.182m5.586 8.272c0 1.406-1.111 2.546-2.482 2.546c-1.372 0-2.483-1.14-2.483-2.546m4.965 0c0-1.405-1.111-2.545-2.482-2.545c-1.372 0-2.483 1.14-2.483 2.545m4.965 0H21v-5.09l-2.515-2.579a2 2 0 0 0-1.431-.603h-2.26m.62 8.272h-.62m0 0V8.182" />
               </svg>
-              <span className="text-[10px] uppercase tracking-wider font-light">
+              <span className="text-[10px] uppercase tracking-wider font-light text-brand-gold">
                 Envio Imediato
               </span>
             </div>
@@ -755,7 +764,7 @@ function ProductPageContent({ product }: ProductPageContentProps) {
                   d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
                 />
               </svg>
-              <span className="text-[10px] uppercase tracking-wider font-light">
+              <span className="text-[10px] uppercase tracking-wider font-light text-brand-gold">
                 Fórmula Premium
               </span>
             </div>
@@ -769,11 +778,11 @@ function ProductPageContent({ product }: ProductPageContentProps) {
               transition={{ duration: 0.4, delay: 0.2 }}
               className="mt-4 p-4 bg-stone-50/50 border border-stone-200/50 rounded-sm"
             >
-              <p className="text-xs text-stone-700 leading-relaxed">
+              <p className="text-xs text-brand-gold/80 leading-relaxed">
                 <span className="font-medium">🔒 Lote de Lançamento:</span>{" "}
                 Devido à alta procura, sua unidade será despachada
                 prioritariamente a partir de{" "}
-                <span className="font-medium text-stone-900">
+                <span className="font-medium text-brand-gold">
                   {SHIPPING_STARTS_AT}
                 </span>
                 .
@@ -784,11 +793,11 @@ function ProductPageContent({ product }: ProductPageContentProps) {
           {/* Texto Legal ANVISA */}
           <div className="mt-6">
             {product.anvisaRecord ? (
-              <span className="text-xs text-stone-400 font-mono">
+              <span className="text-xs text-brand-gold/70 font-mono">
                 Processo ANVISA nº {product.anvisaRecord}
               </span>
             ) : (
-              <span className="text-xs text-stone-400 font-mono">
+              <span className="text-xs text-brand-gold/70 font-mono">
                 Produto dispensado de registro conforme RDC nº 240/2018.
               </span>
             )}

@@ -98,7 +98,7 @@ export default function AboutSection({ image }: AboutSectionProps) {
           <motion.div variants={focusRevealVariants} className="mt-10">
             <a
               href="/sobre"
-              className="inline-block text-brand-softblack text-[10px] uppercase tracking-wider font-light border-b border-brand-green/80 pb-2 hover:text-brand-green hover:border-brand-green transition-all duration-500 ease-out"
+              className="inline-block border border-brand-softblack/90 rounded-sm px-10 md:px-12 py-4 md:py-5 min-h-[44px] text-xs md:text-sm uppercase tracking-wider text-brand-softblack font-light active:bg-brand-green active:text-brand-offwhite active:border-brand-green md:hover:bg-brand-green md:hover:text-brand-offwhite md:hover:border-brand-green md:transition-all md:duration-500 md:ease-out md:transform md:group-hover:-translate-y-1"
             >
               Conheça a nossa história
             </a>

@@ -122,7 +122,7 @@ function ProductCard({ product }: { product: Product }) {
       <div className="flex flex-col gap-3">
         {/* Categoria */}
         {product.category && (
-          <p className="text-[10px] uppercase tracking-[0.2em] text-brand-softblack/50 font-light">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-brand-gold font-light">
             {product.category}
           </p>
         )}
@@ -158,12 +158,12 @@ function ProductCard({ product }: { product: Product }) {
           )}
         </div>
 
-        {/* Botão Adicionar ao Carrinho (Desabilitado) - Estilo Minimalista de Luxo */}
+        {/* Botão Adicionar ao Carrinho - Estilo Minimalista de Luxo */}
         <button
-          disabled
-          className="w-full border border-brand-green/30 rounded-sm bg-brand-offwhite/50 text-brand-softblack/60 px-6 py-3 min-h-[44px] uppercase tracking-wider text-xs font-light transition-all duration-500 ease-out mt-2 cursor-not-allowed"
+          onClick={() => addToCart(product)}
+          className="w-full border border-brand-green rounded-sm bg-brand-green text-brand-offwhite px-6 py-3 min-h-[44px] uppercase tracking-wider text-xs font-light hover:bg-brand-softblack hover:border-brand-softblack transition-all duration-500 ease-out mt-2"
         >
-          Aguardando Lote Zero
+          Adicionar ao Carrinho
         </button>
       </div>
     </div>

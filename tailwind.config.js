@@ -15,6 +15,8 @@ module.exports = {
           green: "#0a3323", // Verde Profundo
           offwhite: "#f2f2f0", // Fundo Sophisticado
           softblack: "#1a1a1a", // Letras Suaves
+          gold: "#C9A961", // Metallic Gold - Acentos de luxo
+          champagne: "#F7E7CE", // Champagne - Background elegante
         },
       },
     },

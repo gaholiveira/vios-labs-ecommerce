@@ -70,13 +70,18 @@ export default function StickyBar({
               </p>
             </div>
 
-            {/* Botão Adicionar ao Carrinho (Desabilitado) */}
+            {/* Botão Adicionar ao Carrinho */}
             <button
-              disabled
-              className="flex-shrink-0 border border-stone-300 rounded-sm bg-stone-200 text-stone-500 px-4 py-2.5 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium transition-all duration-300 whitespace-nowrap cursor-not-allowed"
-              aria-label="Aguardando Lote Zero"
+              onClick={onAddToCart}
+              disabled={isOutOfStock}
+              className={`flex-shrink-0 border rounded-sm px-4 py-2.5 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium transition-all duration-300 whitespace-nowrap ${
+                isOutOfStock
+                  ? "border-stone-300 bg-stone-200 text-stone-500 cursor-not-allowed"
+                  : "border-brand-green bg-brand-green text-brand-offwhite hover:bg-brand-softblack hover:border-brand-softblack"
+              }`}
+              aria-label={isOutOfStock ? "Fora de Estoque" : "Adicionar ao Carrinho"}
             >
-              Lote Zero
+              {isOutOfStock ? "Fora de Estoque" : "Adicionar"}
             </button>
           </div>
         </motion.div>

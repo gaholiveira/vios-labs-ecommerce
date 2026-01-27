@@ -110,7 +110,7 @@ export default function SobrePage() {
                     />
                   </svg>
                 </div>
-                <h3 className="text-brand-softblack text-lg font-medium uppercase tracking-[0.2em] mb-4 group-hover:text-brand-green transition-colors duration-500 ease-out">
+                <h3 className="text-brand-gold text-lg font-medium uppercase tracking-[0.2em] mb-4 group-hover:text-brand-green transition-colors duration-500 ease-out">
                   Transparência
                 </h3>
                 <p className="text-brand-softblack/60 text-sm font-light leading-relaxed">
@@ -138,7 +138,7 @@ export default function SobrePage() {
                     />
                   </svg>
                 </div>
-                <h3 className="text-brand-softblack text-lg font-medium uppercase tracking-[0.2em] mb-4 group-hover:text-brand-green transition-colors duration-500 ease-out">
+                <h3 className="text-brand-gold text-lg font-medium uppercase tracking-[0.2em] mb-4 group-hover:text-brand-green transition-colors duration-500 ease-out">
                   Excelência
                 </h3>
                 <p className="text-brand-softblack/60 text-sm font-light leading-relaxed">
@@ -166,7 +166,7 @@ export default function SobrePage() {
                     />
                   </svg>
                 </div>
-                <h3 className="text-brand-softblack text-lg font-medium uppercase tracking-[0.2em] mb-4 group-hover:text-brand-green transition-colors duration-500 ease-out">
+                <h3 className="text-brand-gold text-lg font-medium uppercase tracking-[0.2em] mb-4 group-hover:text-brand-green transition-colors duration-500 ease-out">
                   Sustentabilidade
                 </h3>
                 <p className="text-brand-softblack/60 text-sm font-light leading-relaxed">
@@ -207,7 +207,7 @@ export default function SobrePage() {
             <h3 className="text-brand-softblack text-xl font-light uppercase tracking-[0.2em] mb-2">
               Isadora Ferreira
             </h3>
-            <p className="text-brand-green text-[10px] uppercase tracking-[0.3em] mb-6 font-medium">
+            <p className="text-brand-gold text-[10px] uppercase tracking-[0.3em] mb-6 font-medium">
               Co-Fundadora & CEO
             </p>
             <p className="text-brand-softblack/60 text-sm font-light leading-relaxed text-left">
@@ -251,7 +251,7 @@ export default function SobrePage() {
             <h3 className="text-brand-softblack text-xl font-light uppercase tracking-[0.2em] mb-2">
               Gabriel Oliveira
             </h3>
-            <p className="text-brand-green text-[10px] uppercase tracking-[0.3em] mb-6 font-medium">
+            <p className="text-brand-gold text-[10px] uppercase tracking-[0.3em] mb-6 font-medium">
               Co-Fundador & Diretor de Desenvolvimento
             </p>
             <p className="text-brand-softblack/60 text-sm font-light leading-relaxed text-left">
@@ -292,7 +292,7 @@ export default function SobrePage() {
             que produtos - é um convite para viver com mais consciência e
             propósito."
           </p>
-          <div className="mt-8 text-brand-softblack text-[10px] uppercase tracking-[0.3em] font-medium">
+          <div className="mt-8 text-brand-gold text-[10px] uppercase tracking-[0.3em] font-medium">
             — Isadora Ferreira & Gabriel Oliveira
           </div>
         </div>

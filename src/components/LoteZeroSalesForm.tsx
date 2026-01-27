@@ -295,7 +295,7 @@ export default function LoteZeroSalesForm({
         <div className="p-6 sm:p-8 md:p-12 lg:p-24 max-w-2xl mx-auto pb-16 sm:pb-20 md:pb-24">
           {/* Logo VIOS pequena no topo */}
           <div className="mb-6 sm:mb-8 md:mb-12">
-            <h2 className="text-[9px] sm:text-[10px] uppercase tracking-[0.4em] sm:tracking-[0.5em] text-brand-softblack font-light">
+            <h2 className="text-[9px] sm:text-[10px] uppercase tracking-[0.4em] sm:tracking-[0.5em] text-brand-gold font-light">
               VIOS
             </h2>
           </div>
@@ -414,7 +414,7 @@ export default function LoteZeroSalesForm({
       <div className="p-6 sm:p-8 md:p-12 lg:p-24 max-w-2xl mx-auto pb-16 sm:pb-20 md:pb-24">
         {/* Logo VIOS pequena no topo */}
         <div className="mb-6 sm:mb-8 md:mb-12">
-          <h2 className="text-[9px] sm:text-[10px] uppercase tracking-[0.4em] sm:tracking-[0.5em] text-brand-softblack font-light">
+          <h2 className="text-[9px] sm:text-[10px] uppercase tracking-[0.4em] sm:tracking-[0.5em] text-brand-gold font-light">
             VIOS
           </h2>
         </div>
@@ -463,7 +463,7 @@ export default function LoteZeroSalesForm({
         >
           {/* Nome Completo */}
           <div>
-            <label className="text-[9px] sm:text-[10px] uppercase tracking-widest block mb-2 sm:mb-3 text-brand-softblack/60 font-light">
+            <label className="text-[9px] sm:text-[10px] uppercase tracking-widest block mb-2 sm:mb-3 text-brand-gold font-light">
               Nome Completo
             </label>
             <input
@@ -481,7 +481,7 @@ export default function LoteZeroSalesForm({
 
           {/* E-mail */}
           <div>
-            <label className="text-[9px] sm:text-[10px] uppercase tracking-widest block mb-2 sm:mb-3 text-brand-softblack/60 font-light">
+            <label className="text-[9px] sm:text-[10px] uppercase tracking-widest block mb-2 sm:mb-3 text-brand-gold font-light">
               E-mail
             </label>
             <input
@@ -507,7 +507,7 @@ export default function LoteZeroSalesForm({
 
           {/* WhatsApp */}
           <div>
-            <label className="text-[9px] sm:text-[10px] uppercase tracking-widest block mb-2 sm:mb-3 text-brand-softblack/60 font-light">
+            <label className="text-[9px] sm:text-[10px] uppercase tracking-widest block mb-2 sm:mb-3 text-brand-gold font-light">
               WhatsApp (Opcional)
             </label>
             <input
