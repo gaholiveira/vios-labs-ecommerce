@@ -1,5 +1,6 @@
 "use client";
 import { memo } from "react";
+import Image from "next/image";
 import { Kit } from "@/constants/kits";
 import { PRODUCTS } from "@/constants/products";
 import { useCart } from "@/context/CartContext";
@@ -16,9 +17,48 @@ function KitCard({ kit }: { kit: Kit }) {
 
   return (
     <div className="group flex flex-col h-full">
-      {/* Template de Imagem do Kit */}
+      {/* Container da Imagem do Kit */}
       <div className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden mb-6">
-        <KitImageTemplate kitName={kit.name} badge={kit.badge} />
+        {kit.image ? (
+          <>
+            <Image
+              src={kit.image}
+              alt={kit.name}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+              loading="lazy"
+              quality={85}
+              placeholder="blur"
+              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+            />
+
+            {/* Badge */}
+            <div className="absolute top-3 left-3 bg-brand-green text-brand-offwhite px-3 py-1 text-[9px] uppercase tracking-wider font-medium z-10">
+              {kit.badge === 'kit' ? 'Kit' : 'Protocolo'}
+            </div>
+
+            {/* Selo "Em Breve" - Faixa Verde */}
+            <div className="absolute top-0 left-0 right-0 bg-brand-green text-brand-offwhite py-2 z-10">
+              <div className="text-center">
+                <span className="text-[9px] uppercase tracking-[0.3em] font-medium">
+                  Em Breve
+                </span>
+              </div>
+            </div>
+
+            {/* Overlay no Hover com Texto "Ver Detalhes" */}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500 ease-out flex items-center justify-center opacity-0 group-hover:opacity-100">
+              <div className="bg-brand-offwhite px-6 py-3 transform translate-y-4 group-hover:translate-y-0 transition-all duration-500 ease-out">
+                <span className="text-[10px] uppercase tracking-wider text-brand-softblack font-light">
+                  Ver Detalhes
+                </span>
+              </div>
+            </div>
+          </>
+        ) : (
+          <KitImageTemplate kitName={kit.name} badge={kit.badge} />
+        )}
       </div>
 
       {/* Informações do Kit */}

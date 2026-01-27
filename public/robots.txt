@@ -1,0 +1,17 @@
+# robots.txt para VIOS LABS
+# https://vioslabs.com.br/robots.txt
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /checkout/
+Disallow: /orders/
+Disallow: /profile/
+Disallow: /auth/
+
+# Sitemap
+Sitemap: https://vioslabs.com.br/sitemap.xml
+
+# Crawl-delay (opcional - ajuda a não sobrecarregar o servidor)
+Crawl-delay: 1

@@ -57,7 +57,9 @@ export default function WaitlistModal({
       }, 3000);
     } catch (err: any) {
       console.error("Error adding to waitlist:", err);
-      setError(err.message || "Erro ao processar sua solicitação. Tente novamente.");
+      setError(
+        err.message || "Erro ao processar sua solicitação. Tente novamente.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -86,8 +88,9 @@ export default function WaitlistModal({
                   Produto Esgotado
                 </h2>
                 <p className="text-sm text-gray-600 font-light leading-relaxed">
-                  <span className="font-medium">{productName}</span> está temporariamente indisponível.
-                  Deixe seu email e avisaremos assim que voltar ao estoque.
+                  <span className="font-medium">{productName}</span> está
+                  temporariamente indisponível. Deixe seu email e avisaremos
+                  assim que voltar ao estoque.
                 </p>
               </div>
 
@@ -129,7 +132,8 @@ export default function WaitlistModal({
 
               {/* Disclaimer */}
               <p className="mt-4 text-xs text-gray-400 text-center">
-                Seus dados serão usados apenas para notificá-lo sobre a disponibilidade deste produto.
+                Seus dados serão usados apenas para notificá-lo sobre a
+                disponibilidade deste produto.
               </p>
             </>
           ) : (
@@ -154,8 +158,9 @@ export default function WaitlistModal({
                 Tudo Pronto!
               </h3>
               <p className="text-sm text-gray-600 font-light">
-                Você receberá um email assim que <span className="font-medium">{productName}</span> voltar
-                ao estoque.
+                Você receberá um email assim que{" "}
+                <span className="font-medium">{productName}</span> voltar ao
+                estoque.
               </p>
             </div>
           )}

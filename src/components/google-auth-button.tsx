@@ -31,12 +31,13 @@ function GoogleAuthButton({
 
   const handleGoogleLogin = useCallback(async () => {
     if (loading) return;
-    
+
     try {
       setLoading(true);
       const supabase = createClient();
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : "";
+
       if (redirectTo) {
         sessionStorage.setItem("oauth_redirect", redirectTo);
       }

@@ -687,8 +687,8 @@ function ProductPageContent({ product }: ProductPageContentProps) {
             {isLoadingInventory
               ? "Carregando..."
               : isOutOfStock
-              ? "Fora de Estoque"
-              : "Adicionar ao Carrinho"}
+                ? "Fora de Estoque"
+                : "Adicionar ao Carrinho"}
           </motion.button>
 
           <motion.div

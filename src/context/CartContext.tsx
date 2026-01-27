@@ -1,7 +1,13 @@
-'use client';
-import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
-import { Product } from '@/constants/products';
-import { Kit } from '@/constants/kits';
+"use client";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useMemo,
+  useCallback,
+} from "react";
+import { Product } from "@/constants/products";
+import { Kit } from "@/constants/kits";
 
 interface CartItem extends Product {
   quantity: number;
@@ -49,11 +55,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addToCart = useCallback((product: Product) => {
     setCart((prev) => {
-      const existing = prev.find((item) => item.id === product.id && !item.isKit);
+      const existing = prev.find(
+        (item) => item.id === product.id && !item.isKit,
+      );
       if (existing) {
         setToastMessage(`${product.name} adicionado novamente ao carrinho`);
         return prev.map((item) =>
-          item.id === product.id && !item.isKit ? { ...item, quantity: item.quantity + 1 } : item
+          item.id === product.id && !item.isKit
+            ? { ...item, quantity: item.quantity + 1 }
+            : item,
         );
       }
       setToastMessage(`${product.name} adicionado ao carrinho`);
@@ -68,7 +78,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (existing) {
         setToastMessage(`${kit.name} adicionado novamente ao carrinho`);
         return prev.map((item) =>
-          item.id === kit.id && item.isKit ? { ...item, quantity: item.quantity + 1 } : item
+          item.id === kit.id && item.isKit
+            ? { ...item, quantity: item.quantity + 1 }
+            : item,
         );
       }
       setToastMessage(`${kit.name} adicionado ao carrinho`);
@@ -77,9 +89,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         id: kit.id,
         name: kit.name,
         price: kit.price,
-        image: '/images/products/glow.jpeg', // Imagem placeholder - será substituída pelo template
+        image: kit.image || "/images/products/glow.jpeg", // Usa imagem do kit ou placeholder
         description: kit.description,
-        category: kit.badge === 'kit' ? 'Kit' : 'Protocolo',
+        category: kit.badge === "kit" ? "Kit" : "Protocolo",
         quantity: 1,
         kitProducts: kit.products,
         isKit: true,
@@ -100,8 +112,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
     setCart((prev) =>
       prev.map((item) =>
-        item.id === productId ? { ...item, quantity } : item
-      )
+        item.id === productId ? { ...item, quantity } : item,
+      ),
     );
   }, []);
 
@@ -111,34 +123,36 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const totalItems = useMemo(
     () => cart.reduce((acc, item) => acc + item.quantity, 0),
-    [cart]
+    [cart],
   );
 
   const totalPrice = useMemo(
     () => cart.reduce((acc, item) => acc + item.price * item.quantity, 0),
-    [cart]
+    [cart],
   );
 
   return (
-    <CartContext.Provider value={{ 
-      cart, 
-      addToCart,
-      addKitToCart,
-      removeFromCart,
-      updateQuantity,
-      clearCart,
-      isOpen, 
-      setIsOpen, 
-      totalItems,
-      totalPrice,
-      isMenuOpen, 
-      setIsMenuOpen, 
-      isSearchOpen, 
-      setIsSearchOpen,
-      toastMessage,
-      showToast,
-      hideToast
-    }}>
+    <CartContext.Provider
+      value={{
+        cart,
+        addToCart,
+        addKitToCart,
+        removeFromCart,
+        updateQuantity,
+        clearCart,
+        isOpen,
+        setIsOpen,
+        totalItems,
+        totalPrice,
+        isMenuOpen,
+        setIsMenuOpen,
+        isSearchOpen,
+        setIsSearchOpen,
+        toastMessage,
+        showToast,
+        hideToast,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );
@@ -146,6 +160,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
 export const useCart = () => {
   const context = useContext(CartContext);
-  if (!context) throw new Error('useCart error');
+  if (!context) throw new Error("useCart error");
   return context;
 };

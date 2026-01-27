@@ -75,30 +75,35 @@ O Resend é um serviço de envio de emails transacionais (confirmações de pedi
 ### 3.2 Configurar DNS
 O Resend mostrará os registros DNS que você precisa adicionar:
 
+**⚠️ IMPORTANTE: Segurança do Email do Workspace**
+
+Os registros do Resend são para **subdomínios específicos**, **NÃO** para o domínio principal. Isso significa que você **NÃO vai perder seu email do workspace** ao adicioná-los.
+
 **Registros necessários:**
 
-1. **SPF Record** (TXT)
-   ```
-   v=spf1 include:resend.com ~all
-   ```
-   - **Nome/Host**: `@` ou `vioslabs.com.br`
+1. **DKIM Record** (TXT)
+   - **Nome/Host**: `resend._domainkey`
    - **Tipo**: `TXT`
-   - **Valor**: `v=spf1 include:resend.com ~all`
+   - **Valor**: [fornecido pelo Resend, começa com `p=MIGfMAOGCSqGSIb3DQEB...`]
+   - ✅ **Seguro**: É um registro novo para o subdomínio `resend._domainkey.vioslabs.com.br`
 
-2. **DKIM Records** (2 registros CNAME)
-   - O Resend fornecerá 2 registros CNAME únicos
-   - Exemplo:
-     ```
-     resend._domainkey.vioslabs.com.br → [valor fornecido]
-     ```
+2. **MX Record** (para envio)
+   - **Nome/Host**: `send`
+   - **Tipo**: `MX`
+   - **Valor**: [fornecido pelo Resend, ex: `feedback-smtp.sa-east-1.amazonses.com`]
+   - **Prioridade**: `10`
+   - ✅ **Seguro**: É para o subdomínio `send.vioslabs.com.br`, não afeta o domínio principal
 
-3. **DMARC Record** (TXT) - Opcional mas recomendado
-   ```
-   v=DMARC1; p=none; rua=mailto:dmarc@vioslabs.com.br
-   ```
-   - **Nome/Host**: `_dmarc`
+3. **SPF Record** (TXT) - para o subdomínio send
+   - **Nome/Host**: `send`
    - **Tipo**: `TXT`
-   - **Valor**: `v=DMARC1; p=none; rua=mailto:dmarc@vioslabs.com.br`
+   - **Valor**: [fornecido pelo Resend, ex: `v=spf1 include:amazonses.com ~all`]
+   - ✅ **Seguro**: É para o subdomínio `send.vioslabs.com.br`, não afeta o SPF do domínio principal
+
+**🛡️ O que NÃO fazer:**
+- ❌ **NÃO modifique** registros com nome `@` ou `vioslabs.com.br` (domínio principal)
+- ❌ **NÃO modifique** registros com nome `mail`, `email`, `smtp` (seu email atual)
+- ✅ **APENAS adicione** os registros novos com os nomes específicos do Resend
 
 ### 3.3 Adicionar Registros no Provedor DNS
 

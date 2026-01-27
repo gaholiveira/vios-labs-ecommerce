@@ -1,14 +1,14 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { createClient } from '@/utils/supabase/client';
-import { formatDatabaseError, logDatabaseError } from '@/utils/errorHandler';
-import Link from 'next/link';
-import { Mail } from 'lucide-react';
-import { useCart } from '@/context/CartContext';
+"use client";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { createClient } from "@/utils/supabase/client";
+import { formatDatabaseError, logDatabaseError } from "@/utils/errorHandler";
+import Link from "next/link";
+import { Mail } from "lucide-react";
+import { useCart } from "@/context/CartContext";
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,14 +16,14 @@ export default function ForgotPasswordPage() {
 
   useEffect(() => {
     // Verificar se há erro na URL (vindo do callback ou home page)
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      const errorParam = params.get('error');
+      const errorParam = params.get("error");
       if (errorParam) {
         const decodedError = decodeURIComponent(errorParam);
         setError(decodedError);
         // Limpar a URL após capturar o erro
-        window.history.replaceState({}, '', '/forgot-password');
+        window.history.replaceState({}, "", "/forgot-password");
       }
     }
   }, []);
@@ -36,47 +36,50 @@ export default function ForgotPasswordPage() {
 
     try {
       const supabase = createClient();
-      
+
       // Normalizar a URL para garantir que corresponde às configurações do Supabase
       let baseUrl = window.location.origin;
       // Remove www. do domínio para corresponder ao Site URL do Supabase
-      if (baseUrl.includes('www.')) {
-        baseUrl = baseUrl.replace('www.', '');
+      if (baseUrl.includes("www.")) {
+        baseUrl = baseUrl.replace("www.", "");
       }
-      
+
       // URL de callback para recovery - deve ser absoluta e incluir todos os parâmetros
       const redirectTo = `${baseUrl}/auth/callback?type=recovery&next=/update-password`;
-      
-      if (process.env.NODE_ENV === 'development') {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('📧 Enviando email de reset com redirectTo:', redirectTo);
+
+      if (process.env.NODE_ENV === "development") {
+        if (process.env.NODE_ENV === "development") {
+          console.log("📧 Enviando email de reset com redirectTo:", redirectTo);
         }
       }
-      
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: redirectTo,
-      });
+
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        email.trim(),
+        {
+          redirectTo: redirectTo,
+        },
+      );
 
       if (resetError) {
-        logDatabaseError('Solicitação de redefinição de senha', resetError);
-        
+        logDatabaseError("Solicitação de redefinição de senha", resetError);
+
         // Tratamento específico para rate limit
-        const isRateLimit = 
-          resetError.message?.toLowerCase().includes('rate limit') ||
-          resetError.message?.toLowerCase().includes('rate_limit') ||
-          resetError.message?.toLowerCase().includes('too many requests') ||
-          resetError.code === 'rate_limit_exceeded' ||
+        const isRateLimit =
+          resetError.message?.toLowerCase().includes("rate limit") ||
+          resetError.message?.toLowerCase().includes("rate_limit") ||
+          resetError.message?.toLowerCase().includes("too many requests") ||
+          resetError.code === "rate_limit_exceeded" ||
           resetError.status === 429;
-        
+
         if (isRateLimit) {
           setError(
-            'Muitas solicitações foram feitas em pouco tempo. Por favor, aguarde alguns minutos antes de tentar novamente. Isso ajuda a proteger nosso sistema contra abusos.'
+            "Muitas solicitações foram feitas em pouco tempo. Por favor, aguarde alguns minutos antes de tentar novamente. Isso ajuda a proteger nosso sistema contra abusos.",
           );
         } else {
           const errorMessage = formatDatabaseError(resetError);
           setError(errorMessage);
         }
-        
+
         setLoading(false);
         return;
       }
@@ -84,9 +87,9 @@ export default function ForgotPasswordPage() {
       // Sucesso - mostrar mensagem
       setSuccess(true);
       setLoading(false);
-      showToast('Link de redefinição enviado! Verifique seu e-mail.');
+      showToast("Link de redefinição enviado! Verifique seu e-mail.");
     } catch (err) {
-      logDatabaseError('Exceção ao solicitar redefinição de senha', err);
+      logDatabaseError("Exceção ao solicitar redefinição de senha", err);
       const errorMessage = formatDatabaseError(err);
       setError(errorMessage);
       setLoading(false);
@@ -111,7 +114,8 @@ export default function ForgotPasswordPage() {
                   Recuperar Acesso
                 </h1>
                 <p className="text-sm font-light text-brand-softblack/60 leading-relaxed">
-                  Digite seu e-mail para receber as instruções de recuperação de acesso.
+                  Digite seu e-mail para receber as instruções de recuperação de
+                  acesso.
                 </p>
               </div>
 
@@ -130,7 +134,7 @@ export default function ForgotPasswordPage() {
                 <form onSubmit={handleSubmit} className="space-y-8">
                   {/* E-mail */}
                   <div>
-                    <label 
+                    <label
                       htmlFor="email"
                       className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack"
                     >
@@ -145,9 +149,9 @@ export default function ForgotPasswordPage() {
                         if (error) setError(null);
                       }}
                       className={`w-full bg-transparent border-b py-3 focus:outline-none transition text-brand-softblack placeholder:text-gray-400 font-light ${
-                        error 
-                          ? 'border-red-400 focus:border-red-500' 
-                          : 'border-gray-300 focus:border-brand-green'
+                        error
+                          ? "border-red-400 focus:border-red-500"
+                          : "border-gray-300 focus:border-brand-green"
                       }`}
                       placeholder="seu@email.com"
                       required
@@ -163,14 +167,30 @@ export default function ForgotPasswordPage() {
                   >
                     {loading ? (
                       <span className="flex items-center justify-center gap-2">
-                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        <svg
+                          className="animate-spin h-4 w-4"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
                         </svg>
                         <span>A enviar...</span>
                       </span>
                     ) : (
-                      'Enviar Link'
+                      "Enviar Link"
                     )}
                   </button>
                 </form>
@@ -199,10 +219,18 @@ export default function ForgotPasswordPage() {
               <motion.div
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.2, type: 'spring', stiffness: 200, damping: 15 }}
+                transition={{
+                  delay: 0.2,
+                  type: "spring",
+                  stiffness: 200,
+                  damping: 15,
+                }}
                 className="flex justify-center mb-8"
               >
-                <Mail className="w-20 h-20 text-brand-green" strokeWidth={1.5} />
+                <Mail
+                  className="w-20 h-20 text-brand-green"
+                  strokeWidth={1.5}
+                />
               </motion.div>
 
               {/* Título */}
@@ -222,8 +250,11 @@ export default function ForgotPasswordPage() {
                 transition={{ delay: 0.4 }}
                 className="text-sm font-light text-brand-softblack/70 leading-relaxed mb-8"
               >
-                Enviamos um e-mail para{' '}
-                <span className="font-medium text-brand-softblack">{email}</span> com instruções para redefinir sua senha.
+                Enviamos um e-mail para{" "}
+                <span className="font-medium text-brand-softblack">
+                  {email}
+                </span>{" "}
+                com instruções para redefinir sua senha.
                 <br />
                 <span className="text-xs text-brand-softblack/50 mt-2 block">
                   Não recebeu? Verifique sua pasta de spam.
@@ -240,7 +271,7 @@ export default function ForgotPasswordPage() {
                 <button
                   onClick={() => {
                     setSuccess(false);
-                    setEmail('');
+                    setEmail("");
                   }}
                   className="text-brand-softblack text-xs uppercase tracking-[0.2em] font-medium border-b border-brand-softblack/30 hover:border-brand-green hover:text-brand-green transition-colors pb-1"
                 >

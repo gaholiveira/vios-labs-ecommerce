@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { resendConfirmationEmail } from '@/utils/auth';
+import { useState } from "react";
+import { resendConfirmationEmail } from "@/utils/auth";
 
 interface ResendConfirmationEmailProps {
   email: string;
@@ -10,11 +10,11 @@ interface ResendConfirmationEmailProps {
   className?: string;
 }
 
-export default function ResendConfirmationEmail({ 
-  email, 
-  onSuccess, 
+export default function ResendConfirmationEmail({
+  email,
+  onSuccess,
   onError,
-  className = ''
+  className = "",
 }: ResendConfirmationEmailProps) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -27,7 +27,7 @@ export default function ResendConfirmationEmail({
 
     try {
       const result = await resendConfirmationEmail(email);
-      
+
       if (result.success) {
         setSuccess(true);
         setError(null);
@@ -35,12 +35,12 @@ export default function ResendConfirmationEmail({
         // Esconder mensagem após 8 segundos
         setTimeout(() => setSuccess(false), 8000);
       } else {
-        const errorMsg = result.error || 'Erro ao reenviar email';
+        const errorMsg = result.error || "Erro ao reenviar email";
         setError(errorMsg);
         onError?.(errorMsg);
       }
     } catch (err: any) {
-      const errorMsg = err?.message || 'Erro ao reenviar email';
+      const errorMsg = err?.message || "Erro ao reenviar email";
       setError(errorMsg);
       onError?.(errorMsg);
     } finally {
@@ -50,7 +50,9 @@ export default function ResendConfirmationEmail({
 
   if (success) {
     return (
-      <div className={`mt-4 p-4 bg-brand-green/10 border border-brand-green/30 text-brand-green text-sm rounded-sm ${className}`}>
+      <div
+        className={`mt-4 p-4 bg-brand-green/10 border border-brand-green/30 text-brand-green text-sm rounded-sm ${className}`}
+      >
         <div className="flex items-start gap-3">
           <svg
             className="w-5 h-5 flex-shrink-0 mt-0.5"
@@ -68,7 +70,8 @@ export default function ResendConfirmationEmail({
           <div className="flex-1">
             <p className="font-medium mb-1">Email reenviado com sucesso!</p>
             <p className="text-xs opacity-80">
-              Verifique sua caixa de entrada e spam. O email pode levar alguns minutos para chegar.
+              Verifique sua caixa de entrada e spam. O email pode levar alguns
+              minutos para chegar.
             </p>
           </div>
         </div>
@@ -77,7 +80,9 @@ export default function ResendConfirmationEmail({
   }
 
   return (
-    <div className={`mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-sm ${className}`}>
+    <div
+      className={`mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-sm ${className}`}
+    >
       {error && (
         <div className="mb-3 p-2 bg-red-50 border border-red-200 text-red-700 text-xs rounded">
           {error}
@@ -102,7 +107,8 @@ export default function ResendConfirmationEmail({
             Confirme seu email para fazer login
           </p>
           <p className="text-xs text-yellow-700 mb-3">
-            Não recebeu o email? Verifique sua caixa de entrada e spam, ou solicite um novo email de confirmação.
+            Não recebeu o email? Verifique sua caixa de entrada e spam, ou
+            solicite um novo email de confirmação.
           </p>
           <button
             type="button"
@@ -112,14 +118,30 @@ export default function ResendConfirmationEmail({
           >
             {loading ? (
               <span className="flex items-center gap-2">
-                <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin h-3 w-3"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
                 Enviando...
               </span>
             ) : (
-              'Reenviar email de confirmação'
+              "Reenviar email de confirmação"
             )}
           </button>
         </div>

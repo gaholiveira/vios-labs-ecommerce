@@ -1,15 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion, useSpring } from 'framer-motion';
 
 export default function CustomCursor() {
   const [isTouchDevice, setIsTouchDevice] = useState(true); // Começar como true para evitar flash
   const [isHovering, setIsHovering] = useState(false);
   const [isOverInput, setIsOverInput] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const hasInitializedRef = useRef(false);
 
   // Spring animation rápida e responsiva (magnética, mas ágil)
-  const springConfig = { damping: 28, stiffness: 500, mass: 0.3 };
+  // Ajustado para ser mais responsivo e menos "magnético"
+  const springConfig = { damping: 30, stiffness: 600, mass: 0.25 };
   const cursorX = useSpring(0, springConfig);
   const cursorY = useSpring(0, springConfig);
 
@@ -96,9 +99,19 @@ export default function CustomCursor() {
         }
 
         // Verificar cursor pointer (verificar estilo computado)
+        // IMPORTANTE: Ignorar elementos com cursor: none (como o próprio cursor customizado)
         try {
           const computedStyle = window.getComputedStyle(current);
-          if (computedStyle.cursor === 'pointer' || computedStyle.cursor === 'grab') {
+          const cursorValue = computedStyle.cursor;
+          
+          // Ignorar elementos com cursor: none (geralmente são elementos do cursor customizado)
+          if (cursorValue === 'none') {
+            current = current.parentElement;
+            depth++;
+            continue;
+          }
+          
+          if (cursorValue === 'pointer' || cursorValue === 'grab') {
             // Verificar se não está desabilitado
             if (current.hasAttribute('disabled') || current.getAttribute('aria-disabled') === 'true') {
               current = current.parentElement;
@@ -153,15 +166,28 @@ export default function CustomCursor() {
 
     // Rastrear posição do mouse e detectar hover
     const handleMouseMove = (e: MouseEvent) => {
+      // Atualizar posição do cursor diretamente (useSpring já lida com a suavidade)
       cursorX.set(e.clientX);
       cursorY.set(e.clientY);
+      
+      // Mostrar cursor na primeira vez que o mouse se move
+      if (!hasInitializedRef.current) {
+        hasInitializedRef.current = true;
+        setIsVisible(true);
+      }
 
       // Detectar elemento diretamente
       try {
         // Verificar elemento sob o cursor (funciona mesmo em elementos com z-index alto)
         const elementUnderCursor = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement;
         
-        if (!elementUnderCursor) {
+        // Verificar se o elemento é válido e não é o próprio cursor
+        if (
+          !elementUnderCursor || 
+          elementUnderCursor === document.body || 
+          elementUnderCursor === document.documentElement ||
+          elementUnderCursor.closest('[data-custom-cursor]')
+        ) {
           if (isHovering) {
             setIsHovering(false);
           }
@@ -215,6 +241,7 @@ export default function CustomCursor() {
 
     // Detectar mouse leave na janela para resetar
     const handleMouseLeave = () => {
+      setIsVisible(false);
       if (isHovering) {
         setIsHovering(false);
       }
@@ -223,19 +250,25 @@ export default function CustomCursor() {
       }
     };
 
-    document.addEventListener('mouseleave', handleMouseLeave, { passive: true });
+    // Detectar mouse enter na janela para mostrar cursor
+    const handleMouseEnter = () => {
+      if (hasInitializedRef.current) {
+        setIsVisible(true);
+      }
+    };
 
-    // Inicializar posição no centro da tela para garantir visibilidade
-    if (typeof window !== 'undefined') {
-      cursorX.set(window.innerWidth / 2);
-      cursorY.set(window.innerHeight / 2);
-    }
+    document.addEventListener('mouseleave', handleMouseLeave, { passive: true });
+    document.addEventListener('mouseenter', handleMouseEnter, { passive: true });
+
+    // NÃO inicializar no centro - isso causa o "puxar ao centro"
+    // O cursor aparecerá apenas quando o mouse se mover pela primeira vez
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseleave', handleMouseLeave);
+      document.removeEventListener('mouseenter', handleMouseEnter);
     };
-  }, [cursorX, cursorY, isHovering, isOverInput]);
+  }, [cursorX, cursorY, isHovering, isOverInput, isVisible]);
 
   // Se for touch device, não renderizar
   if (isTouchDevice) return null;
@@ -248,11 +281,11 @@ export default function CustomCursor() {
         x: cursorX,
         y: cursorY,
       }}
-      initial={{ opacity: 1 }}
+      initial={{ opacity: 0 }}
       animate={{ 
-        opacity: isOverInput ? 0 : 1,
+        opacity: isOverInput ? 0 : (isVisible ? 1 : 0),
       }}
-      transition={{ duration: 0.15, ease: 'easeOut' }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
     >
       <div
         style={{

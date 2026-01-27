@@ -17,9 +17,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  // Construir URL absoluta da imagem
+  // Construir URL absoluta da imagem do produto
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://vioslabs.com.br";
-  const imageUrl = `${baseUrl}${product.image}`;
+  const productImageUrl = `${baseUrl}${product.image}`;
 
   const title = `VIOS | ${product.name}`;
   const description = `Compre ${product.name}. ${product.description}`;
@@ -32,20 +32,35 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       type: "website",
       locale: "pt_BR",
+      // IMPORTANTE: Usar a imagem real do produto como primeira opção
+      // O Next.js vai usar esta imagem ao invés do opengraph-image.tsx quando especificada explicitamente
       images: [
         {
-          url: imageUrl,
+          url: productImageUrl,
           width: 1200,
           height: 630,
           alt: product.name,
+          type: "image/jpeg",
         },
       ],
+      // URL absoluta da página
+      url: `${baseUrl}/produto/${id}`,
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [imageUrl],
+      // Usar a imagem real do produto
+      images: [
+        {
+          url: productImageUrl,
+          alt: product.name,
+        },
+      ],
+    },
+    // Adicionar metadata alternativo para garantir que a imagem seja encontrada
+    alternates: {
+      canonical: `${baseUrl}/produto/${id}`,
     },
   };
 }

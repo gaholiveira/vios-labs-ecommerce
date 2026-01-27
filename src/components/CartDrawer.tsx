@@ -207,7 +207,7 @@ function CartDrawer() {
                         >
                           {/* Imagem do Produto/Kit */}
                           <div
-                            className={`relative w-20 h-24 flex-shrink-0 bg-gray-100 rounded-sm overflow-hidden ${!item.isKit ? 'group' : ''}`}
+                            className={`relative w-20 h-24 flex-shrink-0 bg-gray-100 rounded-sm overflow-hidden ${!item.isKit ? "group" : ""}`}
                           >
                             {!item.isKit ? (
                               <Link
@@ -226,11 +226,25 @@ function CartDrawer() {
                                 />
                               </Link>
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-offwhite to-brand-champagne/30">
-                                <span className="text-[8px] uppercase tracking-wider text-brand-gold font-light text-center px-2">
-                                  {item.category}
-                                </span>
-                              </div>
+                              <>
+                                {item.image ? (
+                                  <Image
+                                    src={item.image}
+                                    alt={item.name}
+                                    fill
+                                    sizes="80px"
+                                    className="object-cover"
+                                    loading="lazy"
+                                    quality={75}
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-offwhite to-brand-champagne/30">
+                                    <span className="text-[8px] uppercase tracking-wider text-brand-gold font-light text-center px-2">
+                                      {item.category}
+                                    </span>
+                                  </div>
+                                )}
+                              </>
                             )}
                           </div>
 

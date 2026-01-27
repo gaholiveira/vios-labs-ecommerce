@@ -8,6 +8,7 @@ export interface Kit {
   products: string[]; // IDs dos produtos que compõem o kit
   description: string; // Frase de apoio
   badge?: 'kit' | 'protocolo';
+  image?: string; // URL da imagem do kit (opcional - se não fornecido, usa template)
 }
 
 const kitsData = [
@@ -19,6 +20,7 @@ const kitsData = [
     badge: 'kit' as const,
     price: 797.00,
     oldPrice: 951.00,
+    image: '/images/kits/sinergia.png'
   },
   {
     id: 'kit_2',
