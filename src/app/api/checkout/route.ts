@@ -13,6 +13,16 @@ const DEFAULT_ORIGIN_PROD = "https://vioslabs.com.br";
 const DEFAULT_ORIGIN_DEV = "http://localhost:3000";
 
 // ============================================================================
+// CONSTANTES DE SEGURANÇA E VALIDAÇÃO
+// ============================================================================
+const MIN_SUBTOTAL = 10.0; // Subtotal mínimo em reais
+const MAX_SUBTOTAL = 100000.0; // Subtotal máximo em reais (proteção contra erros)
+const MIN_QUANTITY = 1; // Quantidade mínima por item
+const MAX_QUANTITY_PER_ITEM = 10; // Quantidade máxima por item
+const MAX_ITEMS_PER_CART = 20; // Máximo de itens diferentes no carrinho
+const MAX_TOTAL_QUANTITY = 50; // Quantidade total máxima no carrinho
+
+// ============================================================================
 // TIPOS E INTERFACES
 // ============================================================================
 interface CartItem {
@@ -172,6 +182,82 @@ function qualifiesForFreeShipping(subtotal: number): boolean {
   return subtotal >= FREE_SHIPPING_THRESHOLD;
 }
 
+/**
+ * Valida dados do carrinho antes de processar checkout
+ * Previne manipulação de preços, quantidades inválidas, etc.
+ */
+function validateCartItems(items: CartItem[]): { valid: boolean; error?: string } {
+  // Validar estrutura básica
+  if (!Array.isArray(items) || items.length === 0) {
+    return { valid: false, error: "Carrinho vazio ou inválido" };
+  }
+
+  // Validar número máximo de itens
+  if (items.length > MAX_ITEMS_PER_CART) {
+    return { valid: false, error: `Máximo de ${MAX_ITEMS_PER_CART} itens diferentes permitidos` };
+  }
+
+  // Validar cada item
+  let totalQuantity = 0;
+  const seenIds = new Set<string>(); // Prevenir itens duplicados
+
+  for (const item of items) {
+    // Validar estrutura do item
+    if (!item.id || !item.name || typeof item.price !== 'number' || typeof item.quantity !== 'number') {
+      return { valid: false, error: "Estrutura de item inválida" };
+    }
+
+    // Validar IDs duplicados
+    if (seenIds.has(item.id)) {
+      return { valid: false, error: `Item duplicado no carrinho: ${item.name}` };
+    }
+    seenIds.add(item.id);
+
+    // Validar preço (valores razoáveis)
+    if (!Number.isFinite(item.price) || item.price <= 0 || item.price > 100000) {
+      return { valid: false, error: `Preço inválido para ${item.name}` };
+    }
+
+    // Validar quantidade (valores inteiros e razoáveis)
+    if (!Number.isInteger(item.quantity) || item.quantity < MIN_QUANTITY || item.quantity > MAX_QUANTITY_PER_ITEM) {
+      return { valid: false, error: `Quantidade inválida para ${item.name}. Mínimo: ${MIN_QUANTITY}, Máximo: ${MAX_QUANTITY_PER_ITEM}` };
+    }
+
+    // Validar quantidade total
+    totalQuantity += item.quantity;
+    if (totalQuantity > MAX_TOTAL_QUANTITY) {
+      return { valid: false, error: `Quantidade total máxima excedida (${MAX_TOTAL_QUANTITY} itens)` };
+    }
+
+    // Validar se é kit e tem produtos definidos
+    if (item.isKit && (!item.kitProducts || !Array.isArray(item.kitProducts) || item.kitProducts.length === 0)) {
+      return { valid: false, error: `Kit ${item.name} sem produtos definidos` };
+    }
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Valida subtotal calculado
+ */
+function validateSubtotal(subtotal: number): { valid: boolean; error?: string } {
+  if (subtotal < MIN_SUBTOTAL) {
+    return { valid: false, error: `Subtotal mínimo de R$ ${MIN_SUBTOTAL.toFixed(2)} não atingido` };
+  }
+
+  if (subtotal > MAX_SUBTOTAL) {
+    return { valid: false, error: "Subtotal excede o valor máximo permitido. Entre em contato com o suporte." };
+  }
+
+  // Validar que não é NaN ou Infinity
+  if (!Number.isFinite(subtotal)) {
+    return { valid: false, error: "Erro no cálculo do subtotal. Tente novamente." };
+  }
+
+  return { valid: true };
+}
+
 function createShippingOptions(
   isFreeShipping: boolean,
 ): Stripe.Checkout.SessionCreateParams.ShippingOption[] {
@@ -179,11 +265,18 @@ function createShippingOptions(
     ? "Reserva Lote 0 (Envio 16/02)"
     : "Entrega Standard (Brasil)";
 
+  // Validar valores de frete antes de criar
+  const shippingAmount = isFreeShipping ? 0 : FIXED_SHIPPING_PRICE;
+  
+  if (shippingAmount < 0 || shippingAmount > 100000) {
+    throw new Error(`Valor de frete inválido: ${shippingAmount}`);
+  }
+
   const shippingRateData: Stripe.Checkout.SessionCreateParams.ShippingOption["shipping_rate_data"] =
     {
       type: "fixed_amount" as const,
       fixed_amount: {
-        amount: isFreeShipping ? 0 : FIXED_SHIPPING_PRICE,
+        amount: shippingAmount,
         currency: "brl",
       },
       display_name: displayName,
@@ -228,17 +321,64 @@ export async function POST(req: Request) {
     const body: CheckoutRequestBody = await req.json();
     const { items, userId, customerEmail } = body;
 
-    if (!items?.length || !Array.isArray(items)) {
+    // ============================================================================
+    // VALIDAÇÕES DE SEGURANÇA E INTEGRIDADE
+    // ============================================================================
+
+    // Validar estrutura básica do carrinho
+    const cartValidation = validateCartItems(items);
+    if (!cartValidation.valid) {
       return NextResponse.json(
-        { error: "Carrinho vazio ou inválido" },
+        { error: cartValidation.error || "Carrinho inválido" },
         { status: 400 },
       );
     }
 
     const origin = getOrigin(req);
 
+    // Calcular subtotal
     const subtotal = calculateSubtotal(items);
+
+    // Validar subtotal calculado
+    const subtotalValidation = validateSubtotal(subtotal);
+    if (!subtotalValidation.valid) {
+      return NextResponse.json(
+        { error: subtotalValidation.error || "Erro no cálculo do subtotal" },
+        { status: 400 },
+      );
+    }
+
     const isFreeShipping = qualifiesForFreeShipping(subtotal);
+
+    // Log estruturado para auditoria (apenas em desenvolvimento)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[CHECKOUT] Validações passadas:', {
+        items_count: items.length,
+        subtotal: subtotal.toFixed(2),
+        freeShipping: isFreeShipping,
+        userId: userId || 'guest',
+      });
+    }
+
+    // ============================================================================
+    // VALIDAÇÃO DE EMAIL (se fornecido)
+    // ============================================================================
+    if (customerEmail) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(customerEmail)) {
+        return NextResponse.json(
+          { error: "Email inválido fornecido" },
+          { status: 400 },
+        );
+      }
+      
+      // Sanitizar email (trim e lowercase)
+      const sanitizedEmail = customerEmail.trim().toLowerCase();
+      if (sanitizedEmail !== customerEmail) {
+        // Se email foi modificado, usar versão sanitizada
+        body.customerEmail = sanitizedEmail;
+      }
+    }
 
     // ============================================================================
     // CRÍTICO: RESERVAR ESTOQUE ANTES DE CRIAR SESSÃO STRIPE
@@ -514,6 +654,20 @@ export async function POST(req: Request) {
       const successUrl = `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
       const cancelUrl = `${origin}/checkout/canceled`;
 
+      // ============================================================================
+      // NOTA: Branding Settings
+      // ============================================================================
+      // O parâmetro branding_settings foi adicionado na API version 2025-09-30.clover
+      // No momento, o SDK pode não suportar completamente essa funcionalidade.
+      // Para customizar o checkout, configure as cores e logo no Stripe Dashboard:
+      // https://dashboard.stripe.com/settings/branding
+      //
+      // Alternativamente, você pode:
+      // 1. Atualizar o SDK do Stripe para a versão mais recente
+      // 2. Configurar a API version explicitamente: Stripe-Version: 2025-09-30.clover
+      // 3. Usar o Stripe Dashboard para configurar branding global
+      // ============================================================================
+
       const session = await stripe.checkout.sessions.create({
         line_items: lineItems,
         mode: "payment",
@@ -530,12 +684,26 @@ export async function POST(req: Request) {
         shipping_options: createShippingOptions(isFreeShipping),
         success_url: successUrl,
         cancel_url: cancelUrl,
+        // ============================================================================
+        // METADADOS PARA AUDITORIA E TRACKING
+        // ============================================================================
         metadata: {
           userId: userId || "null",
           customerEmail: customerEmail || "null",
           isGuest: (!userId).toString(),
           subtotal: subtotal.toFixed(2),
           freeShipping: isFreeShipping.toString(),
+          itemsCount: items.length.toString(),
+          totalQuantity: items.reduce((acc, item) => acc + item.quantity, 0).toString(),
+        },
+        // ============================================================================
+        // CONFIGURAÇÕES DE UX E CONVERSÃO
+        // ============================================================================
+        // NOTA: consent_collection.promotions não está disponível no Brasil
+        // Removido para evitar erro de API
+        // Exibir total de forma mais clara
+        invoice_creation: {
+          enabled: false, // Não criar invoice automaticamente (usamos nosso sistema)
         },
       });
 

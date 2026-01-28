@@ -38,14 +38,6 @@ function KitCard({ kit }: { kit: Kit }) {
               {kit.badge === 'kit' ? 'Kit' : 'Protocolo'}
             </div>
 
-            {/* Selo "Em Breve" - Faixa Verde */}
-            <div className="absolute top-0 left-0 right-0 bg-brand-green text-brand-offwhite py-2 z-10">
-              <div className="text-center">
-                <span className="text-[9px] uppercase tracking-[0.3em] font-medium">
-                  Em Breve
-                </span>
-              </div>
-            </div>
 
             {/* Overlay no Hover com Texto "Ver Detalhes" */}
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500 ease-out flex items-center justify-center opacity-0 group-hover:opacity-100">
