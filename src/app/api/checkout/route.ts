@@ -4,6 +4,16 @@ import { createClient } from "@supabase/supabase-js";
 import type { ReserveInventoryResponse } from "@/types/database";
 
 // ============================================================================
+// CONFIGURAÇÃO DE RUNTIME PARA API ROUTE
+// ============================================================================
+// Usar Node.js runtime para garantir compatibilidade com Stripe e Supabase
+export const runtime = 'nodejs';
+// Forçar dynamic para evitar cache (checkout sempre precisa ser processado)
+export const dynamic = 'force-dynamic';
+// Timeout máximo: 30 segundos (padrão Next.js)
+export const maxDuration = 30;
+
+// ============================================================================
 // CONSTANTES DE NEGÓCIO
 // ============================================================================
 const FREE_SHIPPING_THRESHOLD = 289.9;
@@ -677,7 +687,45 @@ export async function POST(req: Request) {
         billing_address_collection: "auto",
         shipping_address_collection: { allowed_countries: ["BR"] },
         phone_number_collection: { enabled: true },
-        tax_id_collection: { enabled: true },
+        // ============================================================================
+        // COLETA DE CPF - OBRIGATÓRIO PARA NOTA FISCAL (NF-e)
+        // ============================================================================
+        // IMPORTANTE: tax_id_collection coleta CPF apenas se o cliente marcar
+        // "comprando como empresa". Para CPF individual obrigatório no Brasil,
+        // usamos custom_fields para garantir coleta para TODOS os clientes.
+        // ============================================================================
+        
+        // Opção 1: tax_id_collection (para empresas - opcional)
+        tax_id_collection: { 
+          enabled: true, // CPF/CNPJ para empresas (quando cliente marca checkbox)
+        },
+        
+        // Opção 2: custom_fields (para CPF individual - OBRIGATÓRIO)
+        // Coleta CPF diretamente, sem precisar de checkbox de empresa
+        custom_fields: [
+          {
+            key: 'cpf',
+            label: {
+              type: 'custom',
+              custom: 'CPF (apenas números)',
+            },
+            // Nota: O Stripe Checkout não suporta máscara de formatação em tempo real
+            // O cliente digita apenas números (ex: 12345678901)
+            // O CPF será formatado automaticamente no webhook (123.456.789-01)
+            // O campo aceita exatamente 11 dígitos (validação automática)
+            type: 'numeric', // Aceita apenas números (melhor UX)
+            optional: false, // OBRIGATÓRIO
+            // Validação de comprimento: CPF tem exatamente 11 dígitos
+            numeric: {
+              minimum_length: 11, // Mínimo 11 dígitos
+              maximum_length: 11, // Máximo 11 dígitos
+            },
+            // Nota: O Stripe Checkout não suporta formatação automática (máscara)
+            // O cliente pode digitar apenas números, e formatamos no webhook
+            // Label indica formato esperado: "CPF (obrigatório para Nota Fiscal)"
+            // Sugestão visual: cliente pode digitar 12345678901 (será formatado como 123.456.789-01)
+          },
+        ],
         payment_method_options: {
           boleto: { expires_after_days: 3 },
         },
@@ -801,22 +849,28 @@ export async function POST(req: Request) {
         { status: 500 },
       );
     }
-  } catch (err: any) {
-    console.error("[CHECKOUT ERROR] Erro no Checkout:", err);
+  } catch (err: unknown) {
+    // Log estruturado do erro
+    const errorDetails = err instanceof Error 
+      ? { message: err.message, stack: err.stack }
+      : err;
+    
+    console.error("[CHECKOUT ERROR] Erro no Checkout:", errorDetails);
 
     let errorMessage = "Erro interno no servidor. Tente novamente.";
 
-    if (
-      err.message?.includes("Not a valid URL") ||
-      err.message?.includes("Invalid origin")
-    ) {
-      errorMessage =
-        "Erro na configuração de URLs. Verifique as variáveis de ambiente.";
-    } else if (err.message?.includes("Invalid")) {
-      errorMessage =
-        "Dados inválidos fornecidos. Verifique os itens do carrinho.";
-    } else if (err.message) {
-      errorMessage = err.message;
+    if (err instanceof Error) {
+      if (
+        err.message?.includes("Not a valid URL") ||
+        err.message?.includes("Invalid origin")
+      ) {
+        errorMessage =
+          "Erro na configuração de URLs. Verifique as variáveis de ambiente.";
+      } else if (err.message.includes("Invalid")) {
+        errorMessage = "Dados inválidos fornecidos. Verifique os itens do carrinho.";
+      } else {
+        errorMessage = err.message;
+      }
     }
 
     return NextResponse.json({ error: errorMessage }, { status: 500 });

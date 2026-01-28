@@ -21,6 +21,24 @@ function getSupabaseAdmin() {
   });
 }
 
+/**
+ * Formata CPF no padrão brasileiro: XXX.XXX.XXX-XX
+ * @param cpf - CPF sem formatação (apenas números)
+ * @returns CPF formatado (XXX.XXX.XXX-XX)
+ */
+function formatCPF(cpf: string): string {
+  // Remove qualquer formatação existente
+  const cleaned = cpf.replace(/[.\-\s]/g, '');
+  
+  // Valida que tem 11 dígitos
+  if (cleaned.length !== 11 || !/^\d+$/.test(cleaned)) {
+    return cpf; // Retorna original se inválido
+  }
+  
+  // Formata: XXX.XXX.XXX-XX
+  return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+}
+
 // Função helper para obter o cliente Stripe (lazy initialization)
 function getStripeClient(): Stripe {
   const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
@@ -35,10 +53,15 @@ function getStripeClient(): Stripe {
   });
 }
 
-// Configuração para webhook do Stripe
-// Usamos Node.js runtime para garantir compatibilidade com o Stripe webhook
+// ============================================================================
+// CONFIGURAÇÃO DE RUNTIME PARA WEBHOOK
+// ============================================================================
+// Usar Node.js runtime para garantir compatibilidade com o Stripe webhook
 export const runtime = 'nodejs';
+// Forçar dynamic para evitar cache (webhooks sempre precisam ser processados)
 export const dynamic = 'force-dynamic';
+// Timeout máximo: 30 segundos (padrão Next.js)
+export const maxDuration = 30;
 
 // IMPORTANTE: Prevenir redirects que causam erro 307
 // Garantir que a rota aceita apenas POST
@@ -193,6 +216,86 @@ async function handleCheckoutSessionCompleted(
       }
     }
 
+    // ============================================================================
+    // CAPTURAR CPF DO CLIENTE (OBRIGATÓRIO PARA NOTA FISCAL)
+    // ============================================================================
+    // O CPF pode vir de duas fontes:
+    // 1. custom_fields (campo personalizado - sempre aparece)
+    // 2. tax_ids (apenas se cliente marcou "comprando como empresa")
+    // Prioridade: custom_fields > tax_ids
+    // ============================================================================
+    let customerCPF: string | null = null;
+    
+    // Prioridade 1: Buscar CPF em custom_fields (campo personalizado obrigatório)
+    if (session.custom_fields && session.custom_fields.length > 0) {
+      const cpfField = session.custom_fields.find(
+        (field) => field.key === 'cpf' || field.label?.custom?.toLowerCase().includes('cpf')
+      );
+      
+      if (cpfField) {
+        // CPF pode vir de text.value (tipo text) ou numeric.value (tipo numeric)
+        const cpfValue = cpfField.text?.value || cpfField.numeric?.value?.toString() || null;
+        
+        if (cpfValue) {
+          // Remover formatação do CPF (pontos, traços, espaços)
+          // Garantir que temos apenas números
+          let cleanedCPF = cpfValue.replace(/[.\-\s]/g, '');
+          
+          // Validar que tem 11 dígitos
+          if (cleanedCPF.length === 11 && /^\d+$/.test(cleanedCPF)) {
+            customerCPF = cleanedCPF;
+            
+            if (process.env.NODE_ENV === 'development') {
+              console.log('✅ CPF capturado de custom_fields:', {
+                cpf: customerCPF,
+                cpf_formatado: formatCPF(customerCPF), // Formato visual: XXX.XXX.XXX-XX
+                original: cpfValue,
+                session_id: session.id,
+              });
+            }
+          } else {
+            console.warn('⚠️ CPF inválido (não tem 11 dígitos):', {
+              cpf_recebido: cleanedCPF,
+              cpf_formatado_tentativa: formatCPF(cleanedCPF),
+              length: cleanedCPF.length,
+              session_id: session.id,
+            });
+          }
+        }
+      }
+    }
+    
+    // Prioridade 2: Buscar CPF em tax_ids (apenas se cliente marcou "empresa")
+    if (!customerCPF && session.customer_details?.tax_ids && session.customer_details.tax_ids.length > 0) {
+      const cpfTaxId = session.customer_details.tax_ids.find(
+        (taxId) => taxId.type === 'br_cpf'
+      );
+      
+      if (cpfTaxId) {
+        customerCPF = cpfTaxId.value;
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ CPF capturado de tax_ids:', {
+            cpf: customerCPF,
+            type: cpfTaxId.type,
+            session_id: session.id,
+          });
+        }
+      }
+    }
+    
+    // Log de aviso se CPF não foi encontrado
+    if (!customerCPF) {
+      console.warn('⚠️ CPF não encontrado no checkout session:', {
+        session_id: session.id,
+        custom_fields: session.custom_fields,
+        customer_details: session.customer_details,
+        tax_ids: session.customer_details?.tax_ids,
+      });
+      // Nota: O CPF deve estar em custom_fields se configurado corretamente
+      // Se não foi coletado, verifique se custom_fields está configurado no checkout
+    }
+
     // Obter os itens da linha da sessão do Stripe
     let lineItems;
     try {
@@ -212,16 +315,31 @@ async function handleCheckoutSessionCompleted(
     // Calcular o total (incluindo shipping se houver)
     const amountTotal = session.amount_total ? session.amount_total / 100 : 0; // Converter de centavos para reais
 
+    // Preparar dados do pedido incluindo CPF (se disponível)
+    const orderData: {
+      user_id: string | null;
+      customer_email: string;
+      status: string;
+      total_amount: number;
+      stripe_session_id: string;
+      customer_cpf?: string | null;
+    } = {
+      user_id: userId || null,
+      customer_email: customerEmail,
+      status: 'paid', // Checkout session completed significa que foi pago
+      total_amount: amountTotal,
+      stripe_session_id: session.id,
+    };
+
+    // Adicionar CPF se foi capturado (importante para emissão de nota fiscal)
+    if (customerCPF) {
+      orderData.customer_cpf = customerCPF;
+    }
+
     // Criar o pedido no Supabase
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
-      .insert({
-        user_id: userId || null,
-        customer_email: customerEmail,
-        status: 'paid', // Checkout session completed significa que foi pago
-        total_amount: amountTotal,
-        stripe_session_id: session.id,
-      })
+      .insert(orderData)
       .select()
       .single();
 

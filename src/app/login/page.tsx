@@ -26,14 +26,37 @@ export default function LoginPage() {
     // Resetar ao montar (caso o usuário tenha voltado)
     setLoading(false);
 
+    // Verificar se voltou de uma ação de processamento (mais confiável que popstate)
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted || (performance.navigation && performance.navigation.type === 2)) {
+        setLoading(false);
+        const wasProcessing = sessionStorage.getItem('login_processing');
+        if (wasProcessing === 'true') {
+          sessionStorage.removeItem('login_processing');
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
+        }
+      }
+    };
+
     // Resetar quando o usuário usa o botão voltar do navegador
     const handlePopState = () => {
       setLoading(false);
+      const wasProcessing = sessionStorage.getItem('login_processing');
+      if (wasProcessing === 'true') {
+        sessionStorage.removeItem('login_processing');
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+      }
     };
 
+    window.addEventListener('pageshow', handlePageShow);
     window.addEventListener('popstate', handlePopState);
 
     return () => {
+      window.removeEventListener('pageshow', handlePageShow);
       window.removeEventListener('popstate', handlePopState);
     };
   }, []);
@@ -86,6 +109,7 @@ export default function LoginPage() {
       if (loading) return;
 
       setLoading(true);
+      sessionStorage.setItem('login_processing', 'true');
       setError(null);
 
       try {
@@ -104,6 +128,7 @@ export default function LoginPage() {
             setShowEmailNotConfirmed(true);
             setError("Por favor, confirme seu email antes de fazer login.");
             setLoading(false);
+            sessionStorage.removeItem('login_processing');
             return;
           }
 
@@ -121,10 +146,14 @@ export default function LoginPage() {
               : errorMessage,
           );
           setLoading(false);
+          sessionStorage.removeItem('login_processing');
           return;
         }
 
         if (data.user) {
+          // Limpar flag antes de redirecionar (sucesso)
+          sessionStorage.removeItem('login_processing');
+          
           // Associar pedidos de guest checkout (silencioso)
           try {
             await supabase.rpc("associate_my_guest_orders");
@@ -145,6 +174,7 @@ export default function LoginPage() {
         logDatabaseError("Exceção ao fazer login", err);
         showToast("Erro ao fazer login");
         setLoading(false);
+        sessionStorage.removeItem('login_processing');
       }
     },
     [email, password, loading, router, showToast],

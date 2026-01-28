@@ -34,14 +34,42 @@ function GoogleAuthButton({
     // Resetar ao montar (caso o usuário tenha voltado)
     setLoading(false);
 
+    // Verificar se voltou de uma ação de processamento (mais confiável que popstate)
+    const handlePageShow = (event: PageTransitionEvent) => {
+      // Se a página foi carregada do cache (botão voltar), resetar estados
+      if (event.persisted || (performance.navigation && performance.navigation.type === 2)) {
+        setLoading(false);
+        // Forçar reload se detectar que voltou de uma ação de processamento
+        const wasProcessing = sessionStorage.getItem('google_auth_processing');
+        if (wasProcessing === 'true') {
+          sessionStorage.removeItem('google_auth_processing');
+          // Pequeno delay para evitar loop infinito
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
+        }
+      }
+    };
+
     // Resetar quando o usuário usa o botão voltar do navegador
     const handlePopState = () => {
       setLoading(false);
+      // Verificar se estava processando
+      const wasProcessing = sessionStorage.getItem('google_auth_processing');
+      if (wasProcessing === 'true') {
+        sessionStorage.removeItem('google_auth_processing');
+        // Forçar reload para garantir reset completo
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+      }
     };
 
+    window.addEventListener('pageshow', handlePageShow);
     window.addEventListener('popstate', handlePopState);
 
     return () => {
+      window.removeEventListener('pageshow', handlePageShow);
       window.removeEventListener('popstate', handlePopState);
     };
   }, []);
@@ -51,6 +79,9 @@ function GoogleAuthButton({
 
     try {
       setLoading(true);
+      // Marcar que estamos processando login (para detectar volta)
+      sessionStorage.setItem('google_auth_processing', 'true');
+      
       const supabase = createClient();
       const origin =
         typeof window !== "undefined" ? window.location.origin : "";
@@ -73,13 +104,17 @@ function GoogleAuthButton({
       if (error) {
         onError?.(error.message || "Erro ao conectar com Google");
         setLoading(false);
+        sessionStorage.removeItem('google_auth_processing'); // Limpar flag
         return;
       }
 
+      // Limpar flag antes de redirecionar (sucesso)
+      sessionStorage.removeItem('google_auth_processing');
       onSuccess?.();
     } catch (err: any) {
       onError?.(err.message || "Erro inesperado ao conectar com Google");
       setLoading(false);
+      sessionStorage.removeItem('google_auth_processing'); // Limpar flag
     }
   }, [loading, redirectTo, onSuccess, onError]);
 

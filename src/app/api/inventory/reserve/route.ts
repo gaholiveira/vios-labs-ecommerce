@@ -97,10 +97,20 @@ export async function POST(req: Request) {
       expires_at: response.expires_at,
     });
 
-  } catch (error: any) {
-    console.error('Error in reserve inventory API:', error);
+  } catch (error: unknown) {
+    // Log estruturado do erro
+    console.error('Error in reserve inventory API:', 
+      error instanceof Error 
+        ? { message: error.message, stack: error.stack }
+        : error
+    );
+    
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : 'Internal server error';
+
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

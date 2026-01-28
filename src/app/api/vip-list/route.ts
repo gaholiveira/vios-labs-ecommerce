@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+// ============================================================================
+// CONFIGURAÇÃO DE RUNTIME PARA API ROUTE
+// ============================================================================
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const maxDuration = 30;
+
 // Esta rota usa a service role key para garantir inserção na VIP list
 // mesmo para usuários não autenticados, contornando as políticas RLS
 //

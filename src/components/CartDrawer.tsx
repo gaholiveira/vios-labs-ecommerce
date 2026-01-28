@@ -27,14 +27,43 @@ function CartDrawer() {
     // Resetar ao montar (caso o usuário tenha voltado)
     setIsCheckingOut(false);
 
+    // Verificar se voltou de uma ação de processamento (mais confiável que popstate)
+    const handlePageShow = (event: PageTransitionEvent) => {
+      // Se a página foi carregada do cache (botão voltar), resetar estados
+      if (event.persisted || (performance.navigation && performance.navigation.type === 2)) {
+        setIsCheckingOut(false);
+        // Forçar reload se detectar que voltou de uma ação de processamento
+        // Isso garante que o estado seja completamente resetado
+        const wasProcessing = sessionStorage.getItem('checkout_processing');
+        if (wasProcessing === 'true') {
+          sessionStorage.removeItem('checkout_processing');
+          // Pequeno delay para evitar loop infinito
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
+        }
+      }
+    };
+
     // Resetar quando o usuário usa o botão voltar do navegador
     const handlePopState = () => {
       setIsCheckingOut(false);
+      // Verificar se estava processando
+      const wasProcessing = sessionStorage.getItem('checkout_processing');
+      if (wasProcessing === 'true') {
+        sessionStorage.removeItem('checkout_processing');
+        // Forçar reload para garantir reset completo
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+      }
     };
 
+    window.addEventListener('pageshow', handlePageShow);
     window.addEventListener('popstate', handlePopState);
 
     return () => {
+      window.removeEventListener('pageshow', handlePageShow);
       window.removeEventListener('popstate', handlePopState);
     };
   }, []);
@@ -65,6 +94,8 @@ function CartDrawer() {
   const handleCheckout = async () => {
     try {
       setIsCheckingOut(true);
+      // Marcar que estamos processando checkout (para detectar volta)
+      sessionStorage.setItem('checkout_processing', 'true');
 
       // Preparar itens para a API
       const items = cart.map((item) => ({
@@ -98,28 +129,33 @@ function CartDrawer() {
         // Erro retornado pela API
         const errorMessage = data.error || "Erro ao processar checkout";
         console.error("Erro ao criar sessão:", errorMessage);
-        alert(`Erro ao processar checkout: ${errorMessage}`);
         setIsCheckingOut(false);
+        sessionStorage.removeItem('checkout_processing'); // Limpar flag
+        alert(`Erro ao processar checkout: ${errorMessage}`);
         return;
       }
 
       if (data.url) {
+        // Limpar flag antes de redirecionar (sucesso)
+        sessionStorage.removeItem('checkout_processing');
         window.location.href = data.url; // Redireciona para o Stripe
       } else {
         // Sem URL retornada (erro inesperado)
         const errorMessage =
           data.error || "Não foi possível criar a sessão de checkout";
         console.error("Erro ao criar sessão:", errorMessage);
-        alert(`Erro: ${errorMessage}. Por favor, tente novamente.`);
         setIsCheckingOut(false);
+        sessionStorage.removeItem('checkout_processing'); // Limpar flag
+        alert(`Erro: ${errorMessage}. Por favor, tente novamente.`);
       }
     } catch (error: any) {
       // Erro de rede ou outro erro não tratado
       console.error("Erro no checkout:", error);
+      setIsCheckingOut(false);
+      sessionStorage.removeItem('checkout_processing'); // Limpar flag
       alert(
         "Erro ao conectar com o servidor. Verifique sua conexão e tente novamente.",
       );
-      setIsCheckingOut(false);
     }
   };
 

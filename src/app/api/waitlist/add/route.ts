@@ -97,10 +97,20 @@ export async function POST(req: Request) {
       message: response.message || 'Você será notificado quando o produto voltar ao estoque',
     });
 
-  } catch (error: any) {
-    console.error('[WAITLIST ERROR] Error in add to waitlist API:', error);
+  } catch (error: unknown) {
+    // Log estruturado do erro
+    console.error('[WAITLIST ERROR] Error in add to waitlist API:', 
+      error instanceof Error 
+        ? { message: error.message, stack: error.stack }
+        : error
+    );
+    
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : 'Internal server error';
+
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { error: errorMessage },
       { status: 500 }
     );
   }
