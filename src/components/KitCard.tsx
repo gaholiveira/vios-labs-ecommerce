@@ -1,6 +1,7 @@
 "use client";
 import { memo } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Kit } from "@/constants/kits";
 import { PRODUCTS } from "@/constants/products";
 import { useCart } from "@/context/CartContext";
@@ -17,8 +18,11 @@ function KitCard({ kit }: { kit: Kit }) {
 
   return (
     <div className="group flex flex-col">
-      {/* Container da Imagem do Kit */}
-      <div className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden mb-6">
+      {/* Container da Imagem do Kit - Linkável */}
+      <Link
+        href={`/kit/${kit.id}`}
+        className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden mb-6 block"
+      >
         {kit.image ? (
           <>
             <Image
@@ -35,9 +39,8 @@ function KitCard({ kit }: { kit: Kit }) {
 
             {/* Badge */}
             <div className="absolute top-3 left-3 bg-brand-green text-brand-offwhite px-3 py-1 text-[9px] uppercase tracking-wider font-medium z-10">
-              {kit.badge === 'kit' ? 'Kit' : 'Protocolo'}
+              {kit.badge === "kit" ? "Kit" : "Protocolo"}
             </div>
-
 
             {/* Overlay no Hover com Texto "Ver Detalhes" */}
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500 ease-out flex items-center justify-center opacity-0 group-hover:opacity-100">
@@ -51,13 +54,13 @@ function KitCard({ kit }: { kit: Kit }) {
         ) : (
           <KitImageTemplate kitName={kit.name} badge={kit.badge} />
         )}
-      </div>
+      </Link>
 
       {/* Informações do Kit */}
       <div className="flex flex-col gap-3">
         {/* Categoria/Badge */}
         <p className="text-[10px] uppercase tracking-[0.2em] text-brand-gold font-light">
-          {kit.badge === 'kit' ? 'Kit' : 'Protocolo'}
+          {kit.badge === "kit" ? "Kit" : "Protocolo"}
         </p>
 
         {/* Nome do Kit - altura fixa para evitar que empurre o botão ao comprimir */}
