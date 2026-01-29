@@ -39,7 +39,7 @@ const CheckoutBenefitsBar = () => {
         <p className="text-[10px] md:text-[11px] uppercase tracking-[0.18em] text-brand-softblack/80 font-light">
           Cartão em até{" "}
           <span className="font-medium text-brand-softblack">3x sem juros</span>{" "}
-          no checkout seguro Mercado Pago
+          no checkout seguro Pagar.me
         </p>
       </div>
     </div>

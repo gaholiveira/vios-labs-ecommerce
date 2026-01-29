@@ -1,22 +1,12 @@
-import Navbar from "@/components/Navbar";
 import { CartProvider } from "@/context/CartContext";
 import "./globals.css";
-import Footer from "@/components/Footer";
 import SmoothScrolling from "@/components/SmoothScrolling";
 import ToastContainer from "@/components/ToastContainer";
 import ThirdPartyScripts from "@/components/ThirdPartyScripts";
 import ClientCustomCursor from "@/components/ui/ClientCustomCursor";
+import ConditionalSiteChrome from "@/components/ConditionalSiteChrome";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import dynamic from "next/dynamic";
-
-// Lazy load de componentes pesados que não são críticos para o primeiro render
-// Removido ssr: false pois esses componentes já são Client Components
-const CartDrawer = dynamic(() => import("@/components/CartDrawer"));
-
-const MobileMenu = dynamic(() => import("@/components/MobileMenu"));
-
-const SearchOverlay = dynamic(() => import("@/components/SearchOverlay"));
 
 // Configuração otimizada da fonte Inter com display: 'swap' para melhor performance
 const inter = Inter({
@@ -90,14 +80,8 @@ export default function RootLayout({
       <body className={`${inter.className} antialiased bg-white`}>
         <SmoothScrolling>
           <CartProvider>
-            <Navbar />
-            <MobileMenu />
-            <SearchOverlay />
-            <CartDrawer />
+            <ConditionalSiteChrome>{children}</ConditionalSiteChrome>
             <ToastContainer />
-            {/* O children é onde o conteúdo da page.tsx será injetado */}
-            {children}
-            <Footer className="lote-zero-footer" />
           </CartProvider>
         </SmoothScrolling>
         {/* Scripts de terceiros carregados de forma otimizada */}

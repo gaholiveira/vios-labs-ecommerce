@@ -23,8 +23,6 @@ interface CartContextType {
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
-  isOpen: boolean; // Estado para abrir/fechar
-  setIsOpen: (open: boolean) => void;
   totalItems: number;
   totalPrice: number;
   isMenuOpen: boolean;
@@ -40,7 +38,6 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [isOpen, setIsOpen] = useState(false); // Começa fechado
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -69,7 +66,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       setToastMessage(`${product.name} adicionado ao carrinho`);
       return [...prev, { ...product, quantity: 1, isKit: false }];
     });
-    setIsOpen(true); // Abre o carrinho automaticamente ao adicionar
   }, []);
 
   const addKitToCart = useCallback((kit: Kit) => {
@@ -98,7 +94,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       };
       return [...prev, kitAsCartItem];
     });
-    setIsOpen(true); // Abre o carrinho automaticamente ao adicionar
   }, []);
 
   const removeFromCart = useCallback((productId: string) => {
@@ -140,8 +135,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         removeFromCart,
         updateQuantity,
         clearCart,
-        isOpen,
-        setIsOpen,
         totalItems,
         totalPrice,
         isMenuOpen,

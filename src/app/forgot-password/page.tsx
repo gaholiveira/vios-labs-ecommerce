@@ -24,10 +24,10 @@ export default function ForgotPasswordPage() {
       setLoading(false);
     };
 
-    window.addEventListener('popstate', handlePopState);
+    window.addEventListener("popstate", handlePopState);
 
     return () => {
-      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener("popstate", handlePopState);
     };
   }, []);
 
@@ -65,9 +65,7 @@ export default function ForgotPasswordPage() {
       const redirectTo = `${baseUrl}/auth/callback?type=recovery&next=/update-password`;
 
       if (process.env.NODE_ENV === "development") {
-        if (process.env.NODE_ENV === "development") {
-          console.log("📧 Enviando email de reset com redirectTo:", redirectTo);
-        }
+        console.log("📧 Enviando email de reset com redirectTo:", redirectTo);
       }
 
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(

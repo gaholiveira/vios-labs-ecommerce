@@ -30,6 +30,11 @@ export interface CheckoutPaymentStepProps {
   onError: (message: string) => void;
 }
 
+/** Normaliza base64 (remove espaços/quebras que quebram data URL) */
+function normalizeBase64(value: string): string {
+  return value.replace(/\s/g, "");
+}
+
 /** Step PIX: exibe QR Code e link; botão "Acompanhar status" redireciona para sucesso */
 function PagarmePixStep({
   orderId,
@@ -42,35 +47,50 @@ function PagarmePixStep({
   onSuccess: (id: string) => void;
   onError: (message: string) => void;
 }) {
-  if (!pix.qr_code && !pix.qr_code_url) {
+  const [qrImageFailed, setQrImageFailed] = useState(false);
+  const hasQrCode = Boolean(pix.qr_code && pix.qr_code.trim());
+  const hasQrUrl = Boolean(pix.qr_code_url && pix.qr_code_url.trim());
+  const showQrImage = hasQrCode && !qrImageFailed;
+  const showLink = hasQrUrl;
+
+  if (!hasQrCode && !hasQrUrl) {
     onError(
       "PIX não disponível para este pedido. Verifique se PIX está habilitado na sua conta Pagar.me ou tente novamente em instantes.",
     );
     return null;
   }
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-brand-softblack/80">
         Escaneie o QR Code ou copie o código PIX para pagar no app do seu banco.
       </p>
-      {pix.qr_code && (
+      {showQrImage && (
         <div className="flex justify-center bg-white p-4 rounded-sm border border-gray-100">
           <img
-            src={`data:image/png;base64,${pix.qr_code}`}
+            src={`data:image/png;base64,${normalizeBase64(pix.qr_code!)}`}
             alt="QR Code PIX"
             className="w-48 h-48 object-contain"
+            onError={() => setQrImageFailed(true)}
           />
         </div>
       )}
-      {pix.qr_code_url && (
-        <a
-          href={pix.qr_code_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-brand-green underline block text-center"
-        >
-          Abrir PIX no navegador
-        </a>
+      {showLink && (
+        <>
+          {qrImageFailed && (
+            <p className="text-xs text-brand-softblack/70 text-center">
+              Abra o link abaixo para ver o QR Code ou pagar pelo app do banco.
+            </p>
+          )}
+          <a
+            href={pix.qr_code_url!}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center w-full py-3 px-4 bg-brand-green text-white font-medium text-sm rounded-sm hover:bg-brand-green/90 transition-colors"
+          >
+            Abrir PIX no navegador
+          </a>
+        </>
       )}
       <div className="p-4 border border-gray-100 rounded-sm bg-gray-50/70">
         <p className="text-[11px] text-brand-softblack/70 leading-relaxed">
@@ -181,11 +201,27 @@ function PagarmeCardStep({
             return true;
           },
           (err) => {
-            console.error("Tokenizecard error:", err);
+            const errObj =
+              err && typeof err === "object"
+                ? (err as Record<string, unknown>)
+                : null;
+            const msg =
+              errObj?.message != null
+                ? String(errObj.message)
+                : errObj?.error != null
+                  ? String(errObj.error)
+                  : errObj?.msg != null
+                    ? String(errObj.msg)
+                    : errObj && Object.keys(errObj).length > 0
+                      ? JSON.stringify(errObj)
+                      : null;
+            if (process.env.NODE_ENV === "development" && err) {
+              console.warn("[Tokenizecard] Falha ao gerar token:", err);
+            }
             onErrorRef.current(
-              err && typeof err === "object" && "message" in err
-                ? String((err as { message: unknown }).message)
-                : "Falha ao gerar token do cartão.",
+              msg?.trim()
+                ? msg
+                : "Não foi possível validar o cartão. Verifique número, validade e CVV, ou tente outro cartão.",
             );
           },
         );

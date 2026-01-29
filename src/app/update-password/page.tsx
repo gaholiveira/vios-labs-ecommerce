@@ -32,10 +32,10 @@ export default function UpdatePasswordPage() {
       setLoading(false);
     };
 
-    window.addEventListener('popstate', handlePopState);
+    window.addEventListener("popstate", handlePopState);
 
     return () => {
-      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener("popstate", handlePopState);
     };
   }, []);
 
@@ -97,13 +97,11 @@ export default function UpdatePasswordPage() {
 
             // Sessão válida - usuário pode prosseguir
             if (process.env.NODE_ENV === "development") {
-              if (process.env.NODE_ENV === "development") {
-                console.log(
-                  "✅ Sessão válida encontrada para recovery (tentativa",
-                  attempts + 1,
-                  ")",
-                );
-              }
+              console.log(
+                "✅ Sessão válida encontrada para recovery (tentativa",
+                attempts + 1,
+                ")",
+              );
             }
             setHasValidSession(true);
             setCheckingSession(false);
@@ -114,11 +112,9 @@ export default function UpdatePasswordPage() {
           attempts++;
           if (attempts < maxAttempts) {
             if (process.env.NODE_ENV === "development") {
-              if (process.env.NODE_ENV === "development") {
-                console.log(
-                  `⚠️ Sessão não encontrada (tentativa ${attempts}), tentando novamente...`,
-                );
-              }
+              console.log(
+                `⚠️ Sessão não encontrada (tentativa ${attempts}), tentando novamente...`,
+              );
             }
             await new Promise((resolve) => setTimeout(resolve, 500));
           }
