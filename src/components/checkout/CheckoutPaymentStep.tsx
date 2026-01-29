@@ -6,12 +6,7 @@ import type {
   CheckoutCartItem,
   CheckoutFormData,
 } from "@/types/checkout";
-import {
-  getCardBrandFromNumber,
-  formatCardNumber,
-  formatExpDate,
-  type CardBrand,
-} from "@/lib/card-brand";
+import { getCardBrandFromNumber, type CardBrand } from "@/lib/card-brand";
 
 const PAGARME_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAGARME_PUBLIC_KEY ?? "";
 const TOKENIZECARD_SCRIPT = "https://checkout.pagar.me/v1/tokenizecard.js";
@@ -450,30 +445,22 @@ function PagarmeCardStep({
             </label>
             <CardBrandIcon brand={cardBrand} className="w-9 h-6" />
           </div>
-          {/* Input oculto com apenas dígitos — tokenizecard/API MundiPagg esperam número sem espaços */}
+          {/* Um único input: tokenizecard lê o value; API exige apenas dígitos (sem espaços) */}
           <input
             type="text"
             name="card_number"
             data-pagarmecheckout-element="number"
             value={cardNumberDigits}
-            readOnly
-            tabIndex={-1}
-            aria-hidden
-            className="absolute w-0 h-0 opacity-0 pointer-events-none overflow-hidden"
-          />
-          <input
-            type="text"
-            placeholder="0000 0000 0000 0000"
-            value={formatCardNumber(cardNumberDigits)}
             onChange={(e) => {
               const digits = e.target.value.replace(/\D/g, "");
               const maxLen =
                 digits.startsWith("34") || digits.startsWith("37") ? 15 : 16;
               setCardNumberDigits(digits.slice(0, maxLen));
             }}
+            placeholder="0000 0000 0000 0000"
             inputMode="numeric"
             autoComplete="cc-number"
-            maxLength={23}
+            maxLength={19}
             className="w-full px-3 py-2 border border-gray-200 rounded-sm text-sm text-brand-softblack focus:border-brand-green focus:outline-none font-mono"
             required
           />
@@ -483,12 +470,12 @@ function PagarmeCardStep({
             <label className="block text-xs font-medium text-brand-softblack/80 mb-1">
               Validade (MM/AA)
             </label>
-            {/* Input oculto com MMYY (4 dígitos) — API de tokens exige esse formato; tokenizecard lê este */}
+            {/* API MundiPagg exige exp_month (1-12) e exp_year separados; tokenizecard lê estes inputs */}
             <input
               type="text"
-              name="card_exp"
-              data-pagarmecheckout-element="exp_date"
-              value={expDateDigits}
+              name="card_exp_month"
+              data-pagarmecheckout-element="exp_month"
+              value={expDateDigits.slice(0, 2)}
               readOnly
               tabIndex={-1}
               aria-hidden
@@ -496,7 +483,17 @@ function PagarmeCardStep({
             />
             <input
               type="text"
-              placeholder="MM/AA"
+              name="card_exp_year"
+              data-pagarmecheckout-element="exp_year"
+              value={expDateDigits.slice(2, 4)}
+              readOnly
+              tabIndex={-1}
+              aria-hidden
+              className="absolute w-0 h-0 opacity-0 pointer-events-none overflow-hidden"
+            />
+            <input
+              type="text"
+              placeholder="MM/AA (ex: 12/28)"
               value={
                 expDateDigits.length >= 2
                   ? `${expDateDigits.slice(0, 2)}/${expDateDigits.slice(2)}`
