@@ -223,6 +223,12 @@ function pickString(
   return null;
 }
 
+/** True se o valor for código EMV (copia-e-cola PIX), não base64 de imagem */
+function isEmvString(value: string): boolean {
+  const t = value.trim();
+  return t.startsWith("0002") || t.startsWith("000201");
+}
+
 /** Extrai qr_code, qr_code_url e código copia-e-cola de last_transaction ou objeto similar */
 export function extractPixFromTransaction(
   tx: PagarmePixTransaction | Record<string, unknown> | null | undefined,
@@ -230,23 +236,23 @@ export function extractPixFromTransaction(
   if (!tx || typeof tx !== "object")
     return { qr_code: null, qr_code_url: null, pix_copy_paste: null };
   const o = tx as Record<string, unknown>;
-  // QR code (base64): vários nomes possíveis
-  const qr_code =
-    pickString(
-      o,
-      "qr_code",
-      "qr_code_base64",
-      "pix_qr_code",
-      "qr_code_image",
-    ) ?? null;
+  // Valor bruto do campo qr_code (algumas APIs devolvem EMV aqui em vez de base64)
+  const rawQrCode = pickString(
+    o,
+    "qr_code",
+    "qr_code_base64",
+    "pix_qr_code",
+    "qr_code_image",
+  );
+  const qr_code = rawQrCode && !isEmvString(rawQrCode) ? rawQrCode : null;
   // URL do QR / link para pagar
   const qr_code_url =
     pickString(o, "qr_code_url", "qr_code_link", "pix_qr_code_url", "link") ??
     null;
-  // Código copia-e-cola (EMV)
+  // Código copia-e-cola (EMV) — pode vir em emv/qr_code_text ou no próprio qr_code
   const pix_copy_paste =
     pickString(o, "emv", "qr_code_text", "pix_copy_paste", "copy_paste") ??
-    null;
+    (rawQrCode && isEmvString(rawQrCode) ? rawQrCode : null);
   return { qr_code, qr_code_url, pix_copy_paste };
 }
 

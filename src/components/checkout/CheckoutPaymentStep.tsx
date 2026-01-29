@@ -135,7 +135,10 @@ function PagarmePixStep({
   const [copied, setCopied] = useState(false);
   const onSuccessRef = useRef(onSuccess);
   onSuccessRef.current = onSuccess;
-  const hasQrCode = Boolean(pix.qr_code && pix.qr_code.trim());
+  // qr_code deve ser base64 de imagem; se for código EMV (0002...) não usar como img (ERR_INVALID_URL)
+  const isQrCodeBase64 =
+    pix.qr_code && pix.qr_code.trim() && !pix.qr_code.trim().startsWith("0002");
+  const hasQrCode = Boolean(isQrCodeBase64);
   const hasQrUrl = Boolean(pix.qr_code_url && pix.qr_code_url.trim());
   const hasCopyPaste = Boolean(pix.pix_copy_paste && pix.pix_copy_paste.trim());
   const showQrImage = hasQrCode && !qrImageFailed;
