@@ -290,8 +290,8 @@ function PagarmeCardStep({
   onError: (message: string) => void;
 }) {
   const [loading, setLoading] = useState(false);
-  const [cardNumberDisplay, setCardNumberDisplay] = useState("");
-  const [expDateDisplay, setExpDateDisplay] = useState("");
+  const [cardNumberDigits, setCardNumberDigits] = useState("");
+  const [expDateDigits, setExpDateDigits] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   const submittedRef = useRef(false);
   const onSuccessRef = useRef(onSuccess);
@@ -299,7 +299,7 @@ function PagarmeCardStep({
   onSuccessRef.current = onSuccess;
   onErrorRef.current = onError;
 
-  const cardBrand = getCardBrandFromNumber(cardNumberDisplay);
+  const cardBrand = getCardBrandFromNumber(cardNumberDigits);
 
   const submitWithToken = useCallback(
     async (cardToken: string) => {
@@ -423,6 +423,13 @@ function PagarmeCardStep({
         onSubmit={(e) => e.preventDefault()}
         className="space-y-4"
       >
+        {/* Container para o tokenizecard injetar erros (evita innerHTML undefined) */}
+        <div
+          id="pagarme-checkout-errors"
+          data-pagarmecheckout-element="errors"
+          className="min-h-px text-red-600 text-sm empty:min-h-0 empty:invisible"
+          aria-live="polite"
+        />
         <div>
           <label className="block text-xs font-medium text-brand-softblack/80 mb-1">
             Nome no cartão
@@ -443,15 +450,27 @@ function PagarmeCardStep({
             </label>
             <CardBrandIcon brand={cardBrand} className="w-9 h-6" />
           </div>
+          {/* Input oculto com apenas dígitos — tokenizecard/API MundiPagg esperam número sem espaços */}
           <input
             type="text"
             name="card_number"
             data-pagarmecheckout-element="number"
+            value={cardNumberDigits}
+            readOnly
+            tabIndex={-1}
+            aria-hidden
+            className="absolute w-0 h-0 opacity-0 pointer-events-none overflow-hidden"
+          />
+          <input
+            type="text"
             placeholder="0000 0000 0000 0000"
-            value={cardNumberDisplay}
-            onChange={(e) =>
-              setCardNumberDisplay(formatCardNumber(e.target.value))
-            }
+            value={formatCardNumber(cardNumberDigits)}
+            onChange={(e) => {
+              const digits = e.target.value.replace(/\D/g, "");
+              const maxLen =
+                digits.startsWith("34") || digits.startsWith("37") ? 15 : 16;
+              setCardNumberDigits(digits.slice(0, maxLen));
+            }}
             inputMode="numeric"
             autoComplete="cc-number"
             maxLength={23}
@@ -464,13 +483,29 @@ function PagarmeCardStep({
             <label className="block text-xs font-medium text-brand-softblack/80 mb-1">
               Validade (MM/AA)
             </label>
+            {/* Input oculto com MMYY (4 dígitos) — API de tokens exige esse formato; tokenizecard lê este */}
             <input
               type="text"
               name="card_exp"
               data-pagarmecheckout-element="exp_date"
+              value={expDateDigits}
+              readOnly
+              tabIndex={-1}
+              aria-hidden
+              className="absolute w-0 h-0 opacity-0 pointer-events-none overflow-hidden"
+            />
+            <input
+              type="text"
               placeholder="MM/AA"
-              value={expDateDisplay}
-              onChange={(e) => setExpDateDisplay(formatExpDate(e.target.value))}
+              value={
+                expDateDigits.length >= 2
+                  ? `${expDateDigits.slice(0, 2)}/${expDateDigits.slice(2)}`
+                  : expDateDigits
+              }
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
+                setExpDateDigits(digits);
+              }}
               inputMode="numeric"
               autoComplete="cc-exp"
               maxLength={5}
