@@ -6,7 +6,6 @@ import {
   isMercadoPagoConfigured,
 } from "@/lib/mercadopago";
 import { Payment, MerchantOrder, Preference } from "mercadopago";
-import type { ReserveInventoryResponse } from "@/types/database";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -64,6 +63,212 @@ function validateSignature(
 }
 
 /**
+ * Processa notificação de pagamento aprovado: cria order, order_items, confirma reserva e envia e-mail.
+ * Usado por POST (body) e GET (query topic=payment&id=...).
+ */
+async function processPaymentNotification(paymentId: string): Promise<void> {
+  const mpConfig = getMercadoPagoClient();
+  const paymentClient = new Payment(mpConfig);
+  const merchantOrderClient = new MerchantOrder(mpConfig);
+  const preferenceClient = new Preference(mpConfig);
+
+  const payment = await paymentClient.get({ id: paymentId });
+
+  if (!payment || payment.status !== "approved") {
+    return;
+  }
+
+  let preferenceId: string | undefined;
+
+  if (payment.order?.id != null) {
+    try {
+      const merchantOrder = await merchantOrderClient.get({
+        merchantOrderId: String(payment.order.id),
+      });
+      preferenceId = merchantOrder.preference_id;
+    } catch (e) {
+      console.warn("[MERCADOPAGO WEBHOOK] MerchantOrder get failed:", e);
+    }
+  }
+
+  if (!preferenceId && payment.external_reference) {
+    try {
+      const searchResult = await merchantOrderClient.search({
+        options: { external_reference: payment.external_reference },
+      });
+      const first = searchResult.elements?.[0];
+      if (first?.preference_id) preferenceId = first.preference_id;
+    } catch (e) {
+      console.warn("[MERCADOPAGO WEBHOOK] MerchantOrder search failed:", e);
+    }
+  }
+
+  // Fallback: MP pode enviar preference_id no metadata do payment
+  if (
+    !preferenceId &&
+    payment.metadata &&
+    typeof payment.metadata === "object"
+  ) {
+    const meta = payment.metadata as Record<string, unknown>;
+    if (typeof meta.preference_id === "string")
+      preferenceId = meta.preference_id;
+  }
+
+  if (!preferenceId) {
+    console.error(
+      "[MERCADOPAGO WEBHOOK] Could not resolve preference_id for payment:",
+      paymentId,
+      "| payment.order:",
+      payment.order,
+      "| external_reference:",
+      payment.external_reference,
+    );
+    return;
+  }
+
+  const preference = await preferenceClient.get({ preferenceId });
+  if (!preference) {
+    console.error("[MERCADOPAGO WEBHOOK] Preference not found:", preferenceId);
+    return;
+  }
+
+  let metadata: Record<string, string> = {};
+  if (preference.metadata != null) {
+    if (typeof preference.metadata === "string") {
+      try {
+        metadata = JSON.parse(preference.metadata) as Record<string, string>;
+      } catch {
+        console.warn(
+          "[MERCADOPAGO WEBHOOK] metadata is string but not valid JSON",
+        );
+      }
+    } else if (typeof preference.metadata === "object") {
+      metadata = preference.metadata as Record<string, string>;
+    }
+  }
+
+  if (!metadata || Object.keys(metadata).length === 0) {
+    console.error(
+      "[MERCADOPAGO WEBHOOK] Preference has no metadata:",
+      preferenceId,
+    );
+    return;
+  }
+
+  const userId = metadata.user_id === "null" ? null : metadata.user_id;
+  const customerEmail = metadata.customer_email;
+  if (!customerEmail || customerEmail === "null") {
+    console.error(
+      "[MERCADOPAGO WEBHOOK] Missing customer_email in preference metadata",
+    );
+    return;
+  }
+
+  const totalAmount = Number(metadata.total) ?? payment.transaction_amount ?? 0;
+  const supabaseAdmin = getSupabaseAdmin();
+
+  const { data: existingOrder } = await supabaseAdmin
+    .from("orders")
+    .select("id")
+    .eq("stripe_session_id", preferenceId)
+    .maybeSingle();
+
+  if (existingOrder) {
+    return;
+  }
+
+  const { data: order, error: orderError } = await supabaseAdmin
+    .from("orders")
+    .insert({
+      user_id: userId || null,
+      customer_email: customerEmail,
+      status: "paid",
+      total_amount: totalAmount,
+      stripe_session_id: preferenceId,
+    })
+    .select()
+    .single();
+
+  if (orderError || !order) {
+    console.error("[MERCADOPAGO WEBHOOK] Error creating order:", orderError);
+    throw new Error("Failed to create order");
+  }
+
+  const items = preference.items ?? [];
+  const orderItems: Array<{
+    order_id: string;
+    product_id: string;
+    product_name: string;
+    quantity: number;
+    price: number;
+    product_image: string | null;
+  }> = [];
+
+  for (const item of items) {
+    if (
+      !item.id ||
+      !item.title ||
+      item.quantity == null ||
+      item.unit_price == null
+    )
+      continue;
+    if (item.id === "pix-discount") continue;
+    orderItems.push({
+      order_id: order.id,
+      product_id: item.id,
+      product_name: item.title,
+      quantity: item.quantity,
+      price: Number(item.unit_price),
+      product_image: item.picture_url ?? null,
+    });
+  }
+
+  if (orderItems.length > 0) {
+    const { error: itemsError } = await supabaseAdmin
+      .from("order_items")
+      .insert(orderItems);
+    if (itemsError) {
+      console.error(
+        "[MERCADOPAGO WEBHOOK] Error creating order_items:",
+        itemsError,
+      );
+      await supabaseAdmin.from("orders").delete().eq("id", order.id);
+      throw new Error("Failed to create order items");
+    }
+  }
+
+  try {
+    await supabaseAdmin.rpc("confirm_reservation", {
+      p_stripe_session_id: preferenceId,
+      p_order_id: order.id,
+    });
+  } catch (invErr) {
+    console.error(
+      "[MERCADOPAGO WEBHOOK] confirm_reservation exception:",
+      invErr,
+    );
+  }
+
+  try {
+    await sendOrderConfirmationEmail({
+      order,
+      orderItems,
+      customerEmail,
+      customerName: preference.payer?.name
+        ? [preference.payer.name, preference.payer.surname]
+            .filter(Boolean)
+            .join(" ") || null
+        : null,
+    });
+  } catch (emailErr) {
+    console.error(
+      "[MERCADOPAGO WEBHOOK] Error sending confirmation email:",
+      emailErr,
+    );
+  }
+}
+
+/**
  * Envia email de confirmação (mesma API usada pelo webhook Stripe).
  */
 async function sendOrderConfirmationEmail({
@@ -114,11 +319,32 @@ async function sendOrderConfirmationEmail({
   }
 }
 
-export async function GET() {
-  return NextResponse.json(
-    { error: "Method not allowed. Webhooks only accept POST." },
-    { status: 405 },
-  );
+/**
+ * Alguns fluxos do Mercado Pago enviam GET com topic e id na query.
+ * Processamos igual ao POST: buscar payment e criar pedido se aprovado.
+ */
+export async function GET(req: NextRequest) {
+  if (!isMercadoPagoConfigured()) {
+    return NextResponse.json(
+      { error: "Mercado Pago not configured" },
+      { status: 503 },
+    );
+  }
+  const topic = req.nextUrl.searchParams.get("topic");
+  const id =
+    req.nextUrl.searchParams.get("id") ??
+    req.nextUrl.searchParams.get("data.id");
+  if (topic === "payment" && id) {
+    try {
+      await processPaymentNotification(String(id));
+    } catch (e) {
+      console.error(
+        "[MERCADOPAGO WEBHOOK GET] processPaymentNotification error:",
+        e,
+      );
+    }
+  }
+  return NextResponse.json({ received: true });
 }
 
 export async function POST(req: NextRequest) {
@@ -158,203 +384,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
-    const mpConfig = getMercadoPagoClient();
-    const paymentClient = new Payment(mpConfig);
-    const merchantOrderClient = new MerchantOrder(mpConfig);
-    const preferenceClient = new Preference(mpConfig);
-
-    const paymentId = String(dataId);
-    const payment = await paymentClient.get({ id: paymentId });
-
-    if (!payment || payment.status !== "approved") {
-      return NextResponse.json({ received: true });
-    }
-
-    let preferenceId: string | undefined;
-
-    if (payment.order?.id != null) {
-      try {
-        const merchantOrder = await merchantOrderClient.get({
-          merchantOrderId: String(payment.order.id),
-        });
-        preferenceId = merchantOrder.preference_id;
-      } catch (e) {
-        if (process.env.NODE_ENV === "development") {
-          console.warn("[MERCADOPAGO WEBHOOK] MerchantOrder get failed:", e);
-        }
-      }
-    }
-
-    if (!preferenceId && payment.external_reference) {
-      try {
-        const searchResult = await merchantOrderClient.search({
-          options: { external_reference: payment.external_reference },
-        });
-        const first = searchResult.elements?.[0];
-        if (first?.preference_id) preferenceId = first.preference_id;
-      } catch (e) {
-        if (process.env.NODE_ENV === "development") {
-          console.warn("[MERCADOPAGO WEBHOOK] MerchantOrder search failed:", e);
-        }
-      }
-    }
-
-    if (!preferenceId) {
-      console.error(
-        "[MERCADOPAGO WEBHOOK] Could not resolve preference_id for payment:",
-        paymentId,
-      );
-      return NextResponse.json(
-        { error: "Could not resolve preference" },
-        { status: 200 },
-      );
-    }
-
-    const preference = await preferenceClient.get({ preferenceId });
-    if (!preference || !preference.metadata) {
-      console.error(
-        "[MERCADOPAGO WEBHOOK] Preference not found or no metadata:",
-        preferenceId,
-      );
-      return NextResponse.json({ received: true });
-    }
-
-    const metadata = preference.metadata as Record<string, string>;
-    const userId = metadata.user_id === "null" ? null : metadata.user_id;
-    const customerEmail = metadata.customer_email;
-    if (!customerEmail || customerEmail === "null") {
-      console.error(
-        "[MERCADOPAGO WEBHOOK] Missing customer_email in preference metadata",
-      );
-      return NextResponse.json({ received: true });
-    }
-
-    const totalAmount =
-      Number(preference.metadata?.total) ?? payment.transaction_amount ?? 0;
-    const supabaseAdmin = getSupabaseAdmin();
-
-    const { data: existingOrder } = await supabaseAdmin
-      .from("orders")
-      .select("id")
-      .eq("stripe_session_id", preferenceId)
-      .maybeSingle();
-
-    if (existingOrder) {
-      return NextResponse.json({ received: true });
-    }
-
-    const { data: order, error: orderError } = await supabaseAdmin
-      .from("orders")
-      .insert({
-        user_id: userId || null,
-        customer_email: customerEmail,
-        status: "paid",
-        total_amount: totalAmount,
-        stripe_session_id: preferenceId,
-      })
-      .select()
-      .single();
-
-    if (orderError || !order) {
-      console.error("[MERCADOPAGO WEBHOOK] Error creating order:", orderError);
-      return NextResponse.json(
-        { error: "Failed to create order" },
-        { status: 500 },
-      );
-    }
-
-    const items = preference.items ?? [];
-    const orderItems: Array<{
-      order_id: string;
-      product_id: string;
-      product_name: string;
-      quantity: number;
-      price: number;
-      product_image: string | null;
-    }> = [];
-
-    for (const item of items) {
-      if (
-        !item.id ||
-        !item.title ||
-        item.quantity == null ||
-        item.unit_price == null
-      )
-        continue;
-      if (item.id === "pix-discount") continue;
-      orderItems.push({
-        order_id: order.id,
-        product_id: item.id,
-        product_name: item.title,
-        quantity: item.quantity,
-        price: Number(item.unit_price),
-        product_image: item.picture_url ?? null,
-      });
-    }
-
-    if (orderItems.length > 0) {
-      const { error: itemsError } = await supabaseAdmin
-        .from("order_items")
-        .insert(orderItems);
-      if (itemsError) {
-        console.error(
-          "[MERCADOPAGO WEBHOOK] Error creating order_items:",
-          itemsError,
-        );
-        await supabaseAdmin.from("orders").delete().eq("id", order.id);
-        return NextResponse.json(
-          { error: "Failed to create order items" },
-          { status: 500 },
-        );
-      }
-    }
-
-    try {
-      const { data: confirmResult, error: confirmError } =
-        await supabaseAdmin.rpc("confirm_reservation", {
-          p_stripe_session_id: preferenceId,
-          p_order_id: order.id,
-        });
-      if (confirmError) {
-        console.error(
-          "[MERCADOPAGO WEBHOOK] Error confirming reservation:",
-          confirmError,
-        );
-      } else if (
-        confirmResult &&
-        !(confirmResult as ReserveInventoryResponse).success
-      ) {
-        if (process.env.NODE_ENV === "development") {
-          console.warn(
-            "[MERCADOPAGO WEBHOOK] Reservation not found or already processed",
-          );
-        }
-      }
-    } catch (invErr) {
-      console.error(
-        "[MERCADOPAGO WEBHOOK] confirm_reservation exception:",
-        invErr,
-      );
-    }
-
-    try {
-      await sendOrderConfirmationEmail({
-        order,
-        orderItems,
-        customerEmail,
-        customerName: preference.payer?.name
-          ? [preference.payer.name, preference.payer.surname]
-              .filter(Boolean)
-              .join(" ") || null
-          : null,
-      });
-    } catch (emailErr) {
-      console.error(
-        "[MERCADOPAGO WEBHOOK] Error sending confirmation email:",
-        emailErr,
-      );
-    }
-
+    await processPaymentNotification(String(dataId));
     return NextResponse.json({ received: true });
   } catch (err) {
     console.error("[MERCADOPAGO WEBHOOK] Error:", err);

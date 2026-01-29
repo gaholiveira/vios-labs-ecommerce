@@ -1,36 +1,45 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 /**
- * API Route para verificar se um pedido foi criado usando session_id
- * Usado na página de sucesso para verificar se o webhook processou o pedido
+ * API Route para verificar se um pedido foi criado usando session_id (Stripe) ou preference_id (Mercado Pago).
+ * Usa service role para que o lookup funcione para guest: a página de sucesso não tem sessão com o email do pedido.
  */
+function getSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error("Missing Supabase config");
+  return createClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
+
 export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
-    const sessionId = searchParams.get('session_id');
+    const sessionId = searchParams.get("session_id");
 
     if (!sessionId) {
       return NextResponse.json(
-        { error: 'session_id é obrigatório' },
-        { status: 400 }
+        { error: "session_id é obrigatório" },
+        { status: 400 },
       );
     }
 
-    const supabase = await createClient();
+    const supabase = getSupabaseAdmin();
 
-    // Buscar pedido por stripe_session_id
+    // Buscar pedido por stripe_session_id (Stripe session id ou MP preference_id)
     const { data: order, error } = await supabase
-      .from('orders')
-      .select('id, status, created_at')
-      .eq('stripe_session_id', sessionId)
+      .from("orders")
+      .select("id, status, created_at")
+      .eq("stripe_session_id", sessionId)
       .maybeSingle();
 
     if (error) {
-      console.error('Erro ao verificar pedido:', error);
+      console.error("Erro ao verificar pedido:", error);
       return NextResponse.json(
-        { error: 'Erro ao verificar pedido' },
-        { status: 500 }
+        { error: "Erro ao verificar pedido" },
+        { status: 500 },
       );
     }
 
@@ -46,13 +55,13 @@ export async function GET(req: NextRequest) {
     // Pedido ainda não foi criado (webhook pode estar processando)
     return NextResponse.json({
       exists: false,
-      message: 'Pedido ainda não foi processado',
+      message: "Pedido ainda não foi processado",
     });
   } catch (error: any) {
-    console.error('Erro na verificação de pedido:', error);
+    console.error("Erro na verificação de pedido:", error);
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
+      { error: "Erro interno do servidor" },
+      { status: 500 },
     );
   }
 }
