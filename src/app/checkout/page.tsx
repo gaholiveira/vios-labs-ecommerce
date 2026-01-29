@@ -82,6 +82,7 @@ export default function CheckoutPage() {
             pix: {
               qr_code: json.pix?.qr_code ?? null,
               qr_code_url: json.pix?.qr_code_url ?? null,
+              pix_copy_paste: json.pix?.pix_copy_paste ?? null,
             },
           });
           setView("pix");

@@ -203,19 +203,35 @@ export async function getCharge(
   return data as PagarmeChargeResponse;
 }
 
-/** Extrai qr_code e qr_code_url de last_transaction (ou objeto similar) */
+/** Retorno da extração PIX: QR, URL e código copia-e-cola (EMV) */
+export interface ExtractedPixData {
+  qr_code: string | null;
+  qr_code_url: string | null;
+  /** Código PIX para copiar e colar no app do banco (EMV) */
+  pix_copy_paste: string | null;
+}
+
+/** Extrai qr_code, qr_code_url e código copia-e-cola de last_transaction */
 export function extractPixFromTransaction(
   tx: PagarmePixTransaction | null | undefined,
-): { qr_code: string | null; qr_code_url: string | null } {
+): ExtractedPixData {
   if (!tx || typeof tx !== "object")
-    return { qr_code: null, qr_code_url: null };
+    return { qr_code: null, qr_code_url: null, pix_copy_paste: null };
   const qr_code =
     typeof tx.qr_code === "string" && tx.qr_code ? tx.qr_code : null;
   const qr_code_url =
     typeof tx.qr_code_url === "string" && tx.qr_code_url
       ? tx.qr_code_url
       : null;
-  return { qr_code, qr_code_url };
+  // EMV = código PIX copia-e-cola (algumas APIs usam emv, outras qr_code_text, etc.)
+  const qrCodeText = (tx as Record<string, unknown>).qr_code_text;
+  const pix_copy_paste: string | null =
+    typeof tx.emv === "string" && tx.emv
+      ? tx.emv
+      : typeof qrCodeText === "string" && qrCodeText
+        ? qrCodeText
+        : null;
+  return { qr_code, qr_code_url, pix_copy_paste };
 }
 
 /**

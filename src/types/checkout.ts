@@ -20,7 +20,12 @@ export type CheckoutPaymentPayload =
       provider: "pagarme";
       orderId: string;
       paymentMethod: "pix";
-      pix: { qr_code: string | null; qr_code_url: string | null };
+      pix: {
+        qr_code: string | null;
+        qr_code_url: string | null;
+        /** Código PIX para copiar e colar no app do banco */
+        pix_copy_paste: string | null;
+      };
     }
   | {
       provider: "pagarme";

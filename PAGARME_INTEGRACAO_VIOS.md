@@ -19,6 +19,8 @@ Este documento descreve o fluxo de pagamento **transparente** da VIOS Labs usand
 
 O cliente **nunca** sai do site para pagar; a experiência é 100% “checkout transparente” com a identidade visual da VIOS.
 
+**Cartão (padrão e-commerce Pagar.me):** escolha de parcelas (1x, 2x, 3x) no resumo; detecção de bandeira (Visa, Mastercard, Elo, Amex) e formatação do número/validade (MM/AA).
+
 ---
 
 ## 2. O que fazer no Pagar.me (Dashboard)
@@ -87,17 +89,17 @@ PAGARME_WEBHOOK_SECRET=whsec_...
 
 ## 4. Fluxo técnico resumido
 
-| Etapa | Quem     | Ação                                                                                                             |
-| ----- | -------- | ---------------------------------------------------------------------------------------------------------------- |
-| 1     | Front    | Usuário preenche dados e escolhe PIX ou cartão (1x/2x/3x).                                                       |
-| 2     | Front    | Se cartão: carrega tokenizecard.js, usuário digita dados do cartão; o script gera um `card_token`.               |
-| 3     | Front    | Envia `POST /api/checkout/pagarme` com itens, dados do cliente/entrega e, se cartão, `card_token` e parcelas.    |
-| 4     | Backend  | Valida carrinho, reserva estoque (Supabase), cria pedido no Pagar.me (API v5) com uma charge PIX ou credit_card. |
-| 5     | Backend  | Responde com `orderId` e, se PIX, `qr_code` / `qr_code_url` para exibir no front.                                |
-| 6     | Pagar.me | Para PIX: cliente paga; para cartão: processa e autoriza.                                                        |
-| 7     | Pagar.me | Envia webhook `order.paid` para `POST /api/webhooks/pagarme`.                                                    |
-| 8     | Backend  | Cria `orders` e `order_items` no Supabase, confirma reserva com o ID do pedido Pagar.me, envia e-mail.           |
-| 9     | Front    | Redireciona para página de sucesso (ex.: `/checkout/success?order_id=...`).                                      |
+| Etapa | Quem     | Ação                                                                                                                      |
+| ----- | -------- | ------------------------------------------------------------------------------------------------------------------------- |
+| 1     | Front    | Usuário preenche dados e escolhe PIX ou cartão (1x/2x/3x).                                                                |
+| 2     | Front    | Se cartão: carrega tokenizecard.js, usuário digita dados do cartão; o script gera um `card_token`.                        |
+| 3     | Front    | Envia `POST /api/checkout/pagarme` com itens, dados do cliente/entrega e, se cartão, `card_token` e parcelas.             |
+| 4     | Backend  | Valida carrinho, reserva estoque (Supabase), cria pedido no Pagar.me (API v5) com uma charge PIX ou credit_card.          |
+| 5     | Backend  | Responde com `orderId` e, se PIX, `qr_code`, `qr_code_url` e `pix_copy_paste` (código copia-e-cola) para exibir no front. |
+| 6     | Pagar.me | Para PIX: cliente paga; para cartão: processa e autoriza.                                                                 |
+| 7     | Pagar.me | Envia webhook `order.paid` para `POST /api/webhooks/pagarme`.                                                             |
+| 8     | Backend  | Cria `orders` e `order_items` no Supabase, confirma reserva com o ID do pedido Pagar.me, envia e-mail.                    |
+| 9     | Front    | Redireciona para página de sucesso (ex.: `/checkout/success?order_id=...`).                                               |
 
 ---
 

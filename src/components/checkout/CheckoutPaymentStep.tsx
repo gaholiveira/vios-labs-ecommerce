@@ -6,6 +6,12 @@ import type {
   CheckoutCartItem,
   CheckoutFormData,
 } from "@/types/checkout";
+import {
+  getCardBrandFromNumber,
+  formatCardNumber,
+  formatExpDate,
+  type CardBrand,
+} from "@/lib/card-brand";
 
 const PAGARME_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAGARME_PUBLIC_KEY ?? "";
 const TOKENIZECARD_SCRIPT = "https://checkout.pagar.me/v1/tokenizecard.js";
@@ -35,7 +41,86 @@ function normalizeBase64(value: string): string {
   return value.replace(/\s/g, "");
 }
 
-/** Step PIX: exibe QR Code e link; botão "Acompanhar status" redireciona para sucesso */
+/** Ícones de bandeira (padrão e-commerce Pagar.me) — SVG compactos */
+function CardBrandIcon({
+  brand,
+  className = "w-8 h-5",
+}: {
+  brand: CardBrand;
+  className?: string;
+}) {
+  if (!brand) return null;
+  const c = className;
+  if (brand === "visa")
+    return (
+      <span className={`inline-block ${c}`} aria-label="Visa">
+        <svg
+          viewBox="0 0 48 16"
+          fill="none"
+          className="w-full h-full"
+          aria-hidden
+        >
+          <path d="M19 2L16 14h-3l3-12h3z" fill="#1A1F71" />
+          <path
+            d="M31 2.2c-.6-.2-1.5-.5-2.7-.5-3 0-5 1.6-5 3.8 0 1.7 1.5 2.6 2.6 3.2 1.2.6 1.6 1 1.6 1.5 0 .8-1 1.1-1.9 1.1-1.3 0-2-.2-3-.7l-.4 2.4c.7.3 1.9.6 3.2.6 3.2 0 5.2-1.5 5.2-3.9 0-1.3-.8-2.3-2.6-3.1-1.1-.5-1.8-.9-1.8-1.5 0-.5.5-.9 1.8-.9 1 0 1.7.2 2.3.5l.4-2.3z"
+            fill="#1A1F71"
+          />
+          <path
+            d="M41 2l-2.5 12h-2.9l2.5-12h2.9zm-7.2 0c.3 0 .6 0 .8.2l1.5 9.2 2-9.2c.4-.1.8-.2 1.2-.2h1.4L39 14h-3.2l-2.2-6.8-2.3 6.8h-3.2l3.9-12h2.6z"
+            fill="#1A1F71"
+          />
+          <path
+            d="M12.3 2L8 14H5l1.4-3.4C5.5 9.5 4 7.5 4 5c0-2 1.6-3 3.3-3 1 0 1.8.2 2.4.5L9.5 6.8c-.2-.6-.8-1-1.5-1-.7 0-1.3.4-1.3 1.1 0 .7.9 1 1.6 1.3l1.5.4 2.6-6.6h2.4z"
+            fill="#F9A51A"
+          />
+        </svg>
+      </span>
+    );
+  if (brand === "mastercard")
+    return (
+      <span className={`inline-block ${c}`} aria-label="Mastercard">
+        <svg
+          viewBox="0 0 24 16"
+          fill="none"
+          className="w-full h-full"
+          aria-hidden
+        >
+          <circle cx="9" cy="8" r="6" fill="#EB001B" />
+          <circle cx="15" cy="8" r="6" fill="#F79E1B" />
+          <path
+            fill="#FF5F00"
+            d="M12 3.2a6 6 0 0 1 0 9.6 6 6 0 0 1 0-9.6z"
+            opacity=".8"
+          />
+        </svg>
+      </span>
+    );
+  if (brand === "elo")
+    return (
+      <span
+        className={`inline-block ${c} font-semibold text-[10px] text-brand-softblack uppercase tracking-tight`}
+        aria-label="Elo"
+      >
+        Elo
+      </span>
+    );
+  if (brand === "amex")
+    return (
+      <span
+        className={`inline-block ${c} font-semibold text-[10px] text-brand-softblack uppercase tracking-tight`}
+        aria-label="American Express"
+      >
+        Amex
+      </span>
+    );
+  return null;
+}
+
+/** Intervalo de polling para verificar se o pedido foi pago (webhook criou o pedido) */
+const PIX_POLL_INTERVAL_MS = 3000;
+const PIX_POLL_MAX_ATTEMPTS = 100; // ~5 min
+
+/** Step PIX: exibe QR Code, código copia-e-cola e link; polling automático redireciona quando pago (padrão Pagar.me) */
 function PagarmePixStep({
   orderId,
   pix,
@@ -43,22 +128,71 @@ function PagarmePixStep({
   onError,
 }: {
   orderId: string;
-  pix: { qr_code: string | null; qr_code_url: string | null };
+  pix: {
+    qr_code: string | null;
+    qr_code_url: string | null;
+    pix_copy_paste: string | null;
+  };
   onSuccess: (id: string) => void;
   onError: (message: string) => void;
 }) {
   const [qrImageFailed, setQrImageFailed] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const onSuccessRef = useRef(onSuccess);
+  onSuccessRef.current = onSuccess;
   const hasQrCode = Boolean(pix.qr_code && pix.qr_code.trim());
   const hasQrUrl = Boolean(pix.qr_code_url && pix.qr_code_url.trim());
+  const hasCopyPaste = Boolean(pix.pix_copy_paste && pix.pix_copy_paste.trim());
   const showQrImage = hasQrCode && !qrImageFailed;
   const showLink = hasQrUrl;
 
-  if (!hasQrCode && !hasQrUrl) {
+  // Polling: quando o webhook Pagar.me criar o pedido no Supabase, redireciona automaticamente (comportamento padrão)
+  useEffect(() => {
+    let cancelled = false;
+    let attempts = 0;
+
+    const checkOrder = async () => {
+      if (cancelled || attempts >= PIX_POLL_MAX_ATTEMPTS) return;
+      attempts++;
+      try {
+        const res = await fetch(
+          `/api/orders/verify?session_id=${encodeURIComponent(orderId)}`,
+        );
+        const data = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (data.exists) {
+          onSuccessRef.current(orderId);
+          return;
+        }
+      } catch {
+        if (cancelled) return;
+      }
+    };
+
+    const intervalId = setInterval(checkOrder, PIX_POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [orderId]);
+
+  if (!hasQrCode && !hasQrUrl && !hasCopyPaste) {
     onError(
       "PIX não disponível para este pedido. Verifique se PIX está habilitado na sua conta Pagar.me ou tente novamente em instantes.",
     );
     return null;
   }
+
+  const handleCopyPixCode = async () => {
+    if (!pix.pix_copy_paste) return;
+    try {
+      await navigator.clipboard.writeText(pix.pix_copy_paste);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -92,17 +226,47 @@ function PagarmePixStep({
           </a>
         </>
       )}
+      {hasCopyPaste && (
+        <div className="space-y-2">
+          <label className="block text-xs font-medium text-brand-softblack/80">
+            Código PIX para copiar e colar
+          </label>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              readOnly
+              value={pix.pix_copy_paste!}
+              className="flex-1 min-w-0 px-3 py-2.5 text-[11px] sm:text-xs font-mono text-brand-softblack bg-white border border-gray-200 rounded-sm overflow-x-auto"
+              aria-label="Código PIX"
+            />
+            <button
+              type="button"
+              onClick={handleCopyPixCode}
+              className="shrink-0 px-4 py-2.5 bg-brand-green text-white text-sm font-medium rounded-sm hover:bg-brand-green/90 transition-colors whitespace-nowrap"
+            >
+              {copied ? "Copiado!" : "Copiar"}
+            </button>
+          </div>
+        </div>
+      )}
       <div className="p-4 border border-gray-100 rounded-sm bg-gray-50/70">
         <p className="text-[11px] text-brand-softblack/70 leading-relaxed">
-          Pagou via PIX? Assim que for aprovado, o pedido aparece
-          automaticamente.
+          Pagou via PIX? Estamos verificando o pagamento. Você será
+          redirecionado automaticamente assim que for aprovado.
+        </p>
+        <p className="mt-2 text-[11px] text-brand-green/80 flex items-center gap-2">
+          <span
+            className="inline-block w-3 h-3 border border-brand-green border-t-transparent rounded-full animate-spin"
+            aria-hidden
+          />
+          Aguardando confirmação do pagamento…
         </p>
         <button
           type="button"
           onClick={() => onSuccess(orderId)}
           className="mt-3 w-full py-3 px-4 bg-brand-green text-white font-medium uppercase tracking-widest text-sm rounded-sm hover:bg-brand-green/90 transition-colors"
         >
-          Acompanhar status do pedido
+          Ver status do pedido agora
         </button>
       </div>
     </div>
@@ -126,12 +290,16 @@ function PagarmeCardStep({
   onError: (message: string) => void;
 }) {
   const [loading, setLoading] = useState(false);
+  const [cardNumberDisplay, setCardNumberDisplay] = useState("");
+  const [expDateDisplay, setExpDateDisplay] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   const submittedRef = useRef(false);
   const onSuccessRef = useRef(onSuccess);
   const onErrorRef = useRef(onError);
   onSuccessRef.current = onSuccess;
   onErrorRef.current = onError;
+
+  const cardBrand = getCardBrandFromNumber(cardNumberDisplay);
 
   const submitWithToken = useCallback(
     async (cardToken: string) => {
@@ -236,7 +404,7 @@ function PagarmeCardStep({
   return (
     <div className="space-y-4">
       <p className="text-sm text-brand-softblack/80">
-        Pagamento no cartão em <strong>{installmentOption}</strong>.
+        Pagamento no cartão em <strong>{installmentOption}</strong> sem juros.
       </p>
       <form
         ref={formRef}
@@ -258,16 +426,25 @@ function PagarmeCardStep({
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-brand-softblack/80 mb-1">
-            Número do cartão
-          </label>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <label className="block text-xs font-medium text-brand-softblack/80">
+              Número do cartão
+            </label>
+            <CardBrandIcon brand={cardBrand} className="w-9 h-6" />
+          </div>
           <input
             type="text"
             name="card_number"
             data-pagarmecheckout-element="number"
             placeholder="0000 0000 0000 0000"
-            maxLength={19}
-            className="w-full px-3 py-2 border border-gray-200 rounded-sm text-sm text-brand-softblack focus:border-brand-green focus:outline-none"
+            value={cardNumberDisplay}
+            onChange={(e) =>
+              setCardNumberDisplay(formatCardNumber(e.target.value))
+            }
+            inputMode="numeric"
+            autoComplete="cc-number"
+            maxLength={23}
+            className="w-full px-3 py-2 border border-gray-200 rounded-sm text-sm text-brand-softblack focus:border-brand-green focus:outline-none font-mono"
             required
           />
         </div>
@@ -281,8 +458,12 @@ function PagarmeCardStep({
               name="card_exp"
               data-pagarmecheckout-element="exp_date"
               placeholder="MM/AA"
-              maxLength={7}
-              className="w-full px-3 py-2 border border-gray-200 rounded-sm text-sm text-brand-softblack focus:border-brand-green focus:outline-none"
+              value={expDateDisplay}
+              onChange={(e) => setExpDateDisplay(formatExpDate(e.target.value))}
+              inputMode="numeric"
+              autoComplete="cc-exp"
+              maxLength={5}
+              className="w-full px-3 py-2 border border-gray-200 rounded-sm text-sm text-brand-softblack focus:border-brand-green focus:outline-none font-mono"
               required
             />
           </div>
@@ -296,7 +477,9 @@ function PagarmeCardStep({
               data-pagarmecheckout-element="cvv"
               placeholder="123"
               maxLength={4}
-              className="w-full px-3 py-2 border border-gray-200 rounded-sm text-sm text-brand-softblack focus:border-brand-green focus:outline-none"
+              inputMode="numeric"
+              autoComplete="cc-csc"
+              className="w-full px-3 py-2 border border-gray-200 rounded-sm text-sm text-brand-softblack focus:border-brand-green focus:outline-none font-mono"
               required
             />
           </div>

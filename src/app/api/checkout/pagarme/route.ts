@@ -442,10 +442,16 @@ export async function POST(req: Request) {
         : {
             qr_code: null as string | null,
             qr_code_url: null as string | null,
+            pix_copy_paste: null as string | null,
           };
 
       if (paymentMethod === "pix") {
-        if (!pixData.qr_code && !pixData.qr_code_url && firstCharge?.id) {
+        if (
+          !pixData.qr_code &&
+          !pixData.qr_code_url &&
+          !pixData.pix_copy_paste &&
+          firstCharge?.id
+        ) {
           try {
             const charge = await getCharge(firstCharge.id);
             pixData = extractPixFromTransaction(charge.last_transaction);
@@ -456,7 +462,8 @@ export async function POST(req: Request) {
         if (
           process.env.NODE_ENV === "development" &&
           !pixData.qr_code &&
-          !pixData.qr_code_url
+          !pixData.qr_code_url &&
+          !pixData.pix_copy_paste
         ) {
           console.error(
             "[PAGARME CHECKOUT] PIX sem QR: resposta do pedido (charges[0])",
@@ -482,6 +489,7 @@ export async function POST(req: Request) {
           pix: {
             qr_code: pixData.qr_code,
             qr_code_url: pixData.qr_code_url,
+            pix_copy_paste: pixData.pix_copy_paste,
           },
         });
       }
