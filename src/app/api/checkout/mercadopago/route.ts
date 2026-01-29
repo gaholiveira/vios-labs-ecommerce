@@ -19,6 +19,7 @@ export const maxDuration = 30;
 // ============================================================================
 const FREE_SHIPPING_THRESHOLD = 289.9;
 const FIXED_SHIPPING_PRICE = 2500; // R$ 25,00 em centavos
+const PIX_DISCOUNT_PERCENT = 0.05; // 5% de desconto no PIX (sobre o subtotal)
 const IS_PRESALE = true; // Mudar para false após 16/02
 const DEFAULT_ORIGIN_PROD = "https://vioslabs.com.br";
 const DEFAULT_ORIGIN_DEV = "http://localhost:3000";
@@ -137,6 +138,10 @@ interface MercadoPagoPreferenceBody {
   notification_url: string;
   external_reference: string;
   metadata: Record<string, string>;
+  /** Validade do link de pagamento: evita "link já não está disponível" */
+  expires?: boolean;
+  expiration_date_from?: string; // ISO 8601
+  expiration_date_to?: string; // ISO 8601
 }
 
 // ============================================================================
@@ -549,7 +554,9 @@ export async function POST(req: Request) {
 
     const isFreeShipping = qualifiesForFreeShipping(subtotal);
     const shippingAmount = isFreeShipping ? 0 : FIXED_SHIPPING_PRICE;
-    const totalAmount = subtotal + shippingAmount / 100; // shippingAmount está em centavos
+    const pixDiscountAmount =
+      paymentMethod === "pix" ? subtotal * PIX_DISCOUNT_PERCENT : 0;
+    const totalAmount = subtotal + shippingAmount / 100 - pixDiscountAmount; // shippingAmount em centavos
 
     // Log estruturado para auditoria (apenas em desenvolvimento)
     if (process.env.NODE_ENV === "development") {
@@ -708,6 +715,17 @@ export async function POST(req: Request) {
         }),
       );
 
+      // Desconto 5% PIX: item com preço negativo (sobre o subtotal)
+      if (pixDiscountAmount > 0) {
+        preferenceItems.push({
+          id: "pix-discount",
+          title: "Desconto 5% (PIX)",
+          quantity: 1,
+          unit_price: -pixDiscountAmount,
+          currency_id: "BRL",
+        });
+      }
+
       // Frete NÃO vai como item na lista — usamos shipments.cost para o Checkout Pro
       // exibir "Envio" / "Frete" como linha separada (igual ao Stripe). Se mandar como
       // item, o MP às vezes mostra só o total sem detalhar frete.
@@ -773,6 +791,12 @@ export async function POST(req: Request) {
             ? 2
             : 3
           : undefined;
+
+      // Link de pagamento válido por 24h — evita erro "O link de pagamento já não está disponível"
+      const now = new Date();
+      const validUntil = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      const expirationDateFrom = now.toISOString();
+      const expirationDateTo = validUntil.toISOString();
 
       const preferenceData: MercadoPagoPreferenceBody = {
         items: preferenceItems,
@@ -844,6 +868,9 @@ export async function POST(req: Request) {
             ? { shipping_complement: address.complement }
             : {}),
         },
+        expires: true,
+        expiration_date_from: expirationDateFrom,
+        expiration_date_to: expirationDateTo,
       };
 
       // Adicionar auto_return apenas para PIX

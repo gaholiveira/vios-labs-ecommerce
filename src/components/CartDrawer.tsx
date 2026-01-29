@@ -41,9 +41,13 @@ function CartDrawer() {
   // Frete: mesma regra da API (evitar duplicar constante em vários arquivos)
   const FREE_SHIPPING_THRESHOLD = 289.9;
   const FIXED_SHIPPING_REAIS = 25;
+  const PIX_DISCOUNT_PERCENT = 0.05; // 5% off no PIX (sobre o subtotal)
   const isFreeShipping = totalPrice >= FREE_SHIPPING_THRESHOLD;
   const shippingAmount = isFreeShipping ? 0 : FIXED_SHIPPING_REAIS;
   const totalWithShipping = totalPrice + shippingAmount;
+  const pixDiscount =
+    paymentMethod === "pix" ? totalPrice * PIX_DISCOUNT_PERCENT : 0;
+  const totalWithShippingFinal = totalWithShipping - pixDiscount;
 
   // Resetar estados de loading quando o componente é montado novamente ou quando o usuário volta
   useEffect(() => {
@@ -283,8 +287,9 @@ function CartDrawer() {
             orderSummary={{
               subtotal: totalPrice,
               shipping: shippingAmount,
-              total: totalWithShipping,
+              total: totalWithShippingFinal,
               freeShipping: isFreeShipping,
+              ...(pixDiscount > 0 && { discount: pixDiscount }),
             }}
             paymentSummary={
               paymentMethod === "card" &&
@@ -575,6 +580,24 @@ function CartDrawer() {
                           {formatPrice(totalPrice)}
                         </span>
                       </div>
+                      {pixDiscount > 0 && (
+                        <div className="flex justify-between items-center mb-2 text-brand-green text-sm">
+                          <span className="uppercase tracking-wider">
+                            Desconto 5% (PIX)
+                          </span>
+                          <span>- {formatPrice(pixDiscount)}</span>
+                        </div>
+                      )}
+                      {pixDiscount > 0 && (
+                        <div className="flex justify-between items-center mb-2 pt-1 border-t border-gray-200">
+                          <span className="text-sm uppercase tracking-wider text-gray-600 font-medium">
+                            Total
+                          </span>
+                          <span className="text-lg font-semibold text-brand-softblack">
+                            {formatPrice(totalWithShippingFinal)}
+                          </span>
+                        </div>
+                      )}
                       <p className="text-[10px] text-gray-500 uppercase tracking-wider">
                         Frete calculado no checkout
                       </p>

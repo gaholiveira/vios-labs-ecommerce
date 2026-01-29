@@ -90,6 +90,11 @@ function KitCard({ kit }: { kit: Kit }) {
           )}
         </div>
 
+        {/* Benefício PIX */}
+        <p className="text-[10px] uppercase tracking-wider text-brand-green/90 font-light">
+          5% off no PIX
+        </p>
+
         {/* Botão Adicionar ao Carrinho - Mesmo estilo do ProductCard */}
         <button
           onClick={handleAddToCart}

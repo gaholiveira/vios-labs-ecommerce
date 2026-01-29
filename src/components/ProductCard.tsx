@@ -99,7 +99,6 @@ function ProductCard({ product }: { product: Product }) {
           </div>
         )}
 
-
         {/* Overlay no Hover com Texto "Ver Detalhes" */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500 ease-out flex items-center justify-center opacity-0 group-hover:opacity-100">
           <div className="bg-brand-offwhite px-6 py-3 transform translate-y-4 group-hover:translate-y-0 transition-all duration-500 ease-out">
@@ -149,6 +148,11 @@ function ProductCard({ product }: { product: Product }) {
             </p>
           )}
         </div>
+
+        {/* Benefício PIX */}
+        <p className="text-[10px] uppercase tracking-wider text-brand-green/90 font-light">
+          5% off no PIX
+        </p>
 
         {/* Botão Adicionar ao Carrinho - Estilo Minimalista de Luxo */}
         <button
