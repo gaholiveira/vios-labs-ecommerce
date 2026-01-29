@@ -1,23 +1,34 @@
 /**
- * Tipos para checkout com provider dinâmico (Stripe Elements / Mercado Pago Bricks).
- * Checkout "a cara da VIOS" — pagamento embed no site, sem redirecionamento.
+ * Tipos para checkout transparente VIOS Labs — Pagar.me como único gateway.
+ * Checkout "a cara da VIOS" dentro do site (PIX e cartão via tokenizecard).
  */
 
-export type PaymentProvider = "stripe" | "mercadopago";
+/** Item do carrinho enviado para a API de checkout */
+export interface CheckoutCartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image?: string;
+  kitProducts?: string[];
+  isKit?: boolean;
+}
 
-/** Payload retornado pela API para renderizar o step de pagamento no front */
+/** Payload para o step de pagamento — apenas Pagar.me */
 export type CheckoutPaymentPayload =
-  | { provider: "stripe"; clientSecret: string }
   | {
-      provider: "mercadopago";
-      preferenceId: string;
-      publicKey: string;
-      amount: number;
-      payerEmail?: string;
-      /** "pix" = Brick só PIX; "card" = Brick só cartão (2x/3x) */
-      paymentMethod: "pix" | "card";
-      /** Parcela quando paymentMethod === "card" */
-      installmentOption?: "2x" | "3x";
+      provider: "pagarme";
+      orderId: string;
+      paymentMethod: "pix";
+      pix: { qr_code: string | null; qr_code_url: string | null };
+    }
+  | {
+      provider: "pagarme";
+      paymentMethod: "card";
+      checkoutData: CheckoutFormData;
+      items: CheckoutCartItem[];
+      userId: string | null;
+      installmentOption: "1x" | "2x" | "3x";
     };
 
 /** Dados do formulário de checkout (entrega + fiscal) */

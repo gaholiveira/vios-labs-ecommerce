@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * API Route para verificar se um pedido foi criado usando session_id (Stripe) ou preference_id (Mercado Pago).
+ * API Route para verificar se um pedido foi criado usando order_id (Pagar.me), session_id ou payment_intent.
  * Usa service role para que o lookup funcione para guest: a página de sucesso não tem sessão com o email do pedido.
  */
 function getSupabaseAdmin() {
@@ -18,18 +18,20 @@ export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
     const sessionId =
-      searchParams.get("session_id") ?? searchParams.get("payment_intent");
+      searchParams.get("order_id") ??
+      searchParams.get("session_id") ??
+      searchParams.get("payment_intent");
 
     if (!sessionId) {
       return NextResponse.json(
-        { error: "session_id ou payment_intent é obrigatório" },
+        { error: "order_id, session_id ou payment_intent é obrigatório" },
         { status: 400 },
       );
     }
 
     const supabase = getSupabaseAdmin();
 
-    // Buscar pedido por stripe_session_id (Stripe session id ou MP preference_id)
+    // Buscar pedido por stripe_session_id (Pagar.me order id, Stripe session id ou MP preference_id)
     const { data: order, error } = await supabase
       .from("orders")
       .select("id, status, created_at")

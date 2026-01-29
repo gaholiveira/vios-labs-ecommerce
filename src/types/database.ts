@@ -13,10 +13,10 @@ export interface Order {
   customer_email: string;
   status: "pending" | "paid" | "shipped" | "delivered" | "cancelled";
   total_amount: number;
-  stripe_session_id?: string; // Stripe session id ou MP preference_id
+  stripe_session_id?: string; // ID do pedido Pagar.me (ou referência de outro gateway)
   created_at: string;
   updated_at: string;
-  // Fiscal e entrega (preenchidos pelo webhook MP; Stripe pode ter customer_cpf)
+  // Fiscal e entrega (preenchidos no checkout e no webhook Pagar.me)
   customer_cpf?: string | null;
   customer_name?: string | null;
   customer_phone?: string | null;
@@ -76,15 +76,14 @@ export interface CheckoutData {
     image?: string;
   }>;
   userId: string | null; // null para guest checkout
-  customerEmail: string | null; // null para guest, será coletado no Stripe
+  customerEmail: string | null; // null para guest, será coletado no checkout
 }
 
 /**
- * Metadata do Stripe Checkout Session
- * Usado no webhook para identificar se é Guest ou User
+ * Metadata de checkout (Pagar.me / guest ou user)
  */
-export interface StripeCheckoutMetadata {
-  userId: string | "null"; // Stripe converte null para string 'null'
+export interface CheckoutMetadata {
+  userId: string | "null";
   customerEmail: string | "null";
   isGuest: "true" | "false";
 }

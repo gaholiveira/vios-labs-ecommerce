@@ -1,8 +1,8 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: 'Termos de Uso | VIOS LABS',
-  description: 'Termos e condições de uso da VIOS LABS.',
+  title: "Termos de Uso | VIOS LABS",
+  description: "Termos e condições de uso da VIOS LABS.",
 };
 
 export default function TermosPage() {
@@ -13,11 +13,14 @@ export default function TermosPage() {
         <h1 className="text-3xl md:text-4xl font-light mb-12 text-[#082f1e]">
           Termos e Condições de Uso - VIOS
         </h1>
-        
+
         <div className="text-base text-stone-600 leading-relaxed space-y-4">
           {/* Introdução */}
           <p>
-            Bem-vindo à VIOS. Ao acessar este site e adquirir nossos produtos, você concorda com os termos descritos abaixo. Estes termos visam garantir a segurança jurídica de ambas as partes e a transparência na nossa relação com você.
+            Bem-vindo à VIOS. Ao acessar este site e adquirir nossos produtos,
+            você concorda com os termos descritos abaixo. Estes termos visam
+            garantir a segurança jurídica de ambas as partes e a transparência
+            na nossa relação com você.
           </p>
 
           {/* Seção 1 */}
@@ -26,7 +29,10 @@ export default function TermosPage() {
               1. Objeto e Natureza do Serviço
             </h2>
             <p>
-              A VIOS é uma marca de suplementação avançada com foco em longevidade e bem-estar celular. Todo o conteúdo presente neste site, incluindo descrições de produtos e textos informativos, possui caráter meramente educativo e nutricional.
+              A VIOS é uma marca de suplementação avançada com foco em
+              longevidade e bem-estar celular. Todo o conteúdo presente neste
+              site, incluindo descrições de produtos e textos informativos,
+              possui caráter meramente educativo e nutricional.
             </p>
           </section>
 
@@ -36,14 +42,20 @@ export default function TermosPage() {
               2. Isenção de Responsabilidade Médica
             </h2>
             <p className="mb-4">
-              Nossos produtos são suplementos alimentares, dispensados de registro conforme a RDC nº 240/2018 da ANVISA.
+              Nossos produtos são suplementos alimentares, dispensados de
+              registro conforme a RDC nº 240/2018 da ANVISA.
             </p>
-            
+
             {/* Box de Atenção - Estilo Editorial */}
             <div className="bg-stone-50 border-l-2 border-[#082f1e] p-6 italic my-6">
               <p className="font-semibold mb-2">Atenção:</p>
               <p>
-                Os produtos VIOS não são medicamentos e não se destinam a diagnosticar, tratar, curar ou prevenir qualquer doença. A curadoria técnica realizada por profissionais da saúde não substitui a consulta médica individualizada. Recomendamos que gestantes, lactantes e portadores de enfermidades consultem um médico antes de iniciar o uso.
+                Os produtos VIOS não são medicamentos e não se destinam a
+                diagnosticar, tratar, curar ou prevenir qualquer doença. A
+                curadoria técnica realizada por profissionais da saúde não
+                substitui a consulta médica individualizada. Recomendamos que
+                gestantes, lactantes e portadores de enfermidades consultem um
+                médico antes de iniciar o uso.
               </p>
             </div>
           </section>
@@ -54,7 +66,11 @@ export default function TermosPage() {
               3. Propriedade Intelectual
             </h2>
             <p>
-              Todo o conteúdo deste site (textos, logotipos, imagens, vídeos e design) é de propriedade exclusiva da VIOS ou de seus parceiros. É estritamente proibida a reprodução, cópia ou exploração comercial de qualquer material sem autorização prévia por escrito, sob pena das sanções legais cabíveis.
+              Todo o conteúdo deste site (textos, logotipos, imagens, vídeos e
+              design) é de propriedade exclusiva da VIOS ou de seus parceiros. É
+              estritamente proibida a reprodução, cópia ou exploração comercial
+              de qualquer material sem autorização prévia por escrito, sob pena
+              das sanções legais cabíveis.
             </p>
           </section>
 
@@ -65,13 +81,19 @@ export default function TermosPage() {
             </h2>
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li>
-                <strong>Preços:</strong> Os preços exibidos são válidos no momento da visualização, podendo ser alterados sem aviso prévio (exceto para pedidos já finalizados).
+                <strong>Preços:</strong> Os preços exibidos são válidos no
+                momento da visualização, podendo ser alterados sem aviso prévio
+                (exceto para pedidos já finalizados).
               </li>
               <li>
-                <strong>Lote Zero:</strong> O "Lote Zero" refere-se a uma tiragem limitada e exclusiva de lançamento. A confirmação do pedido está sujeita à disponibilidade de estoque.
+                <strong>Lote Zero:</strong> O "Lote Zero" refere-se a uma
+                tiragem limitada e exclusiva de lançamento. A confirmação do
+                pedido está sujeita à disponibilidade de estoque.
               </li>
               <li>
-                <strong>Pagamento:</strong> Utilizamos gateways de pagamento seguros (Stripe/Mercado Pago). A VIOS não armazena dados de cartão de crédito em seus servidores.
+                <strong>Pagamento:</strong> Utilizamos o gateway de pagamento
+                seguro Pagar.me. A VIOS não armazena dados de cartão de crédito
+                em seus servidores.
               </li>
             </ul>
           </section>
@@ -82,7 +104,10 @@ export default function TermosPage() {
               5. Política de Entrega
             </h2>
             <p>
-              Os prazos de entrega são estimativas fornecidas pelos transportadores parceiros. O prazo começa a contar a partir da confirmação do pagamento. Eventuais atrasos decorrentes de problemas logísticos externos serão comunicados ao cliente.
+              Os prazos de entrega são estimativas fornecidas pelos
+              transportadores parceiros. O prazo começa a contar a partir da
+              confirmação do pagamento. Eventuais atrasos decorrentes de
+              problemas logísticos externos serão comunicados ao cliente.
             </p>
           </section>
 
@@ -96,10 +121,13 @@ export default function TermosPage() {
             </p>
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li>
-                O cliente tem até 7 (sete) dias corridos após o recebimento para desistir da compra, desde que o produto esteja com o lacre original intacto e na embalagem original (caixa Kraft e seda).
+                O cliente tem até 7 (sete) dias corridos após o recebimento para
+                desistir da compra, desde que o produto esteja com o lacre
+                original intacto e na embalagem original (caixa Kraft e seda).
               </li>
               <li>
-                Produtos com lacre violado não serão aceitos para devolução por questões de segurança sanitária.
+                Produtos com lacre violado não serão aceitos para devolução por
+                questões de segurança sanitária.
               </li>
             </ul>
           </section>
@@ -110,7 +138,9 @@ export default function TermosPage() {
               7. Limitação de Responsabilidade
             </h2>
             <p>
-              A VIOS não se responsabiliza pelo uso inadequado dos produtos ou pela sua utilização em desacordo com as recomendações de dosagem presentes no rótulo.
+              A VIOS não se responsabiliza pelo uso inadequado dos produtos ou
+              pela sua utilização em desacordo com as recomendações de dosagem
+              presentes no rótulo.
             </p>
           </section>
 
@@ -120,7 +150,8 @@ export default function TermosPage() {
               8. Foro
             </h2>
             <p>
-              Fica eleito o foro da comarca de Franca/SP para dirimir quaisquer controvérsias oriundas deste termo.
+              Fica eleito o foro da comarca de Franca/SP para dirimir quaisquer
+              controvérsias oriundas deste termo.
             </p>
           </section>
         </div>

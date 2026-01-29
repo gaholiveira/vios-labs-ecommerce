@@ -39,7 +39,7 @@ function CartDrawer() {
 
   // Estado para controlar exibição do formulário de checkout
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
-  // Step de pagamento embed (Stripe Elements / MP Bricks) — checkout a cara da VIOS
+  // Step de pagamento embed (Pagar.me — PIX e cartão tokenizecard) — checkout a cara da VIOS
   const [checkoutStep, setCheckoutStep] = useState<"form" | "payment">("form");
   const [paymentPayload, setPaymentPayload] =
     useState<CheckoutPaymentPayload | null>(null);
@@ -129,7 +129,7 @@ function CartDrawer() {
 
   /**
    * Handler inicial do checkout — sempre mostra formulário (dados + entrega)
-   * Depois renderiza pagamento embed (Stripe Elements ou MP Bricks) — a cara da VIOS
+   * Depois renderiza pagamento embed (Pagar.me — PIX ou cartão) — a cara da VIOS
    */
   const handleCheckout = () => {
     if (!paymentMethod) {
@@ -146,15 +146,15 @@ function CartDrawer() {
   };
 
   /**
-   * Processa o checkout após coletar dados do formulário (se necessário)
+   * Processa o checkout após coletar dados do formulário — apenas Pagar.me.
+   * PIX: chama API e exibe step com QR Code. Cartão: exibe step com formulário de cartão (tokenizecard) e chama API ao enviar token.
    */
   const processCheckout = async (checkoutFormData?: CheckoutFormData) => {
+    if (!checkoutFormData) return;
     try {
       setIsCheckingOut(true);
-      // Marcar que estamos processando checkout (para detectar volta)
       sessionStorage.setItem("checkout_processing", "true");
 
-      // Preparar itens para a API
       const items = cart.map((item) => ({
         id: item.id,
         name: item.name,
@@ -165,137 +165,59 @@ function CartDrawer() {
         isKit: item.isKit,
       }));
 
-      // Determinar rota baseado no método de pagamento
-      let apiRoute = "/api/checkout";
-      // E-mail: do formulário (Mercado Pago/guest) ou do usuário logado
-      const customerEmailValue = checkoutFormData?.email ?? user?.email ?? null;
+      const userId = user?.id || null;
+      const opt = installmentOption ?? "1x";
 
-      const checkoutData: {
-        items: typeof items;
-        userId: string | null;
-        customerEmail: string | null;
-        paymentMethod?: PaymentMethod;
-        installmentOption?: InstallmentOption;
-        checkoutData?: CheckoutFormData;
-      } = {
-        items,
-        userId: user?.id || null,
-        customerEmail: customerEmailValue,
-      };
-
-      // Se for PIX ou cartão parcelado, usar Mercado Pago
-      if (
-        paymentMethod === "pix" ||
-        (paymentMethod === "card" && installmentOption !== "1x")
-      ) {
-        apiRoute = "/api/checkout/mercadopago";
-        checkoutData.paymentMethod = paymentMethod;
-        if (installmentOption) {
-          checkoutData.installmentOption = installmentOption;
-        }
-        // Adicionar dados do formulário (inclui email obrigatório para guest)
-        if (checkoutFormData) {
-          checkoutData.checkoutData = checkoutFormData;
-        }
-      }
-      // Se for cartão à vista (1x), usar Stripe (rota atual)
-
-      const isStripe1x = paymentMethod === "card" && installmentOption === "1x";
-      const finalRoute = isStripe1x
-        ? "/api/checkout/create-payment-intent"
-        : apiRoute;
-      const finalBody = isStripe1x
-        ? {
+      if (paymentMethod === "pix") {
+        const response = await fetch("/api/checkout/pagarme", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
             items,
-            userId: user?.id || null,
-            customerEmail: customerEmailValue,
-            checkoutData: checkoutFormData ?? undefined,
-          }
-        : checkoutData;
-
-      const response = await fetch(finalRoute, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(finalBody),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        // Erro retornado pela API
-        const errorMessage = data.error || "Erro ao processar checkout";
-        console.error("Erro ao criar sessão:", errorMessage);
-        setIsCheckingOut(false);
-        sessionStorage.removeItem("checkout_processing"); // Limpar flag
-
-        // Mensagem mais amigável para erro de configuração
-        if (response.status === 503 && errorMessage.includes("Mercado Pago")) {
-          alert(
-            "Mercado Pago não está disponível no momento. Por favor, escolha outra forma de pagamento.",
-          );
-        } else {
-          alert(`Erro ao processar checkout: ${errorMessage}`);
+            userId,
+            paymentMethod: "pix",
+            checkoutData: checkoutFormData,
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          const msg = data.error || "Erro ao processar checkout";
+          setIsCheckingOut(false);
+          sessionStorage.removeItem("checkout_processing");
+          alert(msg);
+          return;
         }
-        return;
-      }
-
-      if (isStripe1x && data.clientSecret) {
         sessionStorage.removeItem("checkout_processing");
         setPaymentPayload({
-          provider: "stripe",
-          clientSecret: data.clientSecret,
+          provider: "pagarme",
+          orderId: data.orderId,
+          paymentMethod: "pix",
+          pix: data.pix ?? { qr_code: null, qr_code_url: null },
         });
         setCheckoutStep("payment");
         setShowCheckoutForm(false);
         setIsCheckingOut(false);
         return;
       }
-      if (!isStripe1x && data.preferenceId) {
+
+      if (paymentMethod === "card") {
         sessionStorage.removeItem("checkout_processing");
+        setPaymentPayload({
+          provider: "pagarme",
+          paymentMethod: "card",
+          checkoutData: checkoutFormData,
+          items,
+          userId,
+          installmentOption: opt,
+        });
+        setCheckoutStep("payment");
+        setShowCheckoutForm(false);
         setIsCheckingOut(false);
-        if (data.publicKey && typeof data.amount === "number") {
-          const mpMethod = paymentMethod === "pix" ? "pix" : "card";
-          const mpInstallment: "2x" | "3x" | undefined =
-            mpMethod === "card" &&
-            (installmentOption === "2x" || installmentOption === "3x")
-              ? installmentOption
-              : undefined;
-          setPaymentPayload({
-            provider: "mercadopago",
-            preferenceId: data.preferenceId,
-            publicKey: data.publicKey,
-            amount: data.amount,
-            payerEmail: checkoutFormData?.email,
-            paymentMethod: mpMethod,
-            installmentOption: mpInstallment,
-          });
-          setCheckoutStep("payment");
-          setShowCheckoutForm(false);
-          return;
-        }
-        if (data.url) {
-          window.location.href = data.url;
-          return;
-        }
-      }
-      if (data.url) {
-        sessionStorage.removeItem("checkout_processing");
-        window.location.href = data.url;
-      } else {
-        const errorMessage =
-          data.error || "Não foi possível criar a sessão de checkout";
-        console.error("Erro ao criar sessão:", errorMessage);
-        setIsCheckingOut(false);
-        sessionStorage.removeItem("checkout_processing");
-        alert(`Erro: ${errorMessage}. Por favor, tente novamente.`);
       }
     } catch (error: unknown) {
-      // Erro de rede ou outro erro não tratado
       console.error("Erro no checkout:", error);
       setIsCheckingOut(false);
-      sessionStorage.removeItem("checkout_processing"); // Limpar flag
+      sessionStorage.removeItem("checkout_processing");
       alert(
         "Erro ao conectar com o servidor. Verifique sua conexão e tente novamente.",
       );
@@ -312,7 +234,7 @@ function CartDrawer() {
 
   const handlePaymentSuccess = (id: string) => {
     sessionStorage.removeItem("checkout_processing");
-    window.location.href = `/checkout/success?session_id=${encodeURIComponent(id)}`;
+    window.location.href = `/checkout/success?order_id=${encodeURIComponent(id)}`;
   };
 
   const handlePaymentStepClose = () => {
@@ -334,7 +256,7 @@ function CartDrawer() {
 
   return (
     <>
-      {/* Checkout: formulário (dados) ou step de pagamento (Stripe Elements / MP Bricks) */}
+      {/* Checkout: formulário (dados) ou step de pagamento (Pagar.me) */}
       <AnimatePresence>
         {(showCheckoutForm || checkoutStep === "payment") && (
           <>

@@ -3,7 +3,8 @@ import { Mail, Phone, MapPin, Clock } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Central de Atendimento | VIOS Labs",
-  description: "Entre em contato com a equipe VIOS Labs. Estamos aqui para auxiliá-lo em sua jornada de bem-estar.",
+  description:
+    "Entre em contato com a equipe VIOS Labs. Estamos aqui para auxiliá-lo em sua jornada de bem-estar.",
 };
 
 export default function ContatoPage() {
@@ -16,7 +17,9 @@ export default function ContatoPage() {
             Central de Atendimento
           </h1>
           <p className="text-sm md:text-base font-light tracking-wider opacity-80 leading-relaxed max-w-2xl mx-auto">
-            Estamos aqui para auxiliá-lo em sua jornada de bem-estar. Nossa equipe especializada está pronta para responder suas dúvidas com a excelência que você merece.
+            Estamos aqui para auxiliá-lo em sua jornada de bem-estar. Nossa
+            equipe especializada está pronta para responder suas dúvidas com a
+            excelência que você merece.
           </p>
         </div>
       </div>
@@ -36,7 +39,7 @@ export default function ContatoPage() {
                   <h3 className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-3 font-medium">
                     Email
                   </h3>
-                  <a 
+                  <a
                     href="mailto:atendimento@vioslabs.com.br"
                     className="text-xl md:text-2xl font-light text-brand-softblack hover:text-brand-green transition-colors duration-300 break-all"
                   >
@@ -62,7 +65,7 @@ export default function ContatoPage() {
                   <h3 className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-3 font-medium">
                     WhatsApp
                   </h3>
-                  <a 
+                  <a
                     href="https://wa.me/5511952136713"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -84,7 +87,7 @@ export default function ContatoPage() {
           <h2 className="text-2xl font-light uppercase tracking-[0.3em] text-brand-softblack mb-12 text-center">
             Outras Informações
           </h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Endereço */}
             <div className="flex items-start gap-4">
@@ -96,8 +99,10 @@ export default function ContatoPage() {
                   Endereço
                 </h3>
                 <p className="text-sm font-light text-gray-700 leading-relaxed">
-                  Rua Cassiano Ricardo, 441<br />
-                  Nova Franca, Franca - SP<br />
+                  Rua Cassiano Ricardo, 441
+                  <br />
+                  Nova Franca, Franca - SP
+                  <br />
                   CEP 14409-214
                 </p>
               </div>
@@ -113,8 +118,10 @@ export default function ContatoPage() {
                   Horário de Atendimento
                 </h3>
                 <p className="text-sm font-light text-gray-700 leading-relaxed">
-                  Segunda a Sexta: 9h às 18h<br />
-                  Sábado: 9h às 13h<br />
+                  Segunda a Sexta: 9h às 18h
+                  <br />
+                  Sábado: 9h às 13h
+                  <br />
                   Domingo e Feriados: Fechado
                 </p>
               </div>
@@ -132,7 +139,7 @@ export default function ContatoPage() {
           <p className="text-sm text-gray-600 text-center mb-12 font-light">
             Antes de entrar em contato, confira se sua dúvida já foi respondida
           </p>
-          
+
           <div className="space-y-4">
             {/* FAQ Item 1 */}
             <details className="group border border-gray-200 rounded-sm bg-white">
@@ -140,19 +147,25 @@ export default function ContatoPage() {
                 <span className="text-sm font-light uppercase tracking-wider text-brand-softblack">
                   Qual o prazo de entrega?
                 </span>
-                <svg 
-                  className="w-5 h-5 text-gray-400 transition-transform group-open:rotate-180" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
+                <svg
+                  className="w-5 h-5 text-gray-400 transition-transform group-open:rotate-180"
+                  fill="none"
+                  viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </summary>
               <div className="px-6 pb-6 text-sm text-gray-600 font-light leading-relaxed border-t border-gray-100 pt-4">
                 <p>
-                  O prazo de entrega é de 3 a 14 dias úteis para todo o Brasil, dependendo da sua localização. 
-                  Entregas para capitais e regiões metropolitanas geralmente ocorrem em 3 a 7 dias úteis.
+                  O prazo de entrega é de 3 a 14 dias úteis para todo o Brasil,
+                  dependendo da sua localização. Entregas para capitais e
+                  regiões metropolitanas geralmente ocorrem em 3 a 7 dias úteis.
                 </p>
               </div>
             </details>
@@ -163,20 +176,33 @@ export default function ContatoPage() {
                 <span className="text-sm font-light uppercase tracking-wider text-brand-softblack">
                   Como faço para trocar ou devolver um produto?
                 </span>
-                <svg 
-                  className="w-5 h-5 text-gray-400 transition-transform group-open:rotate-180" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
+                <svg
+                  className="w-5 h-5 text-gray-400 transition-transform group-open:rotate-180"
+                  fill="none"
+                  viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </summary>
               <div className="px-6 pb-6 text-sm text-gray-600 font-light leading-relaxed border-t border-gray-100 pt-4">
                 <p>
-                  Você tem até 7 dias corridos após o recebimento para solicitar troca ou devolução. 
-                  Entre em contato conosco através do email ou WhatsApp e nossa equipe irá orientá-lo sobre o processo. 
-                  Consulte nossa <a href="/trocas" className="text-brand-green hover:underline">Política de Trocas e Devoluções</a> para mais detalhes.
+                  Você tem até 7 dias corridos após o recebimento para solicitar
+                  troca ou devolução. Entre em contato conosco através do email
+                  ou WhatsApp e nossa equipe irá orientá-lo sobre o processo.
+                  Consulte nossa{" "}
+                  <a
+                    href="/trocas"
+                    className="text-brand-green hover:underline"
+                  >
+                    Política de Trocas e Devoluções
+                  </a>{" "}
+                  para mais detalhes.
                 </p>
               </div>
             </details>
@@ -187,19 +213,25 @@ export default function ContatoPage() {
                 <span className="text-sm font-light uppercase tracking-wider text-brand-softblack">
                   Quais formas de pagamento vocês aceitam?
                 </span>
-                <svg 
-                  className="w-5 h-5 text-gray-400 transition-transform group-open:rotate-180" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
+                <svg
+                  className="w-5 h-5 text-gray-400 transition-transform group-open:rotate-180"
+                  fill="none"
+                  viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </summary>
               <div className="px-6 pb-6 text-sm text-gray-600 font-light leading-relaxed border-t border-gray-100 pt-4">
                 <p>
-                  Aceitamos Cartão de Crédito (Visa, Mastercard, Elo, etc.), Pix e Boleto Bancário. 
-                  Todas as transações são processadas de forma segura através do Stripe, com certificação PCI DSS Level 1.
+                  Aceitamos Cartão de Crédito (Visa, Mastercard, Elo, etc.), Pix
+                  e Boleto Bancário. Todas as transações são processadas de
+                  forma segura através do Pagar.me, com certificação PCI DSS.
                 </p>
               </div>
             </details>
@@ -210,20 +242,26 @@ export default function ContatoPage() {
                 <span className="text-sm font-light uppercase tracking-wider text-brand-softblack">
                   Os produtos possuem registro na ANVISA?
                 </span>
-                <svg 
-                  className="w-5 h-5 text-gray-400 transition-transform group-open:rotate-180" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
+                <svg
+                  className="w-5 h-5 text-gray-400 transition-transform group-open:rotate-180"
+                  fill="none"
+                  viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </summary>
               <div className="px-6 pb-6 text-sm text-gray-600 font-light leading-relaxed border-t border-gray-100 pt-4">
                 <p>
-                  Sim! Alguns de nossos produtos possuem registro ativo na ANVISA. 
-                  Outros são dispensados de registro conforme RDC nº 240/2018. 
-                  Você pode verificar o número do processo ANVISA na página de cada produto.
+                  Sim! Alguns de nossos produtos possuem registro ativo na
+                  ANVISA. Outros são dispensados de registro conforme RDC nº
+                  240/2018. Você pode verificar o número do processo ANVISA na
+                  página de cada produto.
                 </p>
               </div>
             </details>
@@ -237,17 +275,18 @@ export default function ContatoPage() {
           Não Encontrou sua Resposta?
         </h2>
         <p className="text-sm text-gray-600 mb-8 font-light max-w-2xl mx-auto leading-relaxed">
-          Nossa equipe está pronta para ajudá-lo. Entre em contato através dos canais acima e teremos o prazer de atendê-lo.
+          Nossa equipe está pronta para ajudá-lo. Entre em contato através dos
+          canais acima e teremos o prazer de atendê-lo.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <a 
+          <a
             href="mailto:atendimento@vioslabs.com.br"
             className="inline-flex items-center justify-center gap-2 border border-brand-green rounded-sm bg-brand-green text-brand-offwhite px-8 py-4 uppercase tracking-[0.2em] text-xs font-medium hover:bg-brand-softblack hover:border-brand-softblack transition-all duration-300"
           >
             <Mail className="w-4 h-4" />
             Enviar Email
           </a>
-          <a 
+          <a
             href="https://wa.me/5511952136713"
             target="_blank"
             rel="noopener noreferrer"
