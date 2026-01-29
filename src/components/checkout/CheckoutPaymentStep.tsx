@@ -154,7 +154,11 @@ function MercadoPagoCheckoutEmbed({
 }) {
   const isPix = paymentMethod === "pix";
   type MercadoPagoBrickProps = {
-    initialization: { preferenceId: string; amount: number };
+    initialization: {
+      preferenceId: string;
+      amount: number;
+      payer?: { email?: string };
+    };
     customization: {
       paymentMethods: { bankTransfer?: "all"; creditCard?: "all" };
     };
@@ -386,6 +390,9 @@ function MercadoPagoCheckoutEmbed({
         initialization={{
           preferenceId,
           amount: Number(amount) || 0,
+          ...(payerEmailFromForm?.trim()
+            ? { payer: { email: payerEmailFromForm.trim() } }
+            : {}),
         }}
         customization={customization}
         onSubmit={handleSubmit}
