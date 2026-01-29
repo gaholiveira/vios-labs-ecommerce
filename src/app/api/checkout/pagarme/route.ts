@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   createOrder,
   getCharge,
-  extractPixFromTransaction,
+  extractPixFromCharge,
   isPagarmeConfigured,
   type PagarmeAddress,
   type PagarmeCustomer,
@@ -63,7 +63,9 @@ interface PagarmeCheckoutRequestBody {
   customerEmail?: string | null;
   paymentMethod: "pix" | "card";
   installmentOption?: "1x" | "2x" | "3x";
+  /** Token do cartão (tokenizecard); aceita camelCase ou snake_case */
   cardToken?: string | null;
+  card_token?: string | null;
   checkoutData: CheckoutFormData;
 }
 
@@ -180,15 +182,32 @@ export async function POST(req: Request) {
     );
   }
 
+  let body: PagarmeCheckoutRequestBody;
   try {
-    const body = (await req.json()) as PagarmeCheckoutRequestBody;
+    const parsed = await req.json();
+    if (!parsed || typeof parsed !== "object") {
+      return NextResponse.json(
+        { error: "Corpo da requisição inválido (JSON esperado)." },
+        { status: 400 },
+      );
+    }
+    body = parsed as PagarmeCheckoutRequestBody;
+  } catch {
+    return NextResponse.json(
+      { error: "Corpo da requisição inválido ou não é JSON." },
+      { status: 400 },
+    );
+  }
+
+  try {
+    /** Token: aceita cardToken (camelCase) ou card_token (snake_case) do front/tokenizer */
+    const cardToken = body.cardToken ?? body.card_token ?? null;
     const {
       items,
       userId,
       customerEmail: bodyEmail,
       paymentMethod,
       installmentOption,
-      cardToken,
       checkoutData,
     } = body;
 
@@ -438,7 +457,7 @@ export async function POST(req: Request) {
 
       const firstCharge = pagarmeOrder.charges?.[0];
       let pixData = firstCharge
-        ? extractPixFromTransaction(firstCharge.last_transaction)
+        ? extractPixFromCharge(firstCharge)
         : {
             qr_code: null as string | null,
             qr_code_url: null as string | null,
@@ -454,7 +473,7 @@ export async function POST(req: Request) {
         ) {
           try {
             const charge = await getCharge(firstCharge.id);
-            pixData = extractPixFromTransaction(charge.last_transaction);
+            pixData = extractPixFromCharge(charge);
           } catch (e) {
             console.error("[PAGARME CHECKOUT] getCharge error:", e);
           }

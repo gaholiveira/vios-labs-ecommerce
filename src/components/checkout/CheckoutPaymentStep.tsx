@@ -316,6 +316,7 @@ function PagarmeCardStep({
             paymentMethod: "card",
             installmentOption,
             cardToken,
+            card_token: cardToken,
             checkoutData,
           }),
         });
@@ -355,17 +356,27 @@ function PagarmeCardStep({
       if (window.PagarmeCheckout?.init) {
         window.PagarmeCheckout.init(
           (data) => {
+            const obj =
+              data && typeof data === "object"
+                ? (data as Record<string, unknown>)
+                : null;
             const token =
-              (data && typeof data === "object" && "pagarmetoken" in data
-                ? (data as { pagarmetoken?: string }).pagarmetoken
+              (typeof obj?.pagarmetoken === "string" && obj.pagarmetoken.trim()
+                ? obj.pagarmetoken.trim()
                 : null) ||
-              (data && typeof data === "object" && "token" in data
-                ? (data as { token?: string }).token
+              (typeof obj?.token === "string" && obj.token.trim()
+                ? obj.token.trim()
+                : null) ||
+              (typeof obj?.card_token === "string" && obj.card_token.trim()
+                ? obj.card_token.trim()
                 : null);
             if (token && formRef.current) {
               submitWithToken(token);
               return false;
             }
+            onErrorRef.current(
+              "Não foi possível gerar o token do cartão. Verifique os dados e tente novamente.",
+            );
             return true;
           },
           (err) => {

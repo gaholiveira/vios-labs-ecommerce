@@ -211,26 +211,74 @@ export interface ExtractedPixData {
   pix_copy_paste: string | null;
 }
 
-/** Extrai qr_code, qr_code_url e código copia-e-cola de last_transaction */
+/** Extrai string de um objeto (vários nomes possíveis da API Pagar.me) */
+function pickString(
+  obj: Record<string, unknown>,
+  ...keys: string[]
+): string | null {
+  for (const k of keys) {
+    const v = obj[k];
+    if (typeof v === "string" && v.trim()) return v;
+  }
+  return null;
+}
+
+/** Extrai qr_code, qr_code_url e código copia-e-cola de last_transaction ou objeto similar */
 export function extractPixFromTransaction(
-  tx: PagarmePixTransaction | null | undefined,
+  tx: PagarmePixTransaction | Record<string, unknown> | null | undefined,
 ): ExtractedPixData {
   if (!tx || typeof tx !== "object")
     return { qr_code: null, qr_code_url: null, pix_copy_paste: null };
+  const o = tx as Record<string, unknown>;
+  // QR code (base64): vários nomes possíveis
   const qr_code =
-    typeof tx.qr_code === "string" && tx.qr_code ? tx.qr_code : null;
+    pickString(
+      o,
+      "qr_code",
+      "qr_code_base64",
+      "pix_qr_code",
+      "qr_code_image",
+    ) ?? null;
+  // URL do QR / link para pagar
   const qr_code_url =
-    typeof tx.qr_code_url === "string" && tx.qr_code_url
-      ? tx.qr_code_url
-      : null;
-  // EMV = código PIX copia-e-cola (algumas APIs usam emv, outras qr_code_text, etc.)
-  const qrCodeText = (tx as Record<string, unknown>).qr_code_text;
-  const pix_copy_paste: string | null =
-    typeof tx.emv === "string" && tx.emv
-      ? tx.emv
-      : typeof qrCodeText === "string" && qrCodeText
-        ? qrCodeText
-        : null;
+    pickString(o, "qr_code_url", "qr_code_link", "pix_qr_code_url", "link") ??
+    null;
+  // Código copia-e-cola (EMV)
+  const pix_copy_paste =
+    pickString(o, "emv", "qr_code_text", "pix_copy_paste", "copy_paste") ??
+    null;
+  return { qr_code, qr_code_url, pix_copy_paste };
+}
+
+/** Extrai PIX do objeto charge (last_transaction + possíveis campos no topo da charge) */
+export function extractPixFromCharge(
+  charge:
+    | PagarmeChargeResponse
+    | {
+        last_transaction?: PagarmePixTransaction | null;
+        [key: string]: unknown;
+      }
+    | null
+    | undefined,
+): ExtractedPixData {
+  const base = { qr_code: null, qr_code_url: null, pix_copy_paste: null };
+  if (!charge || typeof charge !== "object") return base;
+  const fromTx = extractPixFromTransaction(charge.last_transaction);
+  const o = charge as Record<string, unknown>;
+  // Algumas respostas colocam PIX no topo da charge
+  const qr_code = fromTx.qr_code ?? pickString(o, "qr_code", "qr_code_base64");
+  const qr_code_url = fromTx.qr_code_url ?? pickString(o, "qr_code_url");
+  const pix_copy_paste =
+    fromTx.pix_copy_paste ?? pickString(o, "emv", "qr_code_text");
+  const pix = o.pix;
+  if (pix && typeof pix === "object" && !Array.isArray(pix)) {
+    const fromPix = extractPixFromTransaction(pix as Record<string, unknown>);
+    return {
+      qr_code: qr_code ?? fromPix.qr_code,
+      qr_code_url: qr_code_url ?? fromPix.qr_code_url,
+      pix_copy_paste: pix_copy_paste ?? fromPix.pix_copy_paste,
+    };
+  }
   return { qr_code, qr_code_url, pix_copy_paste };
 }
 
