@@ -156,15 +156,76 @@ async function processPaymentNotification(paymentId: string): Promise<void> {
   }
 
   const userId = metadata.user_id === "null" ? null : metadata.user_id;
-  const customerEmail = metadata.customer_email;
-  if (!customerEmail || customerEmail === "null") {
-    console.error(
-      "[MERCADOPAGO WEBHOOK] Missing customer_email in preference metadata",
+  let customerEmail: string | null =
+    metadata.customer_email && metadata.customer_email !== "null"
+      ? metadata.customer_email
+      : null;
+  if (!customerEmail) {
+    customerEmail =
+      (payment.payer as { email?: string })?.email ??
+      preference.payer?.email ??
+      null;
+  }
+  const fallbackEmail =
+    process.env.FALLBACK_ORDER_EMAIL ?? "pedido-sem-email@vioslabs.com.br";
+  if (!customerEmail || !customerEmail.trim()) {
+    console.warn(
+      "[MERCADOPAGO WEBHOOK] Missing customer_email in preference metadata and payer. Using fallback so order is not lost. Preference:",
+      preferenceId,
+      "Metadata keys:",
+      Object.keys(metadata).join(", "),
     );
-    return;
+    customerEmail = fallbackEmail;
+  } else {
+    customerEmail = customerEmail.trim();
   }
 
   const totalAmount = Number(metadata.total) ?? payment.transaction_amount ?? 0;
+  const customerName =
+    metadata.customer_name && metadata.customer_name !== "null"
+      ? metadata.customer_name
+      : preference.payer?.name
+        ? [preference.payer.name, preference.payer.surname]
+            .filter(Boolean)
+            .join(" ") || null
+        : null;
+  const customerCpf =
+    metadata.customer_cpf && metadata.customer_cpf !== "null"
+      ? metadata.customer_cpf
+      : null;
+  const customerPhone =
+    metadata.customer_phone && metadata.customer_phone !== "null"
+      ? metadata.customer_phone
+      : null;
+  const shippingCep =
+    metadata.shipping_cep && metadata.shipping_cep !== "null"
+      ? metadata.shipping_cep
+      : null;
+  const shippingStreet =
+    metadata.shipping_street && metadata.shipping_street !== "null"
+      ? metadata.shipping_street
+      : null;
+  const shippingNumber =
+    metadata.shipping_number && metadata.shipping_number !== "null"
+      ? metadata.shipping_number
+      : null;
+  const shippingComplement =
+    metadata.shipping_complement && metadata.shipping_complement !== "null"
+      ? metadata.shipping_complement
+      : null;
+  const shippingNeighborhood =
+    metadata.shipping_neighborhood && metadata.shipping_neighborhood !== "null"
+      ? metadata.shipping_neighborhood
+      : null;
+  const shippingCity =
+    metadata.shipping_city && metadata.shipping_city !== "null"
+      ? metadata.shipping_city
+      : null;
+  const shippingState =
+    metadata.shipping_state && metadata.shipping_state !== "null"
+      ? metadata.shipping_state
+      : null;
+
   const supabaseAdmin = getSupabaseAdmin();
 
   const { data: existingOrder } = await supabaseAdmin
@@ -177,15 +238,29 @@ async function processPaymentNotification(paymentId: string): Promise<void> {
     return;
   }
 
+  const orderInsert: Record<string, unknown> = {
+    user_id: userId || null,
+    customer_email: customerEmail,
+    status: "paid",
+    total_amount: totalAmount,
+    stripe_session_id: preferenceId,
+  };
+  if (customerCpf != null) orderInsert.customer_cpf = customerCpf;
+  if (customerName != null) orderInsert.customer_name = customerName;
+  if (customerPhone != null) orderInsert.customer_phone = customerPhone;
+  if (shippingCep != null) orderInsert.shipping_cep = shippingCep;
+  if (shippingStreet != null) orderInsert.shipping_street = shippingStreet;
+  if (shippingNumber != null) orderInsert.shipping_number = shippingNumber;
+  if (shippingComplement != null)
+    orderInsert.shipping_complement = shippingComplement;
+  if (shippingNeighborhood != null)
+    orderInsert.shipping_neighborhood = shippingNeighborhood;
+  if (shippingCity != null) orderInsert.shipping_city = shippingCity;
+  if (shippingState != null) orderInsert.shipping_state = shippingState;
+
   const { data: order, error: orderError } = await supabaseAdmin
     .from("orders")
-    .insert({
-      user_id: userId || null,
-      customer_email: customerEmail,
-      status: "paid",
-      total_amount: totalAmount,
-      stripe_session_id: preferenceId,
-    })
+    .insert(orderInsert)
     .select()
     .single();
 

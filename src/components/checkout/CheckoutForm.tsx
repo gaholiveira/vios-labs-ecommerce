@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import {
@@ -10,6 +10,7 @@ import {
   formatCEP,
   validatePhone,
   formatPhone,
+  validateEmail,
   validateAddress,
   type AddressData,
 } from "@/utils/validation";
@@ -19,6 +20,8 @@ export interface CheckoutFormData {
   cpf: string;
   phone: string;
   address: AddressData;
+  /** E-mail do cliente (obrigatório para guest, preenchido automaticamente quando logado) */
+  email: string;
 }
 
 /** Resumo de pagamento para exibir no formulário (ex.: parcelado) */
@@ -65,7 +68,8 @@ export default function CheckoutForm({
   paymentSummary,
   orderSummary,
 }: CheckoutFormProps) {
-  // Estados do formulário
+  // Estados do formulário (email: inicial do usuário logado ou vazio para guest)
+  const [email, setEmail] = useState(initialEmail ?? "");
   const [cpf, setCpf] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState<AddressData>({
@@ -82,6 +86,7 @@ export default function CheckoutForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoadingCEP, setIsLoadingCEP] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const lastCepLookupRef = useRef<string>("");
 
   // Estados brasileiros
   const estados = [
@@ -115,50 +120,62 @@ export default function CheckoutForm({
   ];
 
   /**
-   * Busca endereço via CEP quando CEP é válido e completo
+   * Busca endereço via CEP (usado no blur e também ao completar 8 dígitos)
    */
-  const handleCEPBlur = useCallback(async () => {
-    if (!address.cep || address.cep.length < 8) {
-      return;
-    }
+  const lookupCEP = useCallback(
+    async (cepDigits: string) => {
+      if (!validateCEP(cepDigits)) return;
+      if (isLoadingCEP) return;
+      if (lastCepLookupRef.current === cepDigits) return;
+      lastCepLookupRef.current = cepDigits;
 
-    const cleanedCEP = address.cep.replace(/\D/g, "");
-    if (cleanedCEP.length !== 8) {
-      return;
-    }
+      setIsLoadingCEP(true);
+      setErrors((prev) => ({ ...prev, cep: "" }));
 
-    setIsLoadingCEP(true);
-    setErrors((prev) => ({ ...prev, cep: "" }));
+      try {
+        const cepData = await fetchAddressByCEP(cepDigits);
 
-    try {
-      const cepData = await fetchAddressByCEP(address.cep);
-
-      if (cepData) {
-        setAddress((prev) => ({
-          ...prev,
-          street: cepData.logradouro || "",
-          neighborhood: cepData.bairro || "",
-          city: cepData.localidade || "",
-          state: cepData.uf || "",
-          complement: cepData.complemento || prev.complement,
-        }));
-        setErrors((prev) => ({ ...prev, cep: "" }));
-      } else {
+        if (cepData) {
+          setAddress((prev) => ({
+            ...prev,
+            street: cepData.logradouro || "",
+            neighborhood: cepData.bairro || "",
+            city: cepData.localidade || "",
+            state: cepData.uf || "",
+            complement: cepData.complemento || prev.complement,
+          }));
+          // Limpar erros dos campos que foram preenchidos pelo ViaCEP
+          // (evita exibir mensagens de requisito em campos já preenchidos)
+          setErrors((prev) => {
+            const next = { ...prev };
+            delete next.cep;
+            delete next.street;
+            delete next.neighborhood;
+            delete next.city;
+            delete next.state;
+            return next;
+          });
+        } else {
+          setErrors((prev) => ({ ...prev, cep: "CEP não encontrado" }));
+        }
+      } catch (error) {
+        console.error("Erro ao buscar CEP:", error);
         setErrors((prev) => ({
           ...prev,
-          cep: "CEP não encontrado",
+          cep: "Erro ao buscar CEP. Tente novamente.",
         }));
+      } finally {
+        setIsLoadingCEP(false);
       }
-    } catch (error) {
-      console.error("Erro ao buscar CEP:", error);
-      setErrors((prev) => ({
-        ...prev,
-        cep: "Erro ao buscar CEP. Tente novamente.",
-      }));
-    } finally {
-      setIsLoadingCEP(false);
-    }
-  }, [address.cep]);
+    },
+    [isLoadingCEP],
+  );
+
+  const handleCEPBlur = useCallback(async () => {
+    const cleanedCEP = address.cep.replace(/\D/g, "");
+    if (cleanedCEP.length !== 8) return;
+    await lookupCEP(cleanedCEP);
+  }, [address.cep, lookupCEP]);
 
   /**
    * Valida campo individual
@@ -185,6 +202,16 @@ export default function CheckoutForm({
             newErrors.phone = "Telefone inválido (use DDD + número)";
           } else {
             delete newErrors.phone;
+          }
+          break;
+
+        case "email":
+          if (!value || (value as string).trim().length === 0) {
+            newErrors.email = "E-mail é obrigatório";
+          } else if (!validateEmail((value as string).trim())) {
+            newErrors.email = "E-mail inválido";
+          } else {
+            delete newErrors.email;
           }
           break;
 
@@ -258,9 +285,14 @@ export default function CheckoutForm({
     if (cleaned.length <= 8) {
       const formatted = formatCEP(cleaned);
       setAddress((prev) => ({ ...prev, cep: formatted }));
-      if (touched.cep) {
+      // Validação/busca assim que completar 8 dígitos
+      if (cleaned.length === 8) {
+        setTouched((prev) => ({ ...prev, cep: true }));
         validateField("address", { ...address, cep: cleaned });
+        void lookupCEP(cleaned);
+        return;
       }
+      if (touched.cep) validateField("address", { ...address, cep: cleaned });
     }
   };
 
@@ -272,6 +304,7 @@ export default function CheckoutForm({
 
     // Marcar todos os campos como tocados
     setTouched({
+      email: true,
       cpf: true,
       phone: true,
       cep: true,
@@ -282,17 +315,21 @@ export default function CheckoutForm({
       state: true,
     });
 
+    // E-mail final: do usuário logado (initialEmail) ou do campo (guest)
+    const emailValue = (initialEmail ?? email).trim().toLowerCase();
+
     // Validar todos os campos
+    validateField("email", emailValue || email);
     validateField("cpf", cpf);
     validateField("phone", phone);
     validateField("address", address);
 
-    // Verificar se há erros
+    const emailValid = validateEmail(emailValue);
     const cpfValid = validateCPF(cpf);
     const phoneValid = validatePhone(phone);
     const addressValid = validateAddress(address).valid;
 
-    if (!cpfValid || !phoneValid || !addressValid) {
+    if (!emailValid || !cpfValid || !phoneValid || !addressValid) {
       return;
     }
 
@@ -308,6 +345,7 @@ export default function CheckoutForm({
         ...address,
         cep: cleanedCEP,
       },
+      email: emailValue,
     });
   };
 
@@ -316,7 +354,7 @@ export default function CheckoutForm({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-80 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/55 backdrop-blur-sm z-80 flex items-center justify-center p-4"
       onClick={onCancel}
     >
       <motion.div
@@ -324,7 +362,7 @@ export default function CheckoutForm({
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 20 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="bg-white rounded-sm shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative"
+        className="bg-white/95 rounded-sm shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative border border-gray-100"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Botão Fechar */}
@@ -339,8 +377,11 @@ export default function CheckoutForm({
         <form onSubmit={handleSubmit} className="p-8 md:p-12">
           {/* Header */}
           <div className="mb-12">
+            <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-brand-softblack/60 mb-2">
+              VIOS LABS · CHECKOUT
+            </p>
             <h2 className="text-2xl md:text-3xl font-light uppercase tracking-widest text-brand-softblack mb-3">
-              Dados para Entrega
+              The Laboratory Aesthetic
             </h2>
             {paymentSummary ? (
               <p className="text-sm font-light text-brand-softblack/80 leading-relaxed mb-2">
@@ -353,7 +394,7 @@ export default function CheckoutForm({
               </p>
             ) : null}
             {orderSummary ? (
-              <div className="mb-4 p-4 bg-gray-50 rounded-sm border border-gray-100">
+              <div className="mb-4 p-4 bg-gray-50/80 rounded-sm border border-gray-100">
                 <p className="text-[10px] uppercase tracking-widest text-brand-softblack/60 mb-2">
                   Resumo do pedido
                 </p>
@@ -387,337 +428,377 @@ export default function CheckoutForm({
               </div>
             ) : null}
             <p className="text-sm font-light text-brand-softblack/60 leading-relaxed">
-              Preencha os dados abaixo para continuar com o checkout
+              Preencha os dados abaixo. Tudo acontece aqui — seguro, minimalista
+              e sem fricção.
             </p>
           </div>
 
-          <div className="space-y-8">
-            {/* Email (readonly se fornecido) */}
-            {initialEmail && (
-              <div>
-                <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={initialEmail}
-                  disabled
-                  className="w-full bg-transparent border-b border-gray-300 py-3 text-brand-softblack/60 font-light cursor-not-allowed"
-                />
-              </div>
-            )}
+          {/*
+            Tokens visuais (inputs): linhas limpas, borda fina, foco “clínico”
+          */}
+          {(() => {
+            const base =
+              "w-full bg-white/70 border rounded-sm px-3 py-3 text-brand-softblack placeholder:text-gray-400 font-light focus:outline-none transition-colors duration-200";
+            const ok =
+              "border-gray-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green/20";
+            const err =
+              "border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-200/40";
+            return (
+              <div className="space-y-10">
+                {/* Contato & Fiscal */}
+                <div className="p-5 md:p-6 border border-gray-100 bg-white rounded-sm">
+                  <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-brand-softblack/50 mb-6">
+                    Contato & Fiscal
+                  </p>
 
-            {/* CPF */}
-            <div>
-              <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
-                CPF <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={cpf}
-                onChange={(e) => handleCPFChange(e.target.value)}
-                onBlur={() => {
-                  setTouched((prev) => ({ ...prev, cpf: true }));
-                  validateField("cpf", cpf);
-                }}
-                placeholder="000.000.000-00"
-                maxLength={14}
-                className={`w-full bg-transparent border-b py-3 focus:outline-none transition-colors duration-300 text-brand-softblack placeholder:text-gray-400 font-light ${
-                  errors.cpf
-                    ? "border-red-400 focus:border-red-500"
-                    : "border-gray-300 focus:border-brand-green"
-                }`}
-              />
-              {errors.cpf && (
-                <p className="text-[10px] text-red-500 mt-2">{errors.cpf}</p>
-              )}
-            </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Email */}
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
+                        E-mail <span className="text-red-500">*</span>
+                      </label>
+                      {initialEmail ? (
+                        <input
+                          type="email"
+                          value={initialEmail}
+                          disabled
+                          className={`${base} border-gray-200 text-brand-softblack/60 cursor-not-allowed`}
+                        />
+                      ) : (
+                        <>
+                          <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            onBlur={() => {
+                              setTouched((prev) => ({ ...prev, email: true }));
+                              validateField("email", email);
+                            }}
+                            placeholder="seu@email.com"
+                            className={`${base} ${errors.email ? err : ok}`}
+                          />
+                          {errors.email && (
+                            <p className="text-[10px] text-red-500 mt-2">
+                              {errors.email}
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
 
-            {/* Telefone */}
-            <div>
-              <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
-                Telefone <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={phone}
-                onChange={(e) => handlePhoneChange(e.target.value)}
-                onBlur={() => {
-                  setTouched((prev) => ({ ...prev, phone: true }));
-                  validateField("phone", phone);
-                }}
-                placeholder="(00) 00000-0000"
-                maxLength={15}
-                className={`w-full bg-transparent border-b py-3 focus:outline-none transition-colors duration-300 text-brand-softblack placeholder:text-gray-400 font-light ${
-                  errors.phone
-                    ? "border-red-400 focus:border-red-500"
-                    : "border-gray-300 focus:border-brand-green"
-                }`}
-              />
-              {errors.phone && (
-                <p className="text-[10px] text-red-500 mt-2">{errors.phone}</p>
-              )}
-            </div>
+                    {/* CPF */}
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
+                        CPF <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={cpf}
+                        onChange={(e) => handleCPFChange(e.target.value)}
+                        onBlur={() => {
+                          setTouched((prev) => ({ ...prev, cpf: true }));
+                          validateField("cpf", cpf);
+                        }}
+                        placeholder="000.000.000-00"
+                        maxLength={14}
+                        className={`${base} ${errors.cpf ? err : ok}`}
+                      />
+                      {errors.cpf && (
+                        <p className="text-[10px] text-red-500 mt-2">
+                          {errors.cpf}
+                        </p>
+                      )}
+                    </div>
 
-            {/* CEP */}
-            <div>
-              <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
-                CEP <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={address.cep}
-                  onChange={(e) => handleCEPChange(e.target.value)}
-                  onBlur={() => {
-                    setTouched((prev) => ({ ...prev, cep: true }));
-                    handleCEPBlur();
-                    validateField("address", address);
-                  }}
-                  placeholder="00000-000"
-                  maxLength={9}
-                  className={`w-full bg-transparent border-b py-3 focus:outline-none transition-colors duration-300 text-brand-softblack placeholder:text-gray-400 font-light pr-12 ${
-                    errors.cep
-                      ? "border-red-400 focus:border-red-500"
-                      : "border-gray-300 focus:border-brand-green"
-                  }`}
-                />
-                {isLoadingCEP && (
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand-green"></div>
+                    {/* Telefone */}
+                    <div className="md:col-span-2">
+                      <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
+                        Telefone <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={phone}
+                        onChange={(e) => handlePhoneChange(e.target.value)}
+                        onBlur={() => {
+                          setTouched((prev) => ({ ...prev, phone: true }));
+                          validateField("phone", phone);
+                        }}
+                        placeholder="(00) 00000-0000"
+                        maxLength={15}
+                        className={`${base} ${errors.phone ? err : ok}`}
+                      />
+                      {errors.phone && (
+                        <p className="text-[10px] text-red-500 mt-2">
+                          {errors.phone}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
-              {errors.cep && (
-                <p className="text-[10px] text-red-500 mt-2">{errors.cep}</p>
-              )}
-            </div>
+                </div>
 
-            {/* Rua */}
-            <div>
-              <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
-                Rua <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={address.street}
-                onChange={(e) => {
-                  setAddress((prev) => ({ ...prev, street: e.target.value }));
-                  if (touched.street) {
-                    validateField("address", {
-                      ...address,
-                      street: e.target.value,
-                    });
-                  }
-                }}
-                onBlur={() => {
-                  setTouched((prev) => ({ ...prev, street: true }));
-                  validateField("address", address);
-                }}
-                placeholder="Nome da rua"
-                className={`w-full bg-transparent border-b py-3 focus:outline-none transition-colors duration-300 text-brand-softblack placeholder:text-gray-400 font-light ${
-                  errors.street
-                    ? "border-red-400 focus:border-red-500"
-                    : "border-gray-300 focus:border-brand-green"
-                }`}
-              />
-              {errors.street && (
-                <p className="text-[10px] text-red-500 mt-2">{errors.street}</p>
-              )}
-            </div>
-
-            {/* Número e Complemento */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div>
-                <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
-                  Número <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={address.number}
-                  onChange={(e) => {
-                    setAddress((prev) => ({ ...prev, number: e.target.value }));
-                    if (touched.number) {
-                      validateField("address", {
-                        ...address,
-                        number: e.target.value,
-                      });
-                    }
-                  }}
-                  onBlur={() => {
-                    setTouched((prev) => ({ ...prev, number: true }));
-                    validateField("address", address);
-                  }}
-                  placeholder="123"
-                  className={`w-full bg-transparent border-b py-3 focus:outline-none transition-colors duration-300 text-brand-softblack placeholder:text-gray-400 font-light ${
-                    errors.number
-                      ? "border-red-400 focus:border-red-500"
-                      : "border-gray-300 focus:border-brand-green"
-                  }`}
-                />
-                {errors.number && (
-                  <p className="text-[10px] text-red-500 mt-2">
-                    {errors.number}
+                {/* Endereço */}
+                <div className="p-5 md:p-6 border border-gray-100 bg-white rounded-sm">
+                  <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-brand-softblack/50 mb-6">
+                    Endereço de entrega
                   </p>
-                )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* CEP */}
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
+                        CEP <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={address.cep}
+                          onChange={(e) => handleCEPChange(e.target.value)}
+                          onBlur={() => {
+                            setTouched((prev) => ({ ...prev, cep: true }));
+                            handleCEPBlur();
+                            validateField("address", address);
+                          }}
+                          placeholder="00000-000"
+                          maxLength={9}
+                          className={`${base} pr-12 ${errors.cep ? err : ok}`}
+                        />
+                        {isLoadingCEP && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-brand-green border-t-transparent" />
+                          </div>
+                        )}
+                      </div>
+                      {isLoadingCEP ? (
+                        <p className="text-[10px] text-brand-softblack/50 mt-2">
+                          Buscando endereço…
+                        </p>
+                      ) : null}
+                      {errors.cep && (
+                        <p className="text-[10px] text-red-500 mt-2">
+                          {errors.cep}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Rua */}
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
+                        Rua <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={address.street}
+                        onChange={(e) => {
+                          setAddress((prev) => ({
+                            ...prev,
+                            street: e.target.value,
+                          }));
+                          if (touched.street) {
+                            validateField("address", {
+                              ...address,
+                              street: e.target.value,
+                            });
+                          }
+                        }}
+                        onBlur={() => {
+                          setTouched((prev) => ({ ...prev, street: true }));
+                          validateField("address", address);
+                        }}
+                        placeholder="Nome da rua"
+                        className={`${base} ${errors.street ? err : ok}`}
+                      />
+                      {errors.street && (
+                        <p className="text-[10px] text-red-500 mt-2">
+                          {errors.street}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Número */}
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
+                        Número <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={address.number}
+                        onChange={(e) => {
+                          setAddress((prev) => ({
+                            ...prev,
+                            number: e.target.value,
+                          }));
+                          if (touched.number) {
+                            validateField("address", {
+                              ...address,
+                              number: e.target.value,
+                            });
+                          }
+                        }}
+                        onBlur={() => {
+                          setTouched((prev) => ({ ...prev, number: true }));
+                          validateField("address", address);
+                        }}
+                        placeholder="123"
+                        className={`${base} ${errors.number ? err : ok}`}
+                      />
+                      {errors.number && (
+                        <p className="text-[10px] text-red-500 mt-2">
+                          {errors.number}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Complemento */}
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
+                        Complemento
+                      </label>
+                      <input
+                        type="text"
+                        value={address.complement}
+                        onChange={(e) =>
+                          setAddress((prev) => ({
+                            ...prev,
+                            complement: e.target.value,
+                          }))
+                        }
+                        placeholder="Apto, Bloco, etc."
+                        className={`${base} ${ok}`}
+                      />
+                    </div>
+
+                    {/* Bairro */}
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
+                        Bairro <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={address.neighborhood}
+                        onChange={(e) => {
+                          setAddress((prev) => ({
+                            ...prev,
+                            neighborhood: e.target.value,
+                          }));
+                          if (touched.neighborhood) {
+                            validateField("address", {
+                              ...address,
+                              neighborhood: e.target.value,
+                            });
+                          }
+                        }}
+                        onBlur={() => {
+                          setTouched((prev) => ({
+                            ...prev,
+                            neighborhood: true,
+                          }));
+                          validateField("address", address);
+                        }}
+                        placeholder="Nome do bairro"
+                        className={`${base} ${errors.neighborhood ? err : ok}`}
+                      />
+                      {errors.neighborhood && (
+                        <p className="text-[10px] text-red-500 mt-2">
+                          {errors.neighborhood}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Cidade */}
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
+                        Cidade <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={address.city}
+                        onChange={(e) => {
+                          setAddress((prev) => ({
+                            ...prev,
+                            city: e.target.value,
+                          }));
+                          if (touched.city) {
+                            validateField("address", {
+                              ...address,
+                              city: e.target.value,
+                            });
+                          }
+                        }}
+                        onBlur={() => {
+                          setTouched((prev) => ({ ...prev, city: true }));
+                          validateField("address", address);
+                        }}
+                        placeholder="Sua cidade"
+                        className={`${base} ${errors.city ? err : ok}`}
+                      />
+                      {errors.city && (
+                        <p className="text-[10px] text-red-500 mt-2">
+                          {errors.city}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Estado */}
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
+                        Estado <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={address.state}
+                        onChange={(e) => {
+                          setAddress((prev) => ({
+                            ...prev,
+                            state: e.target.value,
+                          }));
+                          if (touched.state) {
+                            validateField("address", {
+                              ...address,
+                              state: e.target.value,
+                            });
+                          }
+                        }}
+                        onBlur={() => {
+                          setTouched((prev) => ({ ...prev, state: true }));
+                          validateField("address", address);
+                        }}
+                        className={`${base} ${errors.state ? err : ok}`}
+                      >
+                        <option value="">Selecione</option>
+                        {estados.map((uf) => (
+                          <option key={uf} value={uf}>
+                            {uf}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.state && (
+                        <p className="text-[10px] text-red-500 mt-2">
+                          {errors.state}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ações */}
+                <div className="flex flex-col-reverse md:flex-row md:items-center gap-3 md:justify-between pt-2">
+                  <button
+                    type="button"
+                    onClick={onCancel}
+                    className="w-full md:w-auto px-5 py-3 border border-gray-200 rounded-sm text-brand-softblack/80 text-[11px] uppercase tracking-widest hover:border-brand-green/40 hover:text-brand-softblack transition-colors"
+                  >
+                    Voltar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full md:w-auto px-6 py-3 bg-brand-green text-white rounded-sm text-[11px] uppercase tracking-widest hover:bg-brand-green/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isLoading ? "Processando…" : "Continuar"}
+                  </button>
+                </div>
               </div>
-
-              <div>
-                <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
-                  Complemento
-                </label>
-                <input
-                  type="text"
-                  value={address.complement}
-                  onChange={(e) =>
-                    setAddress((prev) => ({
-                      ...prev,
-                      complement: e.target.value,
-                    }))
-                  }
-                  placeholder="Apto, Bloco, etc."
-                  className="w-full bg-transparent border-b border-gray-300 py-3 focus:outline-none transition-colors duration-300 text-brand-softblack placeholder:text-gray-400 font-light focus:border-brand-green"
-                />
-              </div>
-            </div>
-
-            {/* Bairro */}
-            <div>
-              <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
-                Bairro <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={address.neighborhood}
-                onChange={(e) => {
-                  setAddress((prev) => ({
-                    ...prev,
-                    neighborhood: e.target.value,
-                  }));
-                  if (touched.neighborhood) {
-                    validateField("address", {
-                      ...address,
-                      neighborhood: e.target.value,
-                    });
-                  }
-                }}
-                onBlur={() => {
-                  setTouched((prev) => ({ ...prev, neighborhood: true }));
-                  validateField("address", address);
-                }}
-                placeholder="Nome do bairro"
-                className={`w-full bg-transparent border-b py-3 focus:outline-none transition-colors duration-300 text-brand-softblack placeholder:text-gray-400 font-light ${
-                  errors.neighborhood
-                    ? "border-red-400 focus:border-red-500"
-                    : "border-gray-300 focus:border-brand-green"
-                }`}
-              />
-              {errors.neighborhood && (
-                <p className="text-[10px] text-red-500 mt-2">
-                  {errors.neighborhood}
-                </p>
-              )}
-            </div>
-
-            {/* Cidade e Estado */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div>
-                <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
-                  Cidade <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={address.city}
-                  onChange={(e) => {
-                    setAddress((prev) => ({ ...prev, city: e.target.value }));
-                    if (touched.city) {
-                      validateField("address", {
-                        ...address,
-                        city: e.target.value,
-                      });
-                    }
-                  }}
-                  onBlur={() => {
-                    setTouched((prev) => ({ ...prev, city: true }));
-                    validateField("address", address);
-                  }}
-                  placeholder="Nome da cidade"
-                  className={`w-full bg-transparent border-b py-3 focus:outline-none transition-colors duration-300 text-brand-softblack placeholder:text-gray-400 font-light ${
-                    errors.city
-                      ? "border-red-400 focus:border-red-500"
-                      : "border-gray-300 focus:border-brand-green"
-                  }`}
-                />
-                {errors.city && (
-                  <p className="text-[10px] text-red-500 mt-2">{errors.city}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
-                  Estado <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={address.state}
-                  onChange={(e) => {
-                    setAddress((prev) => ({ ...prev, state: e.target.value }));
-                    if (touched.state) {
-                      validateField("address", {
-                        ...address,
-                        state: e.target.value,
-                      });
-                    }
-                  }}
-                  onBlur={() => {
-                    setTouched((prev) => ({ ...prev, state: true }));
-                    validateField("address", address);
-                  }}
-                  className={`w-full bg-transparent border-b py-3 focus:outline-none transition-colors duration-300 text-brand-softblack font-light appearance-none cursor-pointer ${
-                    errors.state
-                      ? "border-red-400 focus:border-red-500"
-                      : "border-gray-300 focus:border-brand-green"
-                  }`}
-                >
-                  <option value="" className="text-gray-400">
-                    Selecione
-                  </option>
-                  {estados.map((estado) => (
-                    <option
-                      key={estado}
-                      value={estado}
-                      className="text-brand-softblack"
-                    >
-                      {estado}
-                    </option>
-                  ))}
-                </select>
-                {errors.state && (
-                  <p className="text-[10px] text-red-500 mt-2">
-                    {errors.state}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Botões */}
-            <div className="flex flex-col md:flex-row gap-4 pt-8 border-t border-gray-100">
-              <button
-                type="button"
-                onClick={onCancel}
-                disabled={isLoading}
-                className="flex-1 px-8 py-4 border border-gray-300 rounded-sm text-brand-softblack hover:border-brand-green/50 hover:text-brand-green transition-all duration-500 ease-out font-light uppercase tracking-wider text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="flex-1 px-8 py-4 bg-brand-green text-brand-offwhite rounded-sm hover:bg-brand-green/90 transition-all duration-500 ease-out font-light uppercase tracking-wider text-xs disabled:opacity-50 disabled:cursor-not-allowed md:hover:-translate-y-0.5 md:hover:shadow-[0_10px_30px_rgba(10,51,35,0.25)]"
-              >
-                {isLoading ? "Processando..." : "Continuar"}
-              </button>
-            </div>
-          </div>
+            );
+          })()}
         </form>
       </motion.div>
     </motion.div>

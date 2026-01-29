@@ -15,18 +15,22 @@
    - Fallback para obter `preference_id`: além de `payment.order` e busca por `external_reference`, tenta `payment.metadata.preference_id`.
    - **Metadata** da preferência aceita como objeto ou string JSON.
    - **Logs** em produção quando não conseguir `preference_id` ou quando metadata estiver incompleta (para debug no Vercel).
+   - **E-mail obrigatório:** o checkout (formulário) passa a exigir e-mail para todos (guest e logado). A API rejeita com 400 se faltar. O webhook, se ainda assim não tiver e-mail no metadata/payer, usa um fallback (`FALLBACK_ORDER_EMAIL` ou `pedido-sem-email@vioslabs.com.br`) para não perder o pedido e registra um warning nos logs.
+
+4. **DeprecationWarning `url.parse()`**  
+   O aviso `[DEP0169] url.parse() is deprecated` vem de **dependência** (Node ou SDK do Mercado Pago), não do código do projeto. Pode ser ignorado até que a dependência use a WHATWG URL API. Não afeta o funcionamento do webhook.
 
 ---
 
 ## Checklist produção
 
 - [ ] **URL do webhook**  
-      A preferência é criada com `notification_url: ${origin}/api/webhooks/mercadopago`.  
-      Em produção, `origin` deve ser a URL pública do site (ex.: `https://vioslabs.com.br`).  
-      Confirme em `api/checkout/mercadopago/route.ts` que `NEXT_PUBLIC_SITE_URL` (ou a lógica de `origin`) está correta no deploy.
+       A preferência é criada com `notification_url: ${origin}/api/webhooks/mercadopago`.  
+       Em produção, `origin` deve ser a URL pública do site (ex.: `https://vioslabs.com.br`).  
+       Confirme em `api/checkout/mercadopago/route.ts` que `NEXT_PUBLIC_SITE_URL` (ou a lógica de `origin`) está correta no deploy.
 
 - [ ] **HTTPS**  
-      O Mercado Pago só chama URLs **HTTPS** em produção. O domínio deve ter SSL válido.
+       O Mercado Pago só chama URLs **HTTPS** em produção. O domínio deve ter SSL válido.
 
 - [ ] **Variáveis de ambiente (Vercel/produção)**
   - `MERCADOPAGO_ACCESS_TOKEN` (obrigatório)

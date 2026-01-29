@@ -203,7 +203,7 @@ function PaymentMethodSelector({
           className="pt-1.5"
         >
           <div className="flex gap-1.5">
-            {/* 1x */}
+            {/* À vista (1x) */}
             <button
               type="button"
               onClick={() => onInstallmentChange("1x")}
@@ -213,8 +213,9 @@ function PaymentMethodSelector({
                   : "border-gray-200 hover:border-brand-green/30 text-brand-softblack/70"
               }`}
               aria-pressed={installmentOption === "1x"}
+              aria-label="Cartão à vista"
             >
-              1x
+              À vista
             </button>
 
             {/* 2x */}

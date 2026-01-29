@@ -3,7 +3,7 @@ import { useEffect, useCallback, useState, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { Lock } from "lucide-react";
+import { Lock, X } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/utils/format";
 import ShippingMeter from "@/components/cart/ShippingMeter";
@@ -15,6 +15,8 @@ import PaymentMethodSelector, {
 import CheckoutForm, {
   type CheckoutFormData,
 } from "@/components/checkout/CheckoutForm";
+import CheckoutPaymentStep from "@/components/checkout/CheckoutPaymentStep";
+import type { CheckoutPaymentPayload } from "@/types/checkout";
 
 function CartDrawer() {
   const {
@@ -37,6 +39,10 @@ function CartDrawer() {
 
   // Estado para controlar exibição do formulário de checkout
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
+  // Step de pagamento embed (Stripe Elements / MP Bricks) — checkout a cara da VIOS
+  const [checkoutStep, setCheckoutStep] = useState<"form" | "payment">("form");
+  const [paymentPayload, setPaymentPayload] =
+    useState<CheckoutPaymentPayload | null>(null);
 
   // Frete: mesma regra da API (evitar duplicar constante em vários arquivos)
   const FREE_SHIPPING_THRESHOLD = 289.9;
@@ -122,33 +128,21 @@ function CartDrawer() {
   );
 
   /**
-   * Handler inicial do checkout - verifica se precisa coletar dados
+   * Handler inicial do checkout — sempre mostra formulário (dados + entrega)
+   * Depois renderiza pagamento embed (Stripe Elements ou MP Bricks) — a cara da VIOS
    */
   const handleCheckout = () => {
-    // Validar que método de pagamento foi selecionado
     if (!paymentMethod) {
       alert("Por favor, selecione uma forma de pagamento.");
       return;
     }
-
-    // Validar parcelamento se for cartão
     if (paymentMethod === "card" && !installmentOption) {
       alert("Por favor, selecione o número de parcelas.");
       return;
     }
-
-    // Se for PIX ou cartão parcelado (Mercado Pago), mostrar formulário primeiro
-    if (
-      paymentMethod === "pix" ||
-      (paymentMethod === "card" && installmentOption !== "1x")
-    ) {
-      setShowCheckoutForm(true);
-      return;
-    }
-
-    // Se for cartão à vista (Stripe), ir direto para checkout
-    // Stripe já coleta os dados necessários
-    processCheckout();
+    setCheckoutStep("form");
+    setPaymentPayload(null);
+    setShowCheckoutForm(true);
   };
 
   /**
@@ -173,6 +167,9 @@ function CartDrawer() {
 
       // Determinar rota baseado no método de pagamento
       let apiRoute = "/api/checkout";
+      // E-mail: do formulário (Mercado Pago/guest) ou do usuário logado
+      const customerEmailValue = checkoutFormData?.email ?? user?.email ?? null;
+
       const checkoutData: {
         items: typeof items;
         userId: string | null;
@@ -183,7 +180,7 @@ function CartDrawer() {
       } = {
         items,
         userId: user?.id || null,
-        customerEmail: user?.email || null,
+        customerEmail: customerEmailValue,
       };
 
       // Se for PIX ou cartão parcelado, usar Mercado Pago
@@ -196,19 +193,32 @@ function CartDrawer() {
         if (installmentOption) {
           checkoutData.installmentOption = installmentOption;
         }
-        // Adicionar dados do formulário se disponíveis
+        // Adicionar dados do formulário (inclui email obrigatório para guest)
         if (checkoutFormData) {
           checkoutData.checkoutData = checkoutFormData;
         }
       }
       // Se for cartão à vista (1x), usar Stripe (rota atual)
 
-      const response = await fetch(apiRoute, {
+      const isStripe1x = paymentMethod === "card" && installmentOption === "1x";
+      const finalRoute = isStripe1x
+        ? "/api/checkout/create-payment-intent"
+        : apiRoute;
+      const finalBody = isStripe1x
+        ? {
+            items,
+            userId: user?.id || null,
+            customerEmail: customerEmailValue,
+            checkoutData: checkoutFormData ?? undefined,
+          }
+        : checkoutData;
+
+      const response = await fetch(finalRoute, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(checkoutData),
+        body: JSON.stringify(finalBody),
       });
 
       const data = await response.json();
@@ -231,17 +241,54 @@ function CartDrawer() {
         return;
       }
 
-      if (data.url) {
-        // Limpar flag antes de redirecionar (sucesso)
+      if (isStripe1x && data.clientSecret) {
         sessionStorage.removeItem("checkout_processing");
-        window.location.href = data.url; // Redireciona para o gateway
+        setPaymentPayload({
+          provider: "stripe",
+          clientSecret: data.clientSecret,
+        });
+        setCheckoutStep("payment");
+        setShowCheckoutForm(false);
+        setIsCheckingOut(false);
+        return;
+      }
+      if (!isStripe1x && data.preferenceId) {
+        sessionStorage.removeItem("checkout_processing");
+        setIsCheckingOut(false);
+        if (data.publicKey && typeof data.amount === "number") {
+          const mpMethod = paymentMethod === "pix" ? "pix" : "card";
+          const mpInstallment: "2x" | "3x" | undefined =
+            mpMethod === "card" &&
+            (installmentOption === "2x" || installmentOption === "3x")
+              ? installmentOption
+              : undefined;
+          setPaymentPayload({
+            provider: "mercadopago",
+            preferenceId: data.preferenceId,
+            publicKey: data.publicKey,
+            amount: data.amount,
+            payerEmail: checkoutFormData?.email,
+            paymentMethod: mpMethod,
+            installmentOption: mpInstallment,
+          });
+          setCheckoutStep("payment");
+          setShowCheckoutForm(false);
+          return;
+        }
+        if (data.url) {
+          window.location.href = data.url;
+          return;
+        }
+      }
+      if (data.url) {
+        sessionStorage.removeItem("checkout_processing");
+        window.location.href = data.url;
       } else {
-        // Sem URL retornada (erro inesperado)
         const errorMessage =
           data.error || "Não foi possível criar a sessão de checkout";
         console.error("Erro ao criar sessão:", errorMessage);
         setIsCheckingOut(false);
-        sessionStorage.removeItem("checkout_processing"); // Limpar flag
+        sessionStorage.removeItem("checkout_processing");
         alert(`Erro: ${errorMessage}. Por favor, tente novamente.`);
       }
     } catch (error: unknown) {
@@ -263,6 +310,17 @@ function CartDrawer() {
     processCheckout(formData);
   };
 
+  const handlePaymentSuccess = (id: string) => {
+    sessionStorage.removeItem("checkout_processing");
+    window.location.href = `/checkout/success?session_id=${encodeURIComponent(id)}`;
+  };
+
+  const handlePaymentStepClose = () => {
+    setCheckoutStep("form");
+    setPaymentPayload(null);
+    setShowCheckoutForm(false);
+  };
+
   /**
    * Handler quando formulário de checkout é cancelado
    */
@@ -276,37 +334,76 @@ function CartDrawer() {
 
   return (
     <>
-      {/* Formulário de Checkout */}
+      {/* Checkout: formulário (dados) ou step de pagamento (Stripe Elements / MP Bricks) */}
       <AnimatePresence>
-        {showCheckoutForm && (
-          <CheckoutForm
-            onSubmit={handleCheckoutFormSubmit}
-            onCancel={handleCheckoutFormCancel}
-            initialEmail={user?.email || undefined}
-            isLoading={isCheckingOut}
-            orderSummary={{
-              subtotal: totalPrice,
-              shipping: shippingAmount,
-              total: totalWithShippingFinal,
-              freeShipping: isFreeShipping,
-              ...(pixDiscount > 0 && { discount: pixDiscount }),
-            }}
-            paymentSummary={
-              paymentMethod === "card" &&
-              (installmentOption === "2x" || installmentOption === "3x")
-                ? {
-                    installments: installmentOption === "2x" ? 2 : 3,
-                    total: totalWithShipping,
-                    installmentAmount:
-                      Math.round(
-                        (totalWithShipping /
-                          (installmentOption === "2x" ? 2 : 3)) *
-                          100,
-                      ) / 100,
-                  }
-                : undefined
-            }
-          />
+        {(showCheckoutForm || checkoutStep === "payment") && (
+          <>
+            {checkoutStep === "form" && (
+              <CheckoutForm
+                onSubmit={handleCheckoutFormSubmit}
+                onCancel={handleCheckoutFormCancel}
+                initialEmail={user?.email || undefined}
+                isLoading={isCheckingOut}
+                orderSummary={{
+                  subtotal: totalPrice,
+                  shipping: shippingAmount,
+                  total: totalWithShippingFinal,
+                  freeShipping: isFreeShipping,
+                  ...(pixDiscount > 0 && { discount: pixDiscount }),
+                }}
+                paymentSummary={
+                  paymentMethod === "card" &&
+                  (installmentOption === "2x" || installmentOption === "3x")
+                    ? {
+                        installments: installmentOption === "2x" ? 2 : 3,
+                        total: totalWithShipping,
+                        installmentAmount:
+                          Math.round(
+                            (totalWithShipping /
+                              (installmentOption === "2x" ? 2 : 3)) *
+                              100,
+                          ) / 100,
+                      }
+                    : undefined
+                }
+              />
+            )}
+            {checkoutStep === "payment" && paymentPayload && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-80 flex items-center justify-center p-4"
+                onClick={handlePaymentStepClose}
+              >
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="bg-white rounded-sm shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto relative p-8"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    type="button"
+                    onClick={handlePaymentStepClose}
+                    className="absolute top-6 right-6 p-2 text-gray-400 hover:text-brand-softblack transition-colors"
+                    aria-label="Fechar"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                  <h2 className="text-xl font-light uppercase tracking-widest text-brand-softblack mb-6">
+                    Pagamento
+                  </h2>
+                  <CheckoutPaymentStep
+                    payload={paymentPayload}
+                    onSuccess={handlePaymentSuccess}
+                    onError={(msg) => alert(msg)}
+                  />
+                </motion.div>
+              </motion.div>
+            )}
+          </>
         )}
       </AnimatePresence>
 
@@ -580,6 +677,18 @@ function CartDrawer() {
                           {formatPrice(totalPrice)}
                         </span>
                       </div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm uppercase tracking-wider text-gray-600">
+                          Frete
+                        </span>
+                        <span className="text-sm font-medium text-brand-softblack">
+                          {isFreeShipping ? (
+                            <span className="text-brand-green">Grátis</span>
+                          ) : (
+                            formatPrice(shippingAmount)
+                          )}
+                        </span>
+                      </div>
                       {pixDiscount > 0 && (
                         <div className="flex justify-between items-center mb-2 text-brand-green text-sm">
                           <span className="uppercase tracking-wider">
@@ -588,19 +697,14 @@ function CartDrawer() {
                           <span>- {formatPrice(pixDiscount)}</span>
                         </div>
                       )}
-                      {pixDiscount > 0 && (
-                        <div className="flex justify-between items-center mb-2 pt-1 border-t border-gray-200">
-                          <span className="text-sm uppercase tracking-wider text-gray-600 font-medium">
-                            Total
-                          </span>
-                          <span className="text-lg font-semibold text-brand-softblack">
-                            {formatPrice(totalWithShippingFinal)}
-                          </span>
-                        </div>
-                      )}
-                      <p className="text-[10px] text-gray-500 uppercase tracking-wider">
-                        Frete calculado no checkout
-                      </p>
+                      <div className="flex justify-between items-center mb-0 pt-1 border-t border-gray-200">
+                        <span className="text-sm uppercase tracking-wider text-gray-600 font-medium">
+                          Total
+                        </span>
+                        <span className="text-lg font-semibold text-brand-softblack">
+                          {formatPrice(totalWithShippingFinal)}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Seleção de Método de Pagamento - Sutil */}

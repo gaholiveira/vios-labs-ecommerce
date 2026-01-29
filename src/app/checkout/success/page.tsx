@@ -9,7 +9,8 @@ import { createClient } from "@/utils/supabase/client";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
-  const sessionId = searchParams.get("session_id");
+  const sessionId =
+    searchParams.get("session_id") ?? searchParams.get("payment_intent");
   const { clearCart } = useCart();
   const [orderStatus, setOrderStatus] = useState<
     "checking" | "found" | "not_found" | "error"

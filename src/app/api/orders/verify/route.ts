@@ -17,11 +17,12 @@ function getSupabaseAdmin() {
 export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
-    const sessionId = searchParams.get("session_id");
+    const sessionId =
+      searchParams.get("session_id") ?? searchParams.get("payment_intent");
 
     if (!sessionId) {
       return NextResponse.json(
-        { error: "session_id é obrigatório" },
+        { error: "session_id ou payment_intent é obrigatório" },
         { status: 400 },
       );
     }
@@ -57,7 +58,7 @@ export async function GET(req: NextRequest) {
       exists: false,
       message: "Pedido ainda não foi processado",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Erro na verificação de pedido:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },

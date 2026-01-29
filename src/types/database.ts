@@ -1,8 +1,8 @@
 /**
  * Tipos do Banco de Dados - VIOS LABS
- * 
+ *
  * Este arquivo documenta as interfaces TypeScript para as tabelas do Supabase.
- * ATUALIZADO: 
+ * ATUALIZADO:
  * - Suporte para Guest Checkout (user_id opcional em orders)
  * - Sistema de Gestão de Estoque (Inventory Management)
  */
@@ -10,12 +10,23 @@
 export interface Order {
   id: string;
   user_id: string | null; // NULL para guest checkout
-  customer_email: string; // Obrigatório (coletado no Stripe Checkout)
-  status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
+  customer_email: string;
+  status: "pending" | "paid" | "shipped" | "delivered" | "cancelled";
   total_amount: number;
-  stripe_session_id?: string; // ID da sessão do Stripe
+  stripe_session_id?: string; // Stripe session id ou MP preference_id
   created_at: string;
   updated_at: string;
+  // Fiscal e entrega (preenchidos pelo webhook MP; Stripe pode ter customer_cpf)
+  customer_cpf?: string | null;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  shipping_cep?: string | null;
+  shipping_street?: string | null;
+  shipping_number?: string | null;
+  shipping_complement?: string | null;
+  shipping_neighborhood?: string | null;
+  shipping_city?: string | null;
+  shipping_state?: string | null;
 }
 
 export interface OrderItem {
@@ -73,9 +84,9 @@ export interface CheckoutData {
  * Usado no webhook para identificar se é Guest ou User
  */
 export interface StripeCheckoutMetadata {
-  userId: string | 'null'; // Stripe converte null para string 'null'
-  customerEmail: string | 'null';
-  isGuest: 'true' | 'false';
+  userId: string | "null"; // Stripe converte null para string 'null'
+  customerEmail: string | "null";
+  isGuest: "true" | "false";
 }
 
 // ============================================================================
@@ -93,7 +104,7 @@ export interface ProductDB {
   old_price: number | null;
   category: string;
   image_url: string | null;
-  badge: 'bestseller' | 'novo' | 'vegano' | null;
+  badge: "bestseller" | "novo" | "vegano" | null;
   anvisa_record: string | null;
   rating: number | null;
   reviews: number;
@@ -124,7 +135,7 @@ export interface InventoryReservation {
   product_id: string;
   quantity: number;
   stripe_session_id: string | null;
-  status: 'active' | 'completed' | 'cancelled' | 'expired';
+  status: "active" | "completed" | "cancelled" | "expired";
   expires_at: string;
   created_at: string;
   completed_at: string | null;
@@ -138,7 +149,13 @@ export interface InventoryReservation {
 export interface InventoryMovement {
   id: string;
   product_id: string;
-  movement_type: 'sale' | 'reservation' | 'reservation_release' | 'restock' | 'adjustment' | 'return';
+  movement_type:
+    | "sale"
+    | "reservation"
+    | "reservation_release"
+    | "restock"
+    | "adjustment"
+    | "return";
   quantity_change: number;
   quantity_before: number;
   quantity_after: number;
@@ -161,7 +178,7 @@ export interface InventoryStatus {
   available_quantity: number; // stock_quantity - reserved_quantity
   low_stock_threshold: number;
   reorder_point: number;
-  stock_status: 'in_stock' | 'low_stock' | 'out_of_stock';
+  stock_status: "in_stock" | "low_stock" | "out_of_stock";
   inventory_updated_at: string;
 }
 

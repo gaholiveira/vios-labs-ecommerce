@@ -450,14 +450,23 @@ export async function POST(req: Request) {
       );
     }
 
-    // Validar email (se fornecido)
-    if (customerEmail) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      const sanitizedEmail = customerEmail.trim().toLowerCase();
-
-      if (!emailRegex.test(sanitizedEmail)) {
-        return NextResponse.json({ error: "Email inválido" }, { status: 400 });
-      }
+    // E-mail obrigatório para Mercado Pago (webhook precisa para criar pedido e enviar confirmação)
+    const emailTrimmed =
+      customerEmail && typeof customerEmail === "string"
+        ? customerEmail.trim().toLowerCase()
+        : "";
+    if (!emailTrimmed) {
+      return NextResponse.json(
+        {
+          error:
+            "E-mail é obrigatório para concluir o checkout. Preencha o campo no formulário.",
+        },
+        { status: 400 },
+      );
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailTrimmed)) {
+      return NextResponse.json({ error: "E-mail inválido" }, { status: 400 });
     }
 
     // Validar método de pagamento
@@ -604,7 +613,7 @@ export async function POST(req: Request) {
                   p_product_id: productId,
                   p_quantity: item.quantity,
                   p_stripe_session_id: uniqueReservationId, // Usar mesmo campo (será atualizado depois)
-                  p_customer_email: customerEmail || null,
+                  p_customer_email: emailTrimmed,
                   p_user_id: userId || null,
                 },
               );
@@ -661,7 +670,7 @@ export async function POST(req: Request) {
                 p_product_id: item.id,
                 p_quantity: item.quantity,
                 p_stripe_session_id: uniqueReservationId,
-                p_customer_email: customerEmail || null,
+                p_customer_email: emailTrimmed,
                 p_user_id: userId || null,
               },
             );
@@ -767,7 +776,7 @@ export async function POST(req: Request) {
         : undefined;
 
       const payerData: MercadoPagoPayer = {
-        ...(customerEmail && { email: customerEmail }),
+        ...(emailTrimmed && { email: emailTrimmed }),
         identification: {
           type: cpfDigits2.length === 11 ? "CPF" : "CNPJ",
           number: cpfDigits2,
@@ -849,7 +858,7 @@ export async function POST(req: Request) {
         metadata: {
           order_id: tempPreferenceId,
           user_id: userId || "null",
-          customer_email: customerEmail || "null",
+          customer_email: emailTrimmed,
           is_guest: (!userId).toString(),
           subtotal: subtotal.toFixed(2),
           shipping: (shippingAmount / 100).toFixed(2),
@@ -861,7 +870,12 @@ export async function POST(req: Request) {
             .toString(),
           payment_method: paymentMethod,
           installment_option: body.installmentOption || "1x",
+          customer_cpf: cpfDigits2,
+          customer_phone: phoneDigits2,
           shipping_cep: cepDigits2,
+          shipping_street: address.street,
+          shipping_number: address.number,
+          shipping_neighborhood: address.neighborhood,
           shipping_city: address.city,
           shipping_state: address.state,
           ...(address.complement
@@ -949,9 +963,17 @@ export async function POST(req: Request) {
         // Não falhar aqui - preferência já foi criada
       }
 
+      const publicKey =
+        process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY ||
+        process.env.MERCADOPAGO_PUBLIC_KEY ||
+        "";
       return NextResponse.json({
         url: preference.init_point,
-        preference_id: preference.id,
+        preferenceId: preference.id,
+        publicKey,
+        amount: totalAmount,
+        paymentMethod,
+        installmentOption: body.installmentOption ?? undefined,
       });
     } catch (inventoryError: unknown) {
       console.error(

@@ -86,6 +86,17 @@ export function formatCEP(cep: string): string {
 }
 
 /**
+ * Valida e-mail (formato básico)
+ * @param email - E-mail a validar
+ * @returns true se o formato é válido
+ */
+export function validateEmail(email: string): boolean {
+  if (!email || typeof email !== "string") return false;
+  const trimmed = email.trim().toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+}
+
+/**
  * Valida telefone brasileiro
  * @param phone - Telefone com ou sem formatação
  * @returns true se o telefone é válido (10 ou 11 dígitos)
