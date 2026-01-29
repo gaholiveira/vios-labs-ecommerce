@@ -13,6 +13,7 @@ import TextReveal from "@/components/ui/text-reveal";
 import { ShareButton } from "@/components/shop/ShareButton";
 import { Product } from "@/constants/products";
 import { useAuth } from "@/hooks/useAuth";
+import CheckoutBenefitsBar from "@/components/CheckoutBenefitsBar";
 import type { InventoryStatus } from "@/types/database";
 
 // ============================================================================
@@ -649,15 +650,25 @@ function ProductPageContent({ product }: ProductPageContentProps) {
             duration={0.6}
           />
 
-          {/* Preço - Fade-in simples (segurança de conversão) */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-            className="text-xl mb-6"
-          >
-            {formatPrice(product.price)}
-          </motion.p>
+          {/* Preço + faixa de benefícios */}
+          <div className="space-y-4 mb-6">
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              className="text-xl"
+            >
+              {formatPrice(product.price)}
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.1 }}
+            >
+              <CheckoutBenefitsBar />
+            </motion.div>
+          </div>
 
           {/* Descrição Curta com TextReveal */}
           <div className="border-t border-b py-6 mb-8 text-gray-600 font-light leading-relaxed">

@@ -12,6 +12,7 @@ import Image from "next/image";
 import { useMobileViewportHeight } from "@/hooks/useMobileViewportHeight";
 import { useCart } from "@/context/CartContext";
 import TextReveal from "@/components/ui/text-reveal";
+import CheckoutBenefitsBar from "@/components/CheckoutBenefitsBar";
 
 export default function Home() {
   const router = useRouter();
@@ -66,29 +67,29 @@ export default function Home() {
     const productsSection = document.getElementById("produtos");
     if (productsSection) {
       setIsScrolling(true);
-      
+
       // Função para verificar se chegou na seção de produtos
       const checkScrollPosition = () => {
         const rect = productsSection.getBoundingClientRect();
         const isInView = rect.top <= 150 && rect.bottom >= -50;
-        
+
         if (isInView) {
           setIsScrolling(false);
           return true;
         }
         return false;
       };
-      
+
       // Scroll suave
       productsSection.scrollIntoView({ behavior: "smooth", block: "start" });
-      
+
       // Verificar posição periodicamente durante o scroll
       const scrollInterval = setInterval(() => {
         if (checkScrollPosition()) {
           clearInterval(scrollInterval);
         }
       }, 50);
-      
+
       // Timeout de segurança para remover o blur caso o scroll não seja detectado
       setTimeout(() => {
         setIsScrolling(false);
@@ -111,7 +112,7 @@ export default function Home() {
       {isScrolling && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 transition-opacity duration-300 pointer-events-none" />
       )}
-      
+
       {/* Hero Section */}
       <section
         className="group relative w-full flex items-center justify-center overflow-hidden bg-brand-softblack"
@@ -179,7 +180,7 @@ export default function Home() {
       {/* Grid de Produtos */}
       <section id="produtos" className="max-w-7xl mx-auto px-4 md:px-6 py-24">
         {/* Título da Seção com TextReveal */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-10 md:mb-12">
           <TextReveal
             text="Nossos Produtos"
             el="h2"
@@ -189,6 +190,11 @@ export default function Home() {
           />
         </div>
 
+        {/* Faixa de benefícios – posicionada logo antes da grade */}
+        <div className="mb-12">
+          <CheckoutBenefitsBar />
+        </div>
+
         {/* Container com stagger para animação em cascata dos cards */}
         <ProductsGrid products={PRODUCTS} />
       </section>
@@ -196,7 +202,7 @@ export default function Home() {
       {/* Seção de Kits e Protocolos */}
       <section id="kits" className="max-w-7xl mx-auto px-4 md:px-6 py-24">
         {/* Título da Seção com TextReveal */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-10 md:mb-12">
           <TextReveal
             text="Protocolos & Kits"
             el="h2"
@@ -207,6 +213,11 @@ export default function Home() {
           <p className="text-brand-softblack/70 text-sm md:text-base font-light tracking-wide max-w-2xl mx-auto mt-4">
             Combinações científicas desenvolvidas para sinergia máxima
           </p>
+        </div>
+
+        {/* Faixa de benefícios também aqui, para reforçar mensagem em protocolos */}
+        <div className="mb-12">
+          <CheckoutBenefitsBar />
         </div>
 
         {/* Grid de Kits */}

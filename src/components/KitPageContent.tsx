@@ -13,6 +13,7 @@ import { ShareButton } from "@/components/shop/ShareButton";
 import { Kit } from "@/constants/kits";
 import { PRODUCTS } from "@/constants/products";
 import KitImageTemplate from "@/components/KitImageTemplate";
+import CheckoutBenefitsBar from "@/components/CheckoutBenefitsBar";
 
 // ============================================================================
 // CONFIGURAÇÃO DE PRÉ-VENDA
@@ -281,27 +282,37 @@ function KitPageContent({ kit }: KitPageContentProps) {
             </motion.p>
           )}
 
-          {/* Preço */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.3 }}
-            className="flex items-baseline gap-3 mb-6"
-          >
-            {kit.oldPrice && kit.oldPrice > kit.price && (
-              <p className="text-lg text-brand-softblack/40 line-through font-light">
-                {formatPrice(kit.oldPrice)}
+          {/* Preço + faixa de benefícios */}
+          <div className="space-y-4 mb-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+              className="flex items-baseline gap-3"
+            >
+              {kit.oldPrice && kit.oldPrice > kit.price && (
+                <p className="text-lg text-brand-softblack/40 line-through font-light">
+                  {formatPrice(kit.oldPrice)}
+                </p>
+              )}
+              <p className="text-2xl font-light text-brand-softblack">
+                {formatPrice(kit.price)}
               </p>
-            )}
-            <p className="text-2xl font-light text-brand-softblack">
-              {formatPrice(kit.price)}
-            </p>
-            {kit.oldPrice && kit.oldPrice > kit.price && (
-              <span className="text-xs uppercase tracking-wider text-brand-green font-medium">
-                Economia de {formatPrice(kit.oldPrice - kit.price)}
-              </span>
-            )}
-          </motion.div>
+              {kit.oldPrice && kit.oldPrice > kit.price && (
+                <span className="text-xs uppercase tracking-wider text-brand-green font-medium">
+                  Economia de {formatPrice(kit.oldPrice - kit.price)}
+                </span>
+              )}
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.35 }}
+            >
+              <CheckoutBenefitsBar />
+            </motion.div>
+          </div>
 
           {/* Descrição */}
           <div className="border-t border-b py-6 mb-8 text-gray-600 font-light leading-relaxed">

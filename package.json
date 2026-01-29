@@ -17,6 +17,7 @@
     "framer-motion": "^12.26.2",
     "lenis": "^1.3.17",
     "lucide-react": "^0.468.0",
+    "mercadopago": "^2.12.0",
     "next": "16.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
