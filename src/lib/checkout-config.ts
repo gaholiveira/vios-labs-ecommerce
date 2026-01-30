@@ -8,6 +8,10 @@ export const FIXED_SHIPPING_REAIS = 25;
 export const PIX_DISCOUNT_PERCENT = 0.05; // 5% no PIX
 export const MAX_INSTALLMENTS = 3;
 
+/** Cupom de teste (produção): 90% de desconto no subtotal. Uso apenas para testes. */
+export const COUPON_CODE_TESTE90 = "TESTE90";
+export const COUPON_TESTE90_DISCOUNT_PERCENT = 0.9;
+
 /** Fuso horário para expiração e exibição do PIX (Brasil) */
 export const PIX_TIMEZONE = "America/Sao_Paulo";
 

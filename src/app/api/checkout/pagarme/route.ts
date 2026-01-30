@@ -10,7 +10,11 @@ import {
   type PagarmeOrderItem,
   type PagarmePayment,
 } from "@/lib/pagarme";
-import { PIX_EXPIRATION_SECONDS } from "@/lib/checkout-config";
+import {
+  PIX_EXPIRATION_SECONDS,
+  COUPON_CODE_TESTE90,
+  COUPON_TESTE90_DISCOUNT_PERCENT,
+} from "@/lib/checkout-config";
 import type { ReserveInventoryResponse } from "@/types/database";
 
 export const runtime = "nodejs";
@@ -64,10 +68,12 @@ interface PagarmeCheckoutRequestBody {
   customerEmail?: string | null;
   paymentMethod: "pix" | "card";
   installmentOption?: "1x" | "2x" | "3x";
-  /** Token do cartão (tokenizecard); aceita camelCase ou snake_case */
+  /** Token do cartão; aceita camelCase ou snake_case */
   cardToken?: string | null;
   card_token?: string | null;
   checkoutData: CheckoutFormData;
+  /** Cupom de teste: TESTE90 = 90% de desconto no subtotal */
+  couponCode?: string | null;
 }
 
 // ============================================================================
@@ -288,7 +294,12 @@ export async function POST(req: Request) {
     const shippingReais = isFreeShipping ? 0 : FIXED_SHIPPING_REAIS;
     const pixDiscount =
       paymentMethod === "pix" ? subtotal * PIX_DISCOUNT_PERCENT : 0;
-    const totalReais = subtotal + shippingReais - pixDiscount;
+    const couponDiscount =
+      body.couponCode?.trim() === COUPON_CODE_TESTE90
+        ? subtotal * COUPON_TESTE90_DISCOUNT_PERCENT
+        : 0;
+    const totalReais =
+      subtotal + shippingReais - pixDiscount - couponDiscount;
     const totalCents = Math.round(totalReais * 100);
 
     const supabase = getSupabaseAdmin();
@@ -363,21 +374,19 @@ export async function POST(req: Request) {
         }
       }
 
-      // Todos os preços em centavos (inteiros): Math.round(price * 100) para evitar dízimas.
+      // Todos os preços em centavos (inteiros). Desconto PIX + cupom distribuído nos itens (mín. 1 cent/un).
       const pixDiscountCents = Math.round(pixDiscount * 100);
-      const pagarmeItems: PagarmeOrderItem[] = items.map((item, index) => {
+      const couponDiscountCents = Math.round(couponDiscount * 100);
+      let remainingDiscountCents = pixDiscountCents + couponDiscountCents;
+      const pagarmeItems: PagarmeOrderItem[] = items.map((item) => {
         let amountCents = Math.round(Number(item.price) * 100);
-        if (
-          index === 0 &&
-          paymentMethod === "pix" &&
-          pixDiscountCents > 0 &&
-          item.quantity > 0
-        ) {
+        if (remainingDiscountCents > 0 && item.quantity > 0) {
           const itemTotalCents = amountCents * item.quantity;
           const discountApplied = Math.min(
-            pixDiscountCents,
+            remainingDiscountCents,
             itemTotalCents - item.quantity,
           );
+          remainingDiscountCents -= discountApplied;
           amountCents = Math.max(
             1,
             Math.round((itemTotalCents - discountApplied) / item.quantity),

@@ -107,6 +107,12 @@ export async function POST(req: NextRequest) {
   try {
     const payload = (await req.json()) as PagarmeWebhookPayload;
 
+    console.log("[PAGARME WEBHOOK] Recebido:", {
+      type: payload.type,
+      dataId: payload.data?.id,
+      hasData: Boolean(payload.data),
+    });
+
     if (payload.type !== "order.paid" || !payload.data?.id) {
       return NextResponse.json({ received: true });
     }
@@ -178,10 +184,12 @@ export async function POST(req: NextRequest) {
     if (orderError || !createdOrder) {
       console.error("[PAGARME WEBHOOK] Error creating order:", orderError);
       return NextResponse.json(
-        { error: "Failed to create order" },
+        { error: "Failed to create order", details: orderError?.message },
         { status: 500 },
       );
     }
+
+    console.log("[PAGARME WEBHOOK] Pedido criado no banco:", createdOrder.id);
 
     const items = payload.data.items ?? [];
     const orderItems: Array<{
@@ -242,6 +250,7 @@ export async function POST(req: NextRequest) {
         customerEmail,
         customerName,
       });
+      console.log("[PAGARME WEBHOOK] E-mail enviado para:", customerEmail);
     } catch (emailErr) {
       console.error("[PAGARME WEBHOOK] sendOrderConfirmation error:", emailErr);
     }

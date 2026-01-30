@@ -47,6 +47,7 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPreparingMessage, setShowPreparingMessage] = useState(false);
   const [pixModalOpen, setPixModalOpen] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
 
   viewRef.current = view;
 
@@ -97,6 +98,7 @@ export default function CheckoutPage() {
               items,
               userId,
               paymentMethod: "pix",
+              couponCode: couponCode.trim() || null,
               checkoutData: {
                 email: emailVal,
                 cpf: data.cpf,
@@ -170,11 +172,12 @@ export default function CheckoutPage() {
           items,
           userId,
           installmentOption: opt,
+          couponCode: couponCode.trim() || null,
         });
         setView("card_form");
       }
     },
-    [cart, paymentMethod, installmentOption, user?.id],
+    [cart, paymentMethod, installmentOption, user?.id, couponCode],
   );
 
   const handlePaymentSuccess = useCallback(
@@ -257,6 +260,26 @@ export default function CheckoutPage() {
                         <>R$ {formatBRL(shippingReais)} — entrega padrão</>
                       )}
                     </p>
+                  </div>
+
+                  {/* Cupom (opcional — teste) */}
+                  <div
+                    className="py-4 border-t border-[0.5px] px-6 md:px-8"
+                    style={{ borderColor: "rgba(27,43,34,0.1)" }}
+                  >
+                    <label htmlFor="checkout-coupon" className="block text-[10px] uppercase tracking-[0.2em] opacity-60 mb-2">
+                      Cupom
+                    </label>
+                    <input
+                      id="checkout-coupon"
+                      type="text"
+                      placeholder="Código do cupom"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.trim().toUpperCase())}
+                      className="w-full bg-white/70 border border-gray-200 rounded-sm px-3 py-2.5 text-sm font-light text-brand-softblack placeholder:text-gray-400 focus:outline-none focus:border-brand-green"
+                      style={{ color: CHECKOUT_INK }}
+                      aria-label="Cupom de desconto"
+                    />
                   </div>
 
                   {/* Pagamento: toggle elegante PIX (5% OFF) | Cartão (3x sem juros) */}

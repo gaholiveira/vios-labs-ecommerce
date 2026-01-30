@@ -34,6 +34,8 @@ export type CheckoutPaymentPayload =
       items: CheckoutCartItem[];
       userId: string | null;
       installmentOption: "1x" | "2x" | "3x";
+      /** Cupom de teste (ex.: TESTE90) */
+      couponCode?: string | null;
     };
 
 /** Dados do formulário de checkout (entrega + fiscal) */

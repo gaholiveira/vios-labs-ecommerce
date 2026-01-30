@@ -267,6 +267,7 @@ function PagarmeCardStep({
   items,
   userId,
   installmentOption,
+  couponCode,
   onSuccess,
   onError,
 }: {
@@ -274,6 +275,7 @@ function PagarmeCardStep({
   items: CheckoutCartItem[];
   userId: string | null;
   installmentOption: "1x" | "2x" | "3x";
+  couponCode?: string | null;
   onSuccess: (id: string) => void;
   onError: (message: string) => void;
 }) {
@@ -306,6 +308,7 @@ function PagarmeCardStep({
             cardToken,
             card_token: cardToken,
             checkoutData,
+            couponCode: couponCode?.trim() || null,
           }),
         });
         const data = await res.json();
@@ -331,7 +334,7 @@ function PagarmeCardStep({
         setLoading(false);
       }
     },
-    [items, userId, installmentOption, checkoutData],
+    [items, userId, installmentOption, checkoutData, couponCode],
   );
 
   const handleSubmit = useCallback(
@@ -567,6 +570,7 @@ export default function CheckoutPaymentStep({
         items={payload.items}
         userId={payload.userId}
         installmentOption={payload.installmentOption}
+        couponCode={"couponCode" in payload ? payload.couponCode : null}
         onSuccess={onSuccess}
         onError={onError}
       />
