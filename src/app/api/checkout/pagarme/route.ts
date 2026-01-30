@@ -5,8 +5,8 @@ import {
   getCharge,
   extractPixFromCharge,
   isPagarmeConfigured,
-  type PagarmeAddress,
-  type PagarmeCustomer,
+  buildPagarmeCustomer,
+  buildPagarmeAddress,
   type PagarmeOrderItem,
   type PagarmePayment,
 } from "@/lib/pagarme";
@@ -381,35 +381,11 @@ export async function POST(req: Request) {
         });
       }
 
-      const address: PagarmeAddress = {
-        line_1: [checkoutData.address.street, checkoutData.address.number]
-          .filter(Boolean)
-          .join(", "),
-        line_2: checkoutData.address.complement || undefined,
-        zip_code: onlyDigits(checkoutData.address.cep),
-        city: checkoutData.address.city,
-        state: checkoutData.address.state,
-        country: "BR",
-      };
-
-      const phoneDigits = onlyDigits(checkoutData.phone || "");
-      const mobile =
-        phoneDigits.length >= 10
-          ? {
-              country_code: "55",
-              area_code: phoneDigits.slice(0, 2),
-              number: phoneDigits.slice(2),
-            }
-          : undefined;
-
-      const customer: PagarmeCustomer = {
-        name: "Cliente VIOS",
-        email,
-        document: onlyDigits(checkoutData.cpf),
-        type: "individual",
+      const address = buildPagarmeAddress(checkoutData.address);
+      const customer = buildPagarmeCustomer(
+        { ...checkoutData, email },
         address,
-        phones: mobile ? { mobile_phone: mobile } : undefined,
-      };
+      );
 
       const payments: PagarmePayment[] =
         paymentMethod === "pix"
@@ -418,7 +394,7 @@ export async function POST(req: Request) {
               {
                 payment_method: "credit_card",
                 credit_card: {
-                  card_token: cardToken!,
+                  card: { token: cardToken! },
                   installments:
                     installmentOption === "2x"
                       ? 2

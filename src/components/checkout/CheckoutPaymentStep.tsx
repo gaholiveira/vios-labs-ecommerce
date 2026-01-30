@@ -8,17 +8,23 @@ import type {
 } from "@/types/checkout";
 import { getCardBrandFromNumber, type CardBrand } from "@/lib/card-brand";
 
-const PAGARME_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAGARME_PUBLIC_KEY ?? "";
+/**
+ * API v5 Pagar.me: o token do cartão é gerado no frontend com a Public Key (pk_test_... ou pk_live_...).
+ * Defina NEXT_PUBLIC_PAGARME_PUBLIC_KEY (ex.: pk_vRa98QI1) para o tokenizecard.js gerar o token.
+ */
+const PAGARME_PUBLIC_KEY =
+  process.env.NEXT_PUBLIC_PAGARME_PUBLIC_KEY?.trim() ?? "";
 const TOKENIZECARD_SCRIPT = "https://checkout.pagar.me/v1/tokenizecard.js";
 
 declare global {
   interface Window {
     PagarmeCheckout?: {
       init: (
-        success: (data: {
-          pagarmetoken?: string;
-          [k: string]: unknown;
-        }) => boolean | void,
+        success: (
+          data:
+            | string
+            | { pagarmetoken?: string; [k: string]: unknown },
+        ) => boolean | void,
         fail: (error: unknown) => void,
       ) => void;
     };
@@ -292,6 +298,7 @@ function PagarmeCardStep({
   const [expDateDigits, setExpDateDigits] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   const submittedRef = useRef(false);
+  const lastTokenErrorAt = useRef(0);
   const onSuccessRef = useRef(onSuccess);
   const onErrorRef = useRef(onError);
   onSuccessRef.current = onSuccess;
@@ -346,35 +353,69 @@ function PagarmeCardStep({
 
   useEffect(() => {
     if (!PAGARME_PUBLIC_KEY) return;
+    if (
+      process.env.NODE_ENV === "development" &&
+      !PAGARME_PUBLIC_KEY.startsWith("pk_")
+    ) {
+      console.warn(
+        "[Pagar.me] API v5 exige Public Key (pk_test_... ou pk_live_...). Verifique NEXT_PUBLIC_PAGARME_PUBLIC_KEY.",
+      );
+    }
     const script = document.createElement("script");
-    script.src = `${TOKENIZECARD_SCRIPT}?appId=${encodeURIComponent(PAGARME_PUBLIC_KEY)}`;
+    const params = new URLSearchParams({
+      appId: PAGARME_PUBLIC_KEY,
+      public_key: PAGARME_PUBLIC_KEY,
+    });
+    script.src = `${TOKENIZECARD_SCRIPT}?${params.toString()}`;
     script.setAttribute("data-pagarmecheckout-app-id", PAGARME_PUBLIC_KEY);
     script.async = true;
     script.onload = () => {
       if (window.PagarmeCheckout?.init) {
         window.PagarmeCheckout.init(
           (data) => {
+            if (submittedRef.current) return true;
+            const tokenStr = (s: unknown) =>
+              typeof s === "string" && s.trim() ? s.trim() : null;
+            if (typeof data === "string" && data.trim()) {
+              const t = data.trim();
+              if (formRef.current) {
+                submitWithToken(t);
+                return false;
+              }
+            }
             const obj =
               data && typeof data === "object"
                 ? (data as Record<string, unknown>)
                 : null;
             const token =
-              (typeof obj?.pagarmetoken === "string" && obj.pagarmetoken.trim()
-                ? obj.pagarmetoken.trim()
+              tokenStr(obj?.pagarmetoken) ||
+              tokenStr(obj?.token) ||
+              tokenStr(obj?.card_token) ||
+              tokenStr(obj?.id) ||
+              tokenStr(obj?.token_id) ||
+              (obj?.card && typeof obj.card === "object" && obj.card !== null
+                ? tokenStr((obj.card as Record<string, unknown>).token)
                 : null) ||
-              (typeof obj?.token === "string" && obj.token.trim()
-                ? obj.token.trim()
-                : null) ||
-              (typeof obj?.card_token === "string" && obj.card_token.trim()
-                ? obj.card_token.trim()
+              (obj?.data && typeof obj.data === "object" && obj.data !== null
+                ? tokenStr((obj.data as Record<string, unknown>).token)
                 : null);
             if (token && formRef.current) {
               submitWithToken(token);
               return false;
             }
-            onErrorRef.current(
-              "Não foi possível gerar o token do cartão. Verifique os dados e tente novamente.",
-            );
+            if (process.env.NODE_ENV === "development" && obj) {
+              console.warn(
+                "[Tokenizecard] Resposta sem token reconhecido:",
+                obj,
+              );
+            }
+            const now = Date.now();
+            if (now - lastTokenErrorAt.current > 1500) {
+              lastTokenErrorAt.current = now;
+              onErrorRef.current(
+                "Não foi possível gerar o token do cartão. Verifique os dados e tente novamente.",
+              );
+            }
             return true;
           },
           (err) => {
@@ -582,8 +623,9 @@ export default function CheckoutPaymentStep({
     if (!PAGARME_PUBLIC_KEY) {
       return (
         <p className="text-sm text-amber-700">
-          Chave pública do Pagar.me não configurada
-          (NEXT_PUBLIC_PAGARME_PUBLIC_KEY).
+          Chave pública do Pagar.me não configurada. Configure{" "}
+          <code className="text-xs">NEXT_PUBLIC_PAGARME_PUBLIC_KEY</code> com
+          a Public Key (ex.: pk_vRa98QI1) para gerar o token no frontend (API v5).
         </p>
       );
     }

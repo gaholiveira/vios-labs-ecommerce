@@ -54,6 +54,8 @@ interface CheckoutFormProps {
   embedded?: boolean;
   /** Rótulo do botão de submit quando embedded (ex.: "Finalizar compra") */
   submitLabel?: string;
+  /** Conteúdo opcional entre Endereço e Ações (ex.: Frete + Seletor de pagamento) */
+  children?: React.ReactNode;
 }
 
 /**
@@ -73,6 +75,7 @@ export default function CheckoutForm({
   orderSummary,
   embedded = false,
   submitLabel,
+  children,
 }: CheckoutFormProps) {
   // Estados do formulário (email: inicial do usuário logado ou vazio para guest)
   const [email, setEmail] = useState(initialEmail ?? "");
@@ -762,6 +765,8 @@ export default function CheckoutForm({
                 </div>
               </div>
             </div>
+
+            {children}
 
             {/* Ações */}
             <div className="flex flex-col-reverse md:flex-row md:items-center gap-3 md:justify-between pt-2">

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { sendOrderConfirmationEmail } from "@/lib/email";
 import { isPagarmeConfigured } from "@/lib/pagarme";
 
 export const runtime = "nodejs";
@@ -53,7 +54,7 @@ interface PagarmeWebhookPayload {
   };
 }
 
-async function sendOrderConfirmationEmail({
+async function dispatchOrderConfirmationEmail({
   order,
   orderItems,
   customerEmail,
@@ -69,32 +70,22 @@ async function sendOrderConfirmationEmail({
   customerEmail: string;
   customerName: string | null;
 }) {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    (process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000");
-  const res = await fetch(`${baseUrl}/api/send-order-confirmation`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      customerEmail,
-      customerName,
-      orderId: order.id,
-      orderDate: order.created_at,
-      totalAmount: order.total_amount,
-      items: orderItems.map((i) => ({
-        product_name: i.product_name,
-        quantity: i.quantity,
-        price: i.price,
-        product_image: i.product_image,
-      })),
-      orderUrl: `${baseUrl}/orders`,
-    }),
+  const result = await sendOrderConfirmationEmail({
+    customerEmail,
+    customerName,
+    orderId: order.id,
+    orderDate: order.created_at,
+    totalAmount: order.total_amount,
+    status: "Pago",
+    items: orderItems.map((i) => ({
+      product_name: i.product_name,
+      quantity: i.quantity,
+      price: i.price,
+      product_image: i.product_image,
+    })),
   });
-  if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(err?.error || "Failed to send email");
+  if (!result.success) {
+    throw new Error(result.error ?? "Failed to send email");
   }
 }
 
@@ -245,7 +236,7 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      await sendOrderConfirmationEmail({
+      await dispatchOrderConfirmationEmail({
         order: createdOrder,
         orderItems,
         customerEmail,
