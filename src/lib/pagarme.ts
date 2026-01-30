@@ -188,11 +188,11 @@ export interface PagarmePaymentPix {
   };
 }
 
-/** Pagamento cartão — API v5: token gerado no front com pagarme-js (pk_...); parcelas fixas (ex.: 3). */
+/** Pagamento cartão — API v5: token + billing_address (obrigatório; endereço não é tokenizado). */
 export interface PagarmePaymentCreditCard {
   payment_method: "credit_card";
   credit_card: {
-    card: { token: string };
+    card: { token: string; billing_address: PagarmeAddress };
     installments: number;
     statement_descriptor?: string;
   };

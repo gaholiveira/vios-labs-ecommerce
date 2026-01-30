@@ -318,7 +318,10 @@ export async function checkoutAction(input: unknown): Promise<CheckoutResult> {
             {
               payment_method: "credit_card",
               credit_card: {
-                card: { token: cardToken! },
+                card: {
+                  token: cardToken!,
+                  billing_address: address,
+                },
                 installments: 3,
                 statement_descriptor: "VIOS LABS",
               },

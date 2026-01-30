@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, useReducedMotion } from "framer-motion";
 import AboutSection from "@/components/AboutSection";
 import ProductCard from "@/components/ProductCard";
 import KitCard from "@/components/KitCard";
@@ -126,7 +126,7 @@ export default function Home() {
             fill
             priority
             quality={90}
-            sizes="100vw"
+            sizes="(max-width: 768px) 100vw, 1920px"
             className="object-cover object-center"
             placeholder="blur"
             blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWEREiMxUf/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
@@ -134,7 +134,7 @@ export default function Home() {
         </div>
 
         {/* Overlay para escurecer a imagem e destacar o texto */}
-        <div className="absolute inset-0 bg-black/30 z-[1] md:transition-opacity md:duration-500 md:ease-out md:group-hover:bg-black/25" />
+        <div className="absolute inset-0 z-1 bg-black/30 md:transition-opacity md:duration-500 md:ease-out md:group-hover:bg-black/25" />
 
         {/* Conteúdo do Banner com micro-interações */}
         <div className="relative z-10 text-center px-4">
@@ -233,27 +233,28 @@ export default function Home() {
 function ProductsGrid({ products }: { products: typeof PRODUCTS }) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const reducedMotion = useReducedMotion();
 
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
+        staggerChildren: reducedMotion ? 0 : 0.1,
       },
     },
   };
 
   const cardVariants = {
     hidden: {
-      opacity: 0,
-      y: 20,
+      opacity: reducedMotion ? 1 : 0,
+      y: reducedMotion ? 0 : 20,
     },
     show: {
       opacity: 1,
       y: 0,
       transition: {
-        duration: 0.5,
+        duration: reducedMotion ? 0 : 0.5,
         ease: "easeOut" as const,
       },
     },
@@ -286,29 +287,30 @@ function ProductsGrid({ products }: { products: typeof PRODUCTS }) {
 function KitsGrid({ kits }: { kits: typeof KITS }) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const reducedMotion = useReducedMotion();
 
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.15,
+        staggerChildren: reducedMotion ? 0 : 0.15,
       },
     },
   };
 
   const cardVariants = {
     hidden: {
-      opacity: 0,
-      y: 30,
-      scale: 0.95,
+      opacity: reducedMotion ? 1 : 0,
+      y: reducedMotion ? 0 : 30,
+      scale: reducedMotion ? 1 : 0.95,
     },
     show: {
       opacity: 1,
       y: 0,
       scale: 1,
       transition: {
-        duration: 0.6,
+        duration: reducedMotion ? 0 : 0.6,
         ease: "easeOut" as const,
       },
     },
