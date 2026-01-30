@@ -110,7 +110,8 @@ export function buildPagarmeCustomer(
   input: CheckoutFormCustomerInput,
   address: PagarmeAddress,
 ): PagarmeCustomer {
-  const doc = onlyDigits(input.cpf);
+  // CPF: apenas dígitos (sem pontos ou traços) — obrigatório em produção
+  const doc = onlyDigits(String(input.cpf ?? ""));
   if (doc.length !== 11) {
     throw new Error(
       "CPF deve conter 11 dígitos (apenas números). Pagar.me v5 exige document rigoroso.",
@@ -130,9 +131,17 @@ export function buildPagarmeCustomer(
   const name =
     (input.fullName ?? input.name)?.trim() || "Cliente VIOS";
 
+  // E-mail: válido, trim e lowercase — obrigatório em produção
+  const email = String(input.email ?? "").trim().toLowerCase();
+  if (!email || email.length < 5 || !email.includes("@")) {
+    throw new Error(
+      "E-mail válido é obrigatório para o checkout. Pagar.me v5 exige customer.email.",
+    );
+  }
+
   return {
     name,
-    email: input.email.trim().toLowerCase(),
+    email,
     document: doc,
     type: "individual",
     address,
@@ -164,13 +173,13 @@ export function buildPagarmeAddress(input: {
   };
 }
 
-/** Pagamento PIX — objeto pix obrigatório na API v5; expires_in em minutos */
+/** Pagamento PIX — objeto pix obrigatório na API v5 */
 export interface PagarmePaymentPix {
   payment_method: "pix";
   pix: {
-    /** Tempo até expiração do QR code, em minutos (ex.: 30) */
+    /** Tempo até expiração em segundos (ex.: 3600 = 1h). Opcional se enviar expires_at. */
     expires_in?: number;
-    /** Ou data/hora de expiração em Unix timestamp */
+    /** Data/hora de expiração em Unix timestamp (segundos). Preferir quando usar fuso America/Sao_Paulo para consistência. */
     expires_at?: number;
   };
 }
@@ -290,13 +299,13 @@ export async function createOrder(
   };
 
   if (!res.ok) {
-    // Log completo em dev para debugar validação da API
-    if (process.env.NODE_ENV === "development") {
-      console.error(
-        "[PAGARME] API error response:",
-        JSON.stringify(data, null, 2),
-      );
-    }
+    // Log completo (dev e produção) para diagnosticar Chave Inválida / Dados Incompletos
+    console.error("[PAGARME] API error response:", {
+      status: res.status,
+      message: data.message,
+      errors: data.errors,
+      full: JSON.stringify(data, null, 2),
+    });
     const errorsStr =
       data.errors && typeof data.errors === "object"
         ? Object.entries(data.errors)

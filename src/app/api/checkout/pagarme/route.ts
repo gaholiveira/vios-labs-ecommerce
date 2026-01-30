@@ -10,6 +10,7 @@ import {
   type PagarmeOrderItem,
   type PagarmePayment,
 } from "@/lib/pagarme";
+import { getPixExpiresAt } from "@/lib/checkout-config";
 import type { ReserveInventoryResponse } from "@/types/database";
 
 export const runtime = "nodejs";
@@ -389,7 +390,7 @@ export async function POST(req: Request) {
 
       const payments: PagarmePayment[] =
         paymentMethod === "pix"
-          ? [{ payment_method: "pix", pix: { expires_in: 30 } }]
+          ? [{ payment_method: "pix", pix: { expires_at: getPixExpiresAt() } }]
           : [
               {
                 payment_method: "credit_card",

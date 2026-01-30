@@ -13,6 +13,7 @@ import {
   FREE_SHIPPING_THRESHOLD,
   FIXED_SHIPPING_REAIS,
   PIX_DISCOUNT_PERCENT,
+  getPixExpiresAt,
 } from "@/lib/checkout-config";
 
 // ============================================================================
@@ -305,7 +306,7 @@ export async function checkoutAction(input: unknown): Promise<CheckoutResult> {
 
     const payments: PagarmePayment[] =
       paymentMethod === "pix"
-        ? [{ payment_method: "pix", pix: { expires_in: 30 } }]
+        ? [{ payment_method: "pix", pix: { expires_at: getPixExpiresAt() } }]
         : [
             {
               payment_method: "credit_card",
@@ -427,6 +428,7 @@ export async function checkoutAction(input: unknown): Promise<CheckoutResult> {
     };
   } catch (orderError: unknown) {
     for (const id of reservationIds) await releaseReservations(supabase, id);
+    // Retornar a mensagem original da API Pagar.me (Chave Inválida, Dados Incompletos, etc.)
     const msg =
       orderError instanceof Error
         ? orderError.message
