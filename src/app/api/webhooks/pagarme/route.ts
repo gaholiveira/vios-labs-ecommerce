@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { PRODUCTS } from "@/constants/products";
 import { sendOrderConfirmationEmail } from "@/lib/email";
 import { isPagarmeConfigured } from "@/lib/pagarme";
+
+const productImageById = new Map(PRODUCTS.map((p) => [p.id, p.image]));
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -192,6 +195,10 @@ export async function POST(req: NextRequest) {
     console.log("[PAGARME WEBHOOK] Pedido criado no banco:", createdOrder.id);
 
     const items = payload.data.items ?? [];
+    const baseUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      process.env.NEXT_PUBLIC_VERCEL_URL ||
+      "https://www.vioslabs.com.br";
     const orderItems: Array<{
       order_id: string;
       product_id: string;
@@ -207,13 +214,17 @@ export async function POST(req: NextRequest) {
       const productId = code || item.id;
       const unitPrice =
         item.quantity > 0 ? item.amount / 100 / item.quantity : 0;
+      let productImage: string | null = productImageById.get(productId) ?? null;
+      if (productImage && productImage.startsWith("/")) {
+        productImage = `${baseUrl}${productImage}`;
+      }
       orderItems.push({
         order_id: createdOrder.id,
         product_id: productId,
         product_name: item.description ?? "Produto",
         quantity: item.quantity,
         price: unitPrice,
-        product_image: null,
+        product_image: productImage,
       });
     }
 
