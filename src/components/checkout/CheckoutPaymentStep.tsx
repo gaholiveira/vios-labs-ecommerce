@@ -354,24 +354,49 @@ function PagarmeCardStep({
         return;
       }
       setLoading(true);
-      const card = {
-        card_number: cardNumber,
-        card_holder_name: holderName,
-        card_expiration_date: expiry,
-        card_cvv: cvv,
-      };
+      const expMonth = parseInt(expiry.slice(0, 2), 10);
+      const expYearTwo = expiry.slice(2, 4);
+      const expYear = 2000 + parseInt(expYearTwo, 10);
       try {
-        const pagarme = (await import("pagarme/browser")).default;
-        const cardToken = await pagarme.client
-          .connect({
-            encryption_key: PAGARME_PUBLIC_KEY,
-          })
-          .then((client) => client.security.encrypt(card));
-        if (cardToken && typeof cardToken === "string" && cardToken.trim()) {
-          await submitWithToken(cardToken.trim());
+        const res = await fetch(
+          `https://api.pagar.me/core/v5/tokens?appId=${encodeURIComponent(PAGARME_PUBLIC_KEY)}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: "card",
+              card: {
+                number: cardNumber,
+                holder_name: holderName,
+                exp_month: expMonth,
+                exp_year: expYear,
+                cvv,
+              },
+            }),
+          },
+        );
+        const data = (await res.json().catch(() => ({}))) as {
+          id?: string;
+          message?: string;
+          errors?: Record<string, string[]>;
+        };
+        if (!res.ok) {
+          setLoading(false);
+          const msg =
+            data.message ??
+            (data.errors && typeof data.errors === "object"
+              ? Object.values(data.errors).flat().join(", ")
+              : "Não foi possível gerar o token do cartão.");
+          console.error("[Pagar.me tokens] API error:", data);
+          alert(msg);
+          return;
+        }
+        const tokenId = data.id?.trim();
+        if (tokenId && tokenId.length <= 36) {
+          await submitWithToken(tokenId);
         } else {
           setLoading(false);
-          alert("Não foi possível gerar o token do cartão. Tente novamente.");
+          alert("Resposta inválida da tokenização. Tente novamente.");
         }
       } catch (err) {
         setLoading(false);
@@ -381,12 +406,10 @@ function PagarmeCardStep({
             ? String(errObj.message)
             : errObj?.error != null
               ? String(errObj.error)
-              : errObj?.msg != null
-                ? String(errObj.msg)
-                : err && typeof err === "object" && "message" in err
-                  ? String((err as { message: unknown }).message)
-                  : "Não foi possível validar o cartão. Verifique os dados e tente novamente.";
-        console.error("[Pagar.me pagarme-js] Erro ao tokenizar:", err);
+              : err && typeof err === "object" && "message" in err
+                ? String((err as { message: unknown }).message)
+                : "Não foi possível validar o cartão. Verifique os dados e tente novamente.";
+        console.error("[Pagar.me tokens] Erro ao tokenizar:", err);
         alert(message);
       }
     },

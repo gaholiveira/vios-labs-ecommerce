@@ -78,6 +78,16 @@ export default function CheckoutPage() {
       const opt = installmentOption ?? "1x";
 
       if (paymentMethod === "pix") {
+        const emailVal = (data.email ?? "").trim();
+        const addr = data.address;
+        if (!emailVal) {
+          alert("E-mail é obrigatório para o checkout.");
+          return;
+        }
+        if (!addr || !addr.cep?.trim() || !addr.street?.trim() || !addr.number?.trim() || !addr.neighborhood?.trim() || !addr.city?.trim() || !addr.state?.trim()) {
+          alert("Preencha o endereço completo: CEP, logradouro, número, bairro, cidade e estado.");
+          return;
+        }
         setIsSubmitting(true);
         try {
           const res = await fetch("/api/checkout/pagarme", {
@@ -87,7 +97,20 @@ export default function CheckoutPage() {
               items,
               userId,
               paymentMethod: "pix",
-              checkoutData: data,
+              checkoutData: {
+                email: emailVal,
+                cpf: data.cpf,
+                phone: data.phone,
+                address: {
+                  cep: addr.cep.trim(),
+                  street: addr.street.trim(),
+                  number: addr.number.trim(),
+                  complement: addr.complement?.trim(),
+                  neighborhood: addr.neighborhood.trim(),
+                  city: addr.city.trim(),
+                  state: addr.state.trim(),
+                },
+              },
             }),
           });
           const json = await res.json().catch(() => ({}));
@@ -117,10 +140,33 @@ export default function CheckoutPage() {
       }
 
       if (paymentMethod === "card") {
+        const emailVal = (data.email ?? "").trim();
+        const addr = data.address;
+        if (!emailVal) {
+          alert("E-mail é obrigatório para o checkout.");
+          return;
+        }
+        if (!addr || !addr.cep?.trim() || !addr.street?.trim() || !addr.number?.trim() || !addr.neighborhood?.trim() || !addr.city?.trim() || !addr.state?.trim()) {
+          alert("Preencha o endereço completo: CEP, logradouro, número, bairro, cidade e estado.");
+          return;
+        }
         setPaymentPayload({
           provider: "pagarme",
           paymentMethod: "card",
-          checkoutData: data,
+          checkoutData: {
+            email: emailVal,
+            cpf: data.cpf,
+            phone: data.phone,
+            address: {
+              cep: addr.cep.trim(),
+              street: addr.street.trim(),
+              number: addr.number.trim(),
+              complement: addr.complement?.trim(),
+              neighborhood: addr.neighborhood.trim(),
+              city: addr.city.trim(),
+              state: addr.state.trim(),
+            },
+          },
           items,
           userId,
           installmentOption: opt,

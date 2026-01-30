@@ -10,7 +10,7 @@ import {
   type PagarmeOrderItem,
   type PagarmePayment,
 } from "@/lib/pagarme";
-import { getPixExpiresAt } from "@/lib/checkout-config";
+import { PIX_EXPIRATION_SECONDS } from "@/lib/checkout-config";
 import type { ReserveInventoryResponse } from "@/types/database";
 
 export const runtime = "nodejs";
@@ -220,14 +220,41 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!checkoutData || typeof checkoutData !== "object") {
+      return NextResponse.json(
+        { error: "Dados do checkout são obrigatórios (checkoutData)." },
+        { status: 400 },
+      );
+    }
+
     const email =
-      checkoutData?.email?.trim()?.toLowerCase() ||
+      checkoutData.email?.trim()?.toLowerCase() ||
       bodyEmail?.trim()?.toLowerCase() ||
       "";
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || !emailRegex.test(email)) {
       return NextResponse.json(
         { error: "E-mail válido é obrigatório para o checkout." },
+        { status: 400 },
+      );
+    }
+
+    const addr = checkoutData.address;
+    if (!addr || typeof addr !== "object") {
+      return NextResponse.json(
+        { error: "Endereço é obrigatório (checkoutData.address)." },
+        { status: 400 },
+      );
+    }
+    const requiredAddressFields = ["cep", "street", "number", "neighborhood", "city", "state"] as const;
+    const missingAddress = requiredAddressFields.filter(
+      (f) => !addr[f] || String(addr[f]).trim() === "",
+    );
+    if (missingAddress.length > 0) {
+      return NextResponse.json(
+        {
+          error: `Endereço incompleto. Preencha: ${missingAddress.join(", ")}.`,
+        },
         { status: 400 },
       );
     }
@@ -385,7 +412,7 @@ export async function POST(req: Request) {
 
       const payments: PagarmePayment[] =
         paymentMethod === "pix"
-          ? [{ payment_method: "pix", pix: { expires_at: getPixExpiresAt() } }]
+          ? [{ payment_method: "pix", pix: { expires_in: PIX_EXPIRATION_SECONDS } }]
           : [
               {
                 payment_method: "credit_card",

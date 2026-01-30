@@ -13,7 +13,7 @@ import {
   FREE_SHIPPING_THRESHOLD,
   FIXED_SHIPPING_REAIS,
   PIX_DISCOUNT_PERCENT,
-  getPixExpiresAt,
+  PIX_EXPIRATION_SECONDS,
 } from "@/lib/checkout-config";
 
 // ============================================================================
@@ -313,7 +313,7 @@ export async function checkoutAction(input: unknown): Promise<CheckoutResult> {
 
     const payments: PagarmePayment[] =
       paymentMethod === "pix"
-        ? [{ payment_method: "pix", pix: { expires_at: getPixExpiresAt() } }]
+        ? [{ payment_method: "pix", pix: { expires_in: PIX_EXPIRATION_SECONDS } }]
         : [
             {
               payment_method: "credit_card",
