@@ -4,8 +4,8 @@
  * Nunca trafegar dados abertos do cartão no servidor.
  *
  * Chaves:
- * - Frontend (criptografia/tokenização): Public Key (pk_test_... ou pk_live_...) via NEXT_PUBLIC_PAGARME_PUBLIC_KEY.
- * - Backend (criação de pedidos): Secret Key (sk_test_... ou sk_live_...) via PAGARME_SECRET_KEY.
+ * - Frontend (tokenização): apenas pagarme-js com Public Key (pk_...) — sem APIs v1 (api.pagar.me/1/).
+ * - Backend (criação de pedidos): Secret Key (sk_...) via PAGARME_SECRET_KEY (lida apenas desta env).
  */
 
 const PAGARME_API_BASE = "https://api.pagar.me/core/v5";
@@ -25,7 +25,7 @@ export function isProduction(): boolean {
 }
 
 /**
- * Public Key (pk_...) — usada apenas no frontend para geração do token (tokenizecard.js).
+ * Public Key (pk_...) — usada apenas no frontend com pagarme-js para geração do token (V5).
  * Nunca use a Secret Key no cliente.
  */
 export function getPublicKey(): string {
@@ -68,9 +68,9 @@ export interface PagarmeCustomer {
   /** Pessoa física: 'individual'; PJ: 'company' */
   type: "individual" | "company";
   address?: PagarmeAddress;
-  /** DDI (country_code) e DDD (area_code) separados conforme SDK pagarmecore */
-  phones?: {
-    mobile_phone?: {
+  /** V5 exige phones. home_phone: country_code, area_code, number (objetos separados). */
+  phones: {
+    home_phone: {
       country_code: string;
       area_code: string;
       number: string;
@@ -101,37 +101,41 @@ function onlyDigits(value: string): string {
 }
 
 /**
- * Monta o objeto customer para a API Pagar.me v5 com campos fiscais rigorosos:
- * - document: apenas números (CPF 11 dígitos)
+ * Monta o objeto customer para a API Pagar.me v5:
+ * - document: apenas números — .replace(/\D/g, '')
  * - type: 'individual'
- * - phones: DDI (country_code) e DDD (area_code) separados conforme SDK pagarmecore
+ * - phones: obrigatório na V5 — home_phone: { country_code: '55', area_code: 'XX', number: 'XXXXXXXXX' }
  */
 export function buildPagarmeCustomer(
   input: CheckoutFormCustomerInput,
   address: PagarmeAddress,
 ): PagarmeCustomer {
-  // CPF: apenas dígitos (sem pontos ou traços) — obrigatório em produção
-  const doc = onlyDigits(String(input.cpf ?? ""));
+  // document: apenas números (V5 exige sem pontos/traços)
+  const doc = String(input.cpf ?? "").replace(/\D/g, "");
   if (doc.length !== 11) {
     throw new Error(
       "CPF deve conter 11 dígitos (apenas números). Pagar.me v5 exige document rigoroso.",
     );
   }
 
-  const phoneDigits = onlyDigits(input.phone);
-  const mobile =
+  const phoneDigits = onlyDigits(String(input.phone ?? ""));
+  // V5 exige phones; usar home_phone com country_code, area_code e number separados
+  const home_phone =
     phoneDigits.length >= 10
       ? {
           country_code: "55" as const,
           area_code: phoneDigits.slice(0, 2),
           number: phoneDigits.slice(2),
         }
-      : undefined;
+      : {
+          country_code: "55" as const,
+          area_code: "11",
+          number: "000000000",
+        };
 
   const name =
     (input.fullName ?? input.name)?.trim() || "Cliente VIOS";
 
-  // E-mail: válido, trim e lowercase — obrigatório em produção
   const email = String(input.email ?? "").trim().toLowerCase();
   if (!email || email.length < 5 || !email.includes("@")) {
     throw new Error(
@@ -145,7 +149,7 @@ export function buildPagarmeCustomer(
     document: doc,
     type: "individual",
     address,
-    phones: mobile ? { mobile_phone: mobile } : undefined,
+    phones: { home_phone },
   };
 }
 
@@ -184,7 +188,7 @@ export interface PagarmePaymentPix {
   };
 }
 
-/** Pagamento cartão — API v5 pagarmecore: token gerado no front (tokenizecard + pk_...); nunca dados abertos */
+/** Pagamento cartão — API v5: token gerado no front com pagarme-js (pk_...); parcelas fixas (ex.: 3). */
 export interface PagarmePaymentCreditCard {
   payment_method: "credit_card";
   credit_card: {
@@ -249,14 +253,15 @@ export interface PagarmeChargeResponse {
 // ============================================================================
 
 /**
- * Secret Key (sk_...) — usada apenas no backend para chamadas à API Pagar.me.
- * Nunca exponha no frontend (não use NEXT_PUBLIC_ para a secret).
+ * Secret Key (sk_...) — lida apenas de PAGARME_SECRET_KEY (nunca NEXT_PUBLIC_).
+ * Usada somente no backend para chamadas à API Pagar.me V5.
  */
 function getSecretKey(): string {
-  const key = process.env.PAGARME_SECRET_KEY?.trim();
+  const raw = process.env.PAGARME_SECRET_KEY;
+  const key = typeof raw === "string" ? raw.trim() : "";
   if (!key) {
     throw new Error(
-      "Missing PAGARME_SECRET_KEY. Configure no .env para usar checkout Pagar.me.",
+      "Missing PAGARME_SECRET_KEY. Configure PAGARME_SECRET_KEY no .env (ex.: sk_test_... ou sk_live_...).",
     );
   }
   if (isProduction() && key.startsWith("sk_test_")) {
@@ -299,13 +304,6 @@ export async function createOrder(
   };
 
   if (!res.ok) {
-    // Log completo (dev e produção) para diagnosticar Chave Inválida / Dados Incompletos
-    console.error("[PAGARME] API error response:", {
-      status: res.status,
-      message: data.message,
-      errors: data.errors,
-      full: JSON.stringify(data, null, 2),
-    });
     const errorsStr =
       data.errors && typeof data.errors === "object"
         ? Object.entries(data.errors)
@@ -317,7 +315,9 @@ export async function createOrder(
         : undefined;
     const message =
       data.message || errorsStr || `Pagar.me API error ${res.status}`;
-    throw new Error(message);
+    const err = new Error(message) as Error & { responseBody?: unknown };
+    err.responseBody = data;
+    throw err;
   }
 
   return data as PagarmeOrderResponse;
@@ -430,8 +430,10 @@ export function extractPixFromCharge(
 }
 
 /**
- * Verifica se o checkout Pagar.me está configurado (secret key presente).
+ * Verifica se o checkout Pagar.me está configurado (PAGARME_SECRET_KEY presente).
+ * Lê a mesma variável que getSecretKey (nunca NEXT_PUBLIC_).
  */
 export function isPagarmeConfigured(): boolean {
-  return Boolean(process.env.PAGARME_SECRET_KEY);
+  const raw = process.env.PAGARME_SECRET_KEY;
+  return typeof raw === "string" && raw.trim().length > 0;
 }

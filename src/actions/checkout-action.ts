@@ -265,9 +265,10 @@ export async function checkoutAction(input: unknown): Promise<CheckoutResult> {
       }
     }
 
+    // Todos os preços em centavos (inteiros): Math.round(price * 100) para evitar dízimas.
     const pixDiscountCents = Math.round(pixDiscount * 100);
     const pagarmeItems: PagarmeOrderItem[] = items.map((item, index) => {
-      let amountCents = Math.round(item.price * 100);
+      let amountCents = Math.round(Number(item.price) * 100);
       if (
         index === 0 &&
         paymentMethod === "pix" &&
@@ -285,7 +286,7 @@ export async function checkoutAction(input: unknown): Promise<CheckoutResult> {
         );
       }
       return {
-        amount: amountCents,
+        amount: Math.round(amountCents),
         description: item.name,
         quantity: item.quantity,
         code: item.id,
@@ -293,8 +294,9 @@ export async function checkoutAction(input: unknown): Promise<CheckoutResult> {
     });
 
     if (shippingReais > 0) {
+      const shippingCents = Math.round(Number(shippingReais) * 100);
       pagarmeItems.push({
-        amount: Math.round(shippingReais * 100),
+        amount: Math.round(shippingCents),
         description: "Frete",
         quantity: 1,
         code: "shipping",
@@ -302,7 +304,12 @@ export async function checkoutAction(input: unknown): Promise<CheckoutResult> {
     }
 
     const address = pagarme.buildPagarmeAddress(form.address);
-    const customer = pagarme.buildPagarmeCustomer(form, address);
+    // customer: document apenas números; phones V5: country_code, area_code, number (buildPagarmeCustomer já formata)
+    const customerInput = {
+      ...form,
+      cpf: onlyDigits(form.cpf),
+    };
+    const customer = pagarme.buildPagarmeCustomer(customerInput, address);
 
     const payments: PagarmePayment[] =
       paymentMethod === "pix"
@@ -428,12 +435,16 @@ export async function checkoutAction(input: unknown): Promise<CheckoutResult> {
     };
   } catch (orderError: unknown) {
     for (const id of reservationIds) await releaseReservations(supabase, id);
-    // Retornar a mensagem original da API Pagar.me (Chave Inválida, Dados Incompletos, etc.)
+    const err = orderError as Error & { responseBody?: unknown; response?: { body?: unknown } };
+    console.error(
+      "PAGARME_ERROR_DETAIL:",
+      err.responseBody ?? err.response?.body ?? err.message,
+    );
+    console.error("[CHECKOUT ACTION] createOrder error:", orderError);
     const msg =
       orderError instanceof Error
         ? orderError.message
         : "Erro ao criar pedido no Pagar.me.";
-    console.error("[CHECKOUT ACTION] createOrder error:", orderError);
     return { success: false, error: msg };
   }
 }

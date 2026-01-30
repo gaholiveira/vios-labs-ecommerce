@@ -240,17 +240,9 @@ export async function POST(req: Request) {
     }
 
     if (paymentMethod === "card") {
-      const installments =
-        installmentOption === "2x" ? 2 : installmentOption === "3x" ? 3 : 1;
-      if (installments > 1 && !cardToken) {
+      if (!cardToken) {
         return NextResponse.json(
           { error: "Token do cartão é obrigatório para pagamento com cartão." },
-          { status: 400 },
-        );
-      }
-      if (installments === 1 && !cardToken) {
-        return NextResponse.json(
-          { error: "Token do cartão é obrigatório." },
           { status: 400 },
         );
       }
@@ -344,11 +336,10 @@ export async function POST(req: Request) {
         }
       }
 
-      // Pagar.me: amount = preço unitário em centavos (>= 1); quantity = quantidade.
-      // Desconto PIX: aplicado no primeiro item (API não aceita amount negativo).
+      // Todos os preços em centavos (inteiros): Math.round(price * 100) para evitar dízimas.
       const pixDiscountCents = Math.round(pixDiscount * 100);
       const pagarmeItems: PagarmeOrderItem[] = items.map((item, index) => {
-        let amountCents = Math.round(item.price * 100);
+        let amountCents = Math.round(Number(item.price) * 100);
         if (
           index === 0 &&
           paymentMethod === "pix" &&
@@ -366,7 +357,7 @@ export async function POST(req: Request) {
           );
         }
         return {
-          amount: amountCents,
+          amount: Math.round(amountCents),
           description: item.name,
           quantity: item.quantity,
           code: item.id,
@@ -374,8 +365,9 @@ export async function POST(req: Request) {
       });
 
       if (shippingReais > 0) {
+        const shippingCents = Math.round(Number(shippingReais) * 100);
         pagarmeItems.push({
-          amount: Math.round(shippingReais * 100),
+          amount: Math.round(shippingCents),
           description: "Frete",
           quantity: 1,
           code: "shipping",
@@ -383,10 +375,13 @@ export async function POST(req: Request) {
       }
 
       const address = buildPagarmeAddress(checkoutData.address);
-      const customer = buildPagarmeCustomer(
-        { ...checkoutData, email },
-        address,
-      );
+      // customer: document apenas números (buildPagarmeCustomer usa .replace(/\D/g,'')); phones V5: country_code, area_code, number
+      const customerInput = {
+        ...checkoutData,
+        email,
+        cpf: onlyDigits(checkoutData.cpf),
+      };
+      const customer = buildPagarmeCustomer(customerInput, address);
 
       const payments: PagarmePayment[] =
         paymentMethod === "pix"
@@ -396,12 +391,7 @@ export async function POST(req: Request) {
                 payment_method: "credit_card",
                 credit_card: {
                   card: { token: cardToken! },
-                  installments:
-                    installmentOption === "2x"
-                      ? 2
-                      : installmentOption === "3x"
-                        ? 3
-                        : 1,
+                  installments: 3,
                   statement_descriptor: "VIOS LABS",
                 },
               },
@@ -497,16 +487,22 @@ export async function POST(req: Request) {
       });
     } catch (orderError: unknown) {
       for (const id of reservationIds) await releaseReservations(supabase, id);
+      const err = orderError as Error & { responseBody?: unknown; response?: { body?: unknown } };
+      const detail = err.responseBody ?? err.response?.body ?? err.message;
+      console.error("PAGARME_ERROR_DETAIL:", detail);
+      console.error("[PAGARME CHECKOUT] createOrder error:", orderError);
       const msg =
         orderError instanceof Error
           ? orderError.message
           : "Erro ao criar pedido no Pagar.me.";
-      console.error("[PAGARME CHECKOUT] createOrder error:", orderError);
       return NextResponse.json({ error: msg }, { status: 500 });
     }
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Erro interno.";
+    const e = err as Error & { responseBody?: unknown; response?: { body?: unknown } };
+    const detail = e.responseBody ?? e.response?.body ?? e.message;
+    console.error("PAGARME_ERROR_DETAIL:", detail);
     console.error("[PAGARME CHECKOUT] Error:", err);
+    const msg = err instanceof Error ? err.message : "Erro interno.";
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

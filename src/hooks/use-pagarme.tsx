@@ -5,9 +5,9 @@ import type { ReactNode } from "react";
 import { useCallback, useState } from "react";
 
 /**
- * API v5 Pagar.me: o checkout de cartão usa tokenizecard.js + Public Key (pk_...)
- * para gerar o token (ver CheckoutPaymentStep). A API v5 exige credit_card.card.token.
- * Este hook (checkout.js 1.1.0 + encryption_key) gera hash legado; para V5 use apenas o token do tokenizecard.
+ * LEGADO — NÃO usar para checkout V5.
+ * Este hook carrega api v1 (assets.pagar.me/checkout/1.1.0). Para V5 use apenas
+ * pagarme-js (pk_...) em CheckoutPaymentStep; parcelas fixas (3x) no backend.
  */
 const PAGARME_CHECKOUT_SCRIPT =
   "https://assets.pagar.me/checkout/1.1.0/checkout.js";

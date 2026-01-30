@@ -20,11 +20,14 @@ function getResendClient(): Resend {
   return new Resend(key);
 }
 
-function formatPrice(price: number): string {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(price);
+/** Formata valor em reais (R$ 299,00). Valores devem ser em reais, não centavos. */
+const BRL_FORMATTER = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+});
+
+function formatPrice(valueInReais: number): string {
+  return BRL_FORMATTER.format(valueInReais);
 }
 
 function formatDate(dateString: string): string {
@@ -42,11 +45,13 @@ export interface SendOrderConfirmationParams {
   customerName: string | null;
   orderId: string;
   orderDate: string;
+  /** Total do pedido em reais (ex.: 299 para R$ 299,00). Não enviar em centavos. */
   totalAmount: number;
   status: "Pago" | "Processando";
   items: Array<{
     product_name: string;
     quantity: number;
+    /** Preço unitário em reais (ex.: 99.9 para R$ 99,90). Não enviar em centavos. */
     price: number;
     product_image?: string | null;
   }>;

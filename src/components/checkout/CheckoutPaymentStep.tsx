@@ -9,9 +9,8 @@ import type {
 import { getCardBrandFromNumber, type CardBrand } from "@/lib/card-brand";
 
 /**
- * Tokenização com biblioteca oficial pagarme-js.
- * Use pk_live_... em produção e pk_test_... em desenvolvimento em NEXT_PUBLIC_PAGARME_PUBLIC_KEY.
- * A lib aceita encryption_key (ek_...) ou Public Key conforme documentação Pagar.me.
+ * Tokenização V5: apenas pagarme-js com public_key (pk_...).
+ * Não usar calculate_installments_amount nem scripts api.pagar.me/1/ — parcelas fixas (3x) no backend.
  */
 const PAGARME_PUBLIC_KEY =
   process.env.NEXT_PUBLIC_PAGARME_PUBLIC_KEY?.trim() ?? "";
