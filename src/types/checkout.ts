@@ -36,6 +36,10 @@ export type CheckoutPaymentPayload =
       installmentOption: "1x" | "2x" | "3x";
       /** Cupom de teste (ex.: TESTE90) */
       couponCode?: string | null;
+      /** Valor do frete em reais (Melhor Envio) */
+      shippingReais?: number;
+      /** Opção de frete selecionada (para metadata do pedido) */
+      selectedShippingOption?: { id: string; name: string; type: string } | null;
     };
 
 /** Dados do formulário de checkout (entrega + fiscal) */

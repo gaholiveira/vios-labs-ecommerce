@@ -10,16 +10,15 @@ import CheckoutForm, {
 } from "@/components/checkout/CheckoutForm";
 import CheckoutOrderSummary from "@/components/checkout/CheckoutOrderSummary";
 import CheckoutPaymentStep from "@/components/checkout/CheckoutPaymentStep";
-import {
-  FREE_SHIPPING_THRESHOLD,
-  FIXED_SHIPPING_REAIS,
-} from "@/lib/checkout-config";
+import ShippingQuoteSelector from "@/components/checkout/ShippingQuoteSelector";
+import { FREE_SHIPPING_THRESHOLD } from "@/lib/checkout-config";
 import type {
   PaymentMethod,
   InstallmentOption,
   CheckoutPaymentPayload,
   CheckoutCartItem,
 } from "@/types/checkout";
+import type { ShippingQuoteOption } from "@/app/api/shipping/quote/route";
 
 const CHECKOUT_BG = "#F9F7F2";
 const CHECKOUT_INK = "#1B2B22";
@@ -48,11 +47,16 @@ export default function CheckoutPage() {
   const [showPreparingMessage, setShowPreparingMessage] = useState(false);
   const [pixModalOpen, setPixModalOpen] = useState(false);
   const [couponCode, setCouponCode] = useState("");
+  const [checkoutCep, setCheckoutCep] = useState("");
+  const [selectedShippingQuote, setSelectedShippingQuote] =
+    useState<ShippingQuoteOption | null>(null);
 
   viewRef.current = view;
 
   const isFreeShipping = totalPrice >= FREE_SHIPPING_THRESHOLD;
-  const shippingReais = isFreeShipping ? 0 : FIXED_SHIPPING_REAIS;
+  const shippingReais = isFreeShipping
+    ? 0
+    : selectedShippingQuote?.price ?? 0;
 
   const handleFormSubmit = useCallback(
     async (data: CheckoutFormData) => {
@@ -62,6 +66,10 @@ export default function CheckoutPage() {
       }
       if (paymentMethod === "card" && !installmentOption) {
         alert("Selecione o número de parcelas.");
+        return;
+      }
+      if (!isFreeShipping && (!selectedShippingQuote || shippingReais <= 0)) {
+        alert("Aguarde o cálculo do frete ou informe um CEP válido para continuar.");
         return;
       }
 
@@ -99,6 +107,10 @@ export default function CheckoutPage() {
               userId,
               paymentMethod: "pix",
               couponCode: couponCode.trim() || null,
+              shippingReais,
+              selectedShippingOption: selectedShippingQuote
+                ? { id: selectedShippingQuote.id, name: selectedShippingQuote.name, type: selectedShippingQuote.type }
+                : null,
               checkoutData: {
                 email: emailVal,
                 cpf: data.cpf,
@@ -155,6 +167,10 @@ export default function CheckoutPage() {
         setPaymentPayload({
           provider: "pagarme",
           paymentMethod: "card",
+          shippingReais,
+          selectedShippingOption: selectedShippingQuote
+            ? { id: selectedShippingQuote.id, name: selectedShippingQuote.name, type: selectedShippingQuote.type }
+            : null,
           checkoutData: {
             email: emailVal,
             cpf: data.cpf,
@@ -177,7 +193,7 @@ export default function CheckoutPage() {
         setView("card_form");
       }
     },
-    [cart, paymentMethod, installmentOption, user?.id, couponCode],
+    [cart, paymentMethod, installmentOption, user?.id, couponCode, shippingReais, selectedShippingQuote],
   );
 
   const handlePaymentSuccess = useCallback(
@@ -244,22 +260,18 @@ export default function CheckoutPage() {
                   initialEmail={user?.email ?? undefined}
                   isLoading={isSubmitting}
                   submitLabel="Finalizar compra"
+                  onCEPChange={setCheckoutCep}
                 >
-                  {/* Frete */}
+                  {/* Frete — Melhor Envio */}
                   <div
                     className="py-6 border-t border-[0.5px] px-6 md:px-8"
                     style={{ borderColor: "rgba(27,43,34,0.1)" }}
                   >
-                    <p className="text-[10px] uppercase tracking-[0.2em] opacity-60 mb-2">
-                      Frete
-                    </p>
-                    <p className="text-sm font-light" style={{ color: CHECKOUT_INK }}>
-                      {isFreeShipping ? (
-                        <>Grátis — compras acima de R$ {formatBRL(FREE_SHIPPING_THRESHOLD)}</>
-                      ) : (
-                        <>R$ {formatBRL(shippingReais)} — entrega padrão</>
-                      )}
-                    </p>
+                    <ShippingQuoteSelector
+                      postalCode={checkoutCep}
+                      selectedQuote={selectedShippingQuote}
+                      onSelect={setSelectedShippingQuote}
+                    />
                   </div>
 
                   {/* Cupom (opcional — teste) */}
@@ -417,6 +429,8 @@ export default function CheckoutPage() {
                 onPaymentMethodChange={setPaymentMethod}
                 onInstallmentChange={setInstallmentOption}
                 showPaymentSelector={false}
+                shippingReais={shippingReais}
+                isFreeShipping={isFreeShipping}
                 className="rounded-sm shadow-sm border-[0.5px] border-[#1B2B22]/10"
               />
             </div>

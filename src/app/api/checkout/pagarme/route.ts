@@ -25,7 +25,6 @@ export const maxDuration = 30;
 // CONSTANTES DE NEGÓCIO
 // ============================================================================
 const FREE_SHIPPING_THRESHOLD = 289.9;
-const FIXED_SHIPPING_REAIS = 25;
 const PIX_DISCOUNT_PERCENT = 0.05;
 const MIN_SUBTOTAL = 10;
 const MAX_SUBTOTAL = 100000;
@@ -74,6 +73,10 @@ interface PagarmeCheckoutRequestBody {
   checkoutData: CheckoutFormData;
   /** Cupom de teste: TESTE90 = 90% de desconto no subtotal */
   couponCode?: string | null;
+  /** Valor do frete em reais (Melhor Envio). Se omitido e subtotal < threshold, erro. */
+  shippingReais?: number | null;
+  /** Opção de frete selecionada (metadata do pedido) */
+  selectedShippingOption?: { id: string; name: string; type: string } | null;
 }
 
 // ============================================================================
@@ -166,7 +169,7 @@ function validateSubtotal(subtotal: number): {
 
 async function releaseReservations(
   supabase: ReturnType<typeof getSupabaseAdmin>,
-  sessionId: string,
+  sessionId: string
 ) {
   try {
     await supabase.rpc("release_reservation", {
@@ -185,7 +188,7 @@ export async function POST(req: Request) {
   if (!isPagarmeConfigured()) {
     return NextResponse.json(
       { error: "Pagar.me não está configurado. Configure PAGARME_SECRET_KEY." },
-      { status: 503 },
+      { status: 503 }
     );
   }
 
@@ -195,14 +198,14 @@ export async function POST(req: Request) {
     if (!parsed || typeof parsed !== "object") {
       return NextResponse.json(
         { error: "Corpo da requisição inválido (JSON esperado)." },
-        { status: 400 },
+        { status: 400 }
       );
     }
     body = parsed as PagarmeCheckoutRequestBody;
   } catch {
     return NextResponse.json(
       { error: "Corpo da requisição inválido ou não é JSON." },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -216,20 +219,22 @@ export async function POST(req: Request) {
       paymentMethod,
       installmentOption,
       checkoutData,
+      shippingReais: bodyShippingReais,
+      selectedShippingOption,
     } = body;
 
     const cartValidation = validateCartItems(items);
     if (!cartValidation.valid) {
       return NextResponse.json(
         { error: cartValidation.error || "Carrinho inválido" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     if (!checkoutData || typeof checkoutData !== "object") {
       return NextResponse.json(
         { error: "Dados do checkout são obrigatórios (checkoutData)." },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -241,7 +246,7 @@ export async function POST(req: Request) {
     if (!email || !emailRegex.test(email)) {
       return NextResponse.json(
         { error: "E-mail válido é obrigatório para o checkout." },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -249,26 +254,33 @@ export async function POST(req: Request) {
     if (!addr || typeof addr !== "object") {
       return NextResponse.json(
         { error: "Endereço é obrigatório (checkoutData.address)." },
-        { status: 400 },
+        { status: 400 }
       );
     }
-    const requiredAddressFields = ["cep", "street", "number", "neighborhood", "city", "state"] as const;
+    const requiredAddressFields = [
+      "cep",
+      "street",
+      "number",
+      "neighborhood",
+      "city",
+      "state",
+    ] as const;
     const missingAddress = requiredAddressFields.filter(
-      (f) => !addr[f] || String(addr[f]).trim() === "",
+      (f) => !addr[f] || String(addr[f]).trim() === ""
     );
     if (missingAddress.length > 0) {
       return NextResponse.json(
         {
           error: `Endereço incompleto. Preencha: ${missingAddress.join(", ")}.`,
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     if (!checkoutData?.cpf || onlyDigits(checkoutData.cpf).length !== 11) {
       return NextResponse.json(
         { error: "CPF válido (11 dígitos) é obrigatório." },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -276,7 +288,7 @@ export async function POST(req: Request) {
       if (!cardToken) {
         return NextResponse.json(
           { error: "Token do cartão é obrigatório para pagamento com cartão." },
-          { status: 400 },
+          { status: 400 }
         );
       }
     }
@@ -286,31 +298,48 @@ export async function POST(req: Request) {
     if (!subtotalValidation.valid) {
       return NextResponse.json(
         { error: subtotalValidation.error || "Subtotal inválido" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     const isFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD;
-    const shippingReais = isFreeShipping ? 0 : FIXED_SHIPPING_REAIS;
+    const shippingReais = isFreeShipping
+      ? 0
+      : typeof bodyShippingReais === "number" &&
+        Number.isFinite(bodyShippingReais) &&
+        bodyShippingReais >= 0
+      ? bodyShippingReais
+      : 0;
+    if (!isFreeShipping && shippingReais <= 0) {
+      return NextResponse.json(
+        {
+          error: "Informe o CEP e selecione uma opção de frete para continuar.",
+        },
+        { status: 400 }
+      );
+    }
     const pixDiscount =
       paymentMethod === "pix" ? subtotal * PIX_DISCOUNT_PERCENT : 0;
     const couponDiscount =
       body.couponCode?.trim() === COUPON_CODE_TESTE90
         ? subtotal * COUPON_TESTE90_DISCOUNT_PERCENT
         : 0;
-    const totalReais =
-      subtotal + shippingReais - pixDiscount - couponDiscount;
+    const totalReais = subtotal + shippingReais - pixDiscount - couponDiscount;
     const totalCents = Math.round(totalReais * 100);
 
     const supabase = getSupabaseAdmin();
-    const tempSessionId = `temp_pagarme_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    const tempSessionId = `temp_pagarme_${Date.now()}_${Math.random()
+      .toString(36)
+      .slice(2, 10)}`;
     const reservationIds: string[] = [];
 
     try {
       for (const item of items) {
         if (item.isKit && item.kitProducts && item.kitProducts.length > 0) {
           for (const productId of item.kitProducts) {
-            const uniqueId = `${tempSessionId}_${productId}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+            const uniqueId = `${tempSessionId}_${productId}_${Date.now()}_${Math.random()
+              .toString(36)
+              .slice(2, 8)}`;
             reservationIds.push(uniqueId);
             const { data, error } = await supabase.rpc("reserve_inventory", {
               p_product_id: productId,
@@ -326,7 +355,7 @@ export async function POST(req: Request) {
                 {
                   error: `Erro ao reservar estoque para ${item.name}. Tente novamente.`,
                 },
-                { status: 500 },
+                { status: 500 }
               );
             }
             const result = data as ReserveInventoryResponse;
@@ -340,12 +369,14 @@ export async function POST(req: Request) {
                       ? "Produto do kit não encontrado no estoque."
                       : `Estoque insuficiente para ${item.name}.`,
                 },
-                { status: 409 },
+                { status: 409 }
               );
             }
           }
         } else {
-          const uniqueId = `${tempSessionId}_${item.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+          const uniqueId = `${tempSessionId}_${
+            item.id
+          }_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
           reservationIds.push(uniqueId);
           const { data, error } = await supabase.rpc("reserve_inventory", {
             p_product_id: item.id,
@@ -359,7 +390,7 @@ export async function POST(req: Request) {
               await releaseReservations(supabase, id);
             return NextResponse.json(
               { error: `Erro ao reservar estoque para ${item.name}.` },
-              { status: 500 },
+              { status: 500 }
             );
           }
           const result = data as ReserveInventoryResponse;
@@ -368,7 +399,7 @@ export async function POST(req: Request) {
               await releaseReservations(supabase, id);
             return NextResponse.json(
               { error: `Estoque insuficiente para ${item.name}.` },
-              { status: 409 },
+              { status: 409 }
             );
           }
         }
@@ -384,12 +415,12 @@ export async function POST(req: Request) {
           const itemTotalCents = amountCents * item.quantity;
           const discountApplied = Math.min(
             remainingDiscountCents,
-            itemTotalCents - item.quantity,
+            itemTotalCents - item.quantity
           );
           remainingDiscountCents -= discountApplied;
           amountCents = Math.max(
             1,
-            Math.round((itemTotalCents - discountApplied) / item.quantity),
+            Math.round((itemTotalCents - discountApplied) / item.quantity)
           );
         }
         return {
@@ -421,7 +452,12 @@ export async function POST(req: Request) {
 
       const payments: PagarmePayment[] =
         paymentMethod === "pix"
-          ? [{ payment_method: "pix", pix: { expires_in: PIX_EXPIRATION_SECONDS } }]
+          ? [
+              {
+                payment_method: "pix",
+                pix: { expires_in: PIX_EXPIRATION_SECONDS },
+              },
+            ]
           : [
               {
                 payment_method: "credit_card",
@@ -436,7 +472,9 @@ export async function POST(req: Request) {
               },
             ];
 
-      const orderCode = `vios_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const orderCode = `vios_${Date.now()}_${Math.random()
+        .toString(36)
+        .slice(2, 8)}`;
       const orderPayload = {
         items: pagarmeItems,
         customer,
@@ -448,6 +486,11 @@ export async function POST(req: Request) {
           customer_email: email,
           free_shipping: String(isFreeShipping),
           items_count: String(items.length),
+          ...(selectedShippingOption && {
+            shipping_option_id: selectedShippingOption.id,
+            shipping_option_name: selectedShippingOption.name,
+            shipping_option_type: selectedShippingOption.type,
+          }),
         },
       };
 
@@ -504,8 +547,8 @@ export async function POST(req: Request) {
                   : null,
               },
               null,
-              2,
-            ),
+              2
+            )
           );
         }
         return NextResponse.json({
@@ -526,7 +569,10 @@ export async function POST(req: Request) {
       });
     } catch (orderError: unknown) {
       for (const id of reservationIds) await releaseReservations(supabase, id);
-      const err = orderError as Error & { responseBody?: unknown; response?: { body?: unknown } };
+      const err = orderError as Error & {
+        responseBody?: unknown;
+        response?: { body?: unknown };
+      };
       const detail = err.responseBody ?? err.response?.body ?? err.message;
       console.error("PAGARME_ERROR_DETAIL:", detail);
       console.error("[PAGARME CHECKOUT] createOrder error:", orderError);
@@ -537,7 +583,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: msg }, { status: 500 });
     }
   } catch (err: unknown) {
-    const e = err as Error & { responseBody?: unknown; response?: { body?: unknown } };
+    const e = err as Error & {
+      responseBody?: unknown;
+      response?: { body?: unknown };
+    };
     const detail = e.responseBody ?? e.response?.body ?? e.message;
     console.error("PAGARME_ERROR_DETAIL:", detail);
     console.error("[PAGARME CHECKOUT] Error:", err);

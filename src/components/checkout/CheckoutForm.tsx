@@ -56,6 +56,8 @@ interface CheckoutFormProps {
   submitLabel?: string;
   /** Conteúdo opcional entre Endereço e Ações (ex.: Frete + Seletor de pagamento) */
   children?: React.ReactNode;
+  /** Chamado quando o CEP possui 8 dígitos (para cotação de frete) */
+  onCEPChange?: (cep: string) => void;
 }
 
 /**
@@ -76,6 +78,7 @@ export default function CheckoutForm({
   embedded = false,
   submitLabel,
   children,
+  onCEPChange,
 }: CheckoutFormProps) {
   // Estados do formulário (email: inicial do usuário logado ou vazio para guest)
   const [email, setEmail] = useState(initialEmail ?? "");
@@ -290,18 +293,16 @@ export default function CheckoutForm({
    * Handler de mudança de CEP com formatação automática
    */
   const handleCEPChange = (value: string) => {
-    const cleaned = value.replace(/\D/g, "");
-    if (cleaned.length <= 8) {
-      const formatted = formatCEP(cleaned);
-      setAddress((prev) => ({ ...prev, cep: formatted }));
-      // Validação/busca assim que completar 8 dígitos
-      if (cleaned.length === 8) {
-        setTouched((prev) => ({ ...prev, cep: true }));
-        validateField("address", { ...address, cep: cleaned });
-        void lookupCEP(cleaned);
-        return;
-      }
-      if (touched.cep) validateField("address", { ...address, cep: cleaned });
+    const cleaned = value.replace(/\D/g, "").slice(0, 8);
+    const formatted = formatCEP(cleaned);
+    setAddress((prev) => ({ ...prev, cep: formatted }));
+    onCEPChange?.(cleaned);
+    if (cleaned.length === 8) {
+      setTouched((prev) => ({ ...prev, cep: true }));
+      validateField("address", { ...address, cep: cleaned });
+      void lookupCEP(cleaned);
+    } else if (touched.cep) {
+      validateField("address", { ...address, cep: cleaned });
     }
   };
 

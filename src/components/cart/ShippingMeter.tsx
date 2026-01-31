@@ -2,8 +2,7 @@
 
 import { useMemo } from 'react';
 import { formatPrice } from '@/utils/format';
-
-const FREE_SHIPPING_THRESHOLD = 289.90;
+import { FREE_SHIPPING_THRESHOLD } from '@/lib/checkout-config';
 
 interface ShippingMeterProps {
   currentSubtotal: number;

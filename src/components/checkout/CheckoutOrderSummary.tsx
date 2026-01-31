@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import {
   FREE_SHIPPING_THRESHOLD,
-  FIXED_SHIPPING_REAIS,
   PIX_DISCOUNT_PERCENT,
   MAX_INSTALLMENTS,
 } from "@/lib/checkout-config";
@@ -28,6 +27,10 @@ export interface CheckoutOrderSummaryProps {
   onInstallmentChange: (option: InstallmentOption) => void;
   /** Se true, mostra seletor de pagamento; se false, só mostra totais */
   showPaymentSelector?: boolean;
+  /** Valor do frete em reais (Melhor Envio). Quando omitido, usa cálculo legado. */
+  shippingReais?: number;
+  /** Se true, exibe "Grátis" no frete */
+  isFreeShipping?: boolean;
   className?: string;
 }
 
@@ -37,11 +40,15 @@ export default function CheckoutOrderSummary({
   onPaymentMethodChange,
   onInstallmentChange,
   showPaymentSelector = true,
+  shippingReais: shippingProp,
+  isFreeShipping: isFreeShippingProp,
   className = "",
 }: CheckoutOrderSummaryProps) {
   const { cart, totalPrice } = useCart();
-  const isFreeShipping = totalPrice >= FREE_SHIPPING_THRESHOLD;
-  const shippingReais = isFreeShipping ? 0 : FIXED_SHIPPING_REAIS;
+  const isFreeShipping =
+    isFreeShippingProp ?? totalPrice >= FREE_SHIPPING_THRESHOLD;
+  const shippingReais =
+    shippingProp ?? (isFreeShipping ? 0 : 0);
   const subtotalWithShipping = totalPrice + shippingReais;
   const pixDiscount =
     paymentMethod === "pix" ? totalPrice * PIX_DISCOUNT_PERCENT : 0;

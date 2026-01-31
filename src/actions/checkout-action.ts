@@ -11,7 +11,6 @@ import {
 import type { ReserveInventoryResponse } from "@/types/database";
 import {
   FREE_SHIPPING_THRESHOLD,
-  FIXED_SHIPPING_REAIS,
   PIX_DISCOUNT_PERCENT,
   PIX_EXPIRATION_SECONDS,
 } from "@/lib/checkout-config";
@@ -92,6 +91,8 @@ const checkoutInputSchema = z.object({
   paymentMethod: z.enum(["pix", "card"]),
   cardToken: z.string().optional(),
   userId: z.string().nullable().optional(),
+  /** Valor do frete em reais (Melhor Envio). Obrigatório quando subtotal < FREE_SHIPPING_THRESHOLD. */
+  shippingReais: z.number().min(0).optional(),
 });
 
 export type CheckoutInput = z.infer<typeof checkoutInputSchema>;
@@ -165,7 +166,7 @@ export async function checkoutAction(input: unknown): Promise<CheckoutResult> {
     return { success: false, error: msg ?? "Dados inválidos." };
   }
 
-  const { form, items, paymentMethod, cardToken, userId } = parsed.data;
+  const { form, items, paymentMethod, cardToken, userId, shippingReais: inputShippingReais } = parsed.data;
 
   if (paymentMethod === "card" && (!cardToken || !cardToken.trim())) {
     return {
@@ -193,7 +194,17 @@ export async function checkoutAction(input: unknown): Promise<CheckoutResult> {
     };
 
   const isFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD;
-  const shippingReais = isFreeShipping ? 0 : FIXED_SHIPPING_REAIS;
+  const shippingReais = isFreeShipping
+    ? 0
+    : typeof inputShippingReais === "number" && inputShippingReais >= 0
+      ? inputShippingReais
+      : 0;
+  if (!isFreeShipping && shippingReais <= 0) {
+    return {
+      success: false,
+      error: "Informe o CEP e selecione uma opção de frete para continuar.",
+    };
+  }
   const pixDiscount =
     paymentMethod === "pix" ? subtotal * PIX_DISCOUNT_PERCENT : 0;
   const email = form.email;
