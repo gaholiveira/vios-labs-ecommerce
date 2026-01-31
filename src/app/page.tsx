@@ -1,14 +1,19 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useCallback, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useInView, useReducedMotion } from "framer-motion";
-import AboutSection from "@/components/AboutSection";
 import ProductCard from "@/components/ProductCard";
 import KitCard from "@/components/KitCard";
 import { PRODUCTS } from "@/constants/products";
 import { KITS } from "@/constants/kits";
 import Image from "next/image";
+
+const AboutSection = dynamic(() => import("@/components/AboutSection"), {
+  ssr: false,
+  loading: () => <div className="min-h-[240px] animate-pulse bg-brand-offwhite/30" aria-hidden />,
+});
 import { useMobileViewportHeight } from "@/hooks/useMobileViewportHeight";
 import { useCart } from "@/context/CartContext";
 import TextReveal from "@/components/ui/text-reveal";
@@ -63,38 +68,30 @@ export default function Home() {
   }, [router, showToast]);
 
   // Handler para scroll suave - Memoizado
+  // Usa requestAnimationFrame para evitar reflow forçado ao ler getBoundingClientRect
   const handleExploreClick = useCallback(() => {
     const productsSection = document.getElementById("produtos");
     if (productsSection) {
       setIsScrolling(true);
 
-      // Função para verificar se chegou na seção de produtos
-      const checkScrollPosition = () => {
-        const rect = productsSection.getBoundingClientRect();
-        const isInView = rect.top <= 150 && rect.bottom >= -50;
-
-        if (isInView) {
-          setIsScrolling(false);
-          return true;
-        }
-        return false;
-      };
-
-      // Scroll suave
       productsSection.scrollIntoView({ behavior: "smooth", block: "start" });
 
-      // Verificar posição periodicamente durante o scroll
-      const scrollInterval = setInterval(() => {
-        if (checkScrollPosition()) {
-          clearInterval(scrollInterval);
-        }
-      }, 50);
-
-      // Timeout de segurança para remover o blur caso o scroll não seja detectado
-      setTimeout(() => {
+      let scrollInterval: ReturnType<typeof setInterval>;
+      const safetyTimeout = setTimeout(() => {
         setIsScrolling(false);
         clearInterval(scrollInterval);
       }, 2000);
+
+      scrollInterval = setInterval(() => {
+        requestAnimationFrame(() => {
+          const rect = productsSection.getBoundingClientRect();
+          if (rect.top <= 150 && rect.bottom >= -50) {
+            setIsScrolling(false);
+            clearInterval(scrollInterval);
+            clearTimeout(safetyTimeout);
+          }
+        });
+      }, 100);
     }
   }, []);
 

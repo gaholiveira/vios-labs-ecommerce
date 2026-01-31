@@ -23,18 +23,27 @@ export default function TextReveal({
   const [shouldAnimate, setShouldAnimate] = useState(false);
 
   // Verificar se o elemento já está visível no mount (para hero section no topo)
+  // Usa requestAnimationFrame para evitar reflow forçado — lê layout após o paint
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (ref.current) {
-      const rect = ref.current.getBoundingClientRect();
+    const el = ref.current;
+    if (!el) return;
+
+    const rafId = requestAnimationFrame(() => {
+      const rect = el.getBoundingClientRect();
       const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
       if (isVisible) {
-        // Se já está visível, disparar animação após um pequeno delay
-        const timer = setTimeout(() => {
-          setShouldAnimate(true);
-        }, 100);
-        return () => clearTimeout(timer);
+        timerRef.current = setTimeout(() => setShouldAnimate(true), 100);
       }
-    }
+    });
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
   }, []);
 
   // Atualizar quando isInView mudar

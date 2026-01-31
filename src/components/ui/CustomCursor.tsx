@@ -55,8 +55,9 @@ export default function CustomCursor() {
       return false;
     };
 
+    const cursorCache = new WeakMap<Element, string>();
+
     // Função para verificar se elemento é clicável/interativo
-    // Verifica o elemento e todos os seus ancestrais para garantir detecção precisa
     const isInteractiveElement = (element: HTMLElement | null): boolean => {
       if (!element || element === document.body || element === document.documentElement) {
         return false;
@@ -98,21 +99,19 @@ export default function CustomCursor() {
           return true;
         }
 
-        // Verificar cursor pointer (verificar estilo computado)
-        // IMPORTANTE: Ignorar elementos com cursor: none (como o próprio cursor customizado)
+        // Verificar cursor pointer (cache para evitar reflow forçado por getComputedStyle)
         try {
-          const computedStyle = window.getComputedStyle(current);
-          const cursorValue = computedStyle.cursor;
-          
-          // Ignorar elementos com cursor: none (geralmente são elementos do cursor customizado)
+          let cursorValue = cursorCache.get(current);
+          if (cursorValue === undefined) {
+            cursorValue = window.getComputedStyle(current).cursor;
+            cursorCache.set(current, cursorValue);
+          }
           if (cursorValue === 'none') {
             current = current.parentElement;
             depth++;
             continue;
           }
-          
           if (cursorValue === 'pointer' || cursorValue === 'grab') {
-            // Verificar se não está desabilitado
             if (current.hasAttribute('disabled') || current.getAttribute('aria-disabled') === 'true') {
               current = current.parentElement;
               depth++;

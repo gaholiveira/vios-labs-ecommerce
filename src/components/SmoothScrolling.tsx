@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactLenis, useLenis } from "lenis/react";
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
@@ -17,7 +17,12 @@ function isTouchDevice(): boolean {
   );
 }
 
-// Reset de scroll na troca de rota (usado quando Lenis não está ativo, ex.: mobile)
+// Lenis carregado apenas em desktop (economia de ~25kb no bundle inicial)
+const SmoothScrollingLenis = dynamic(
+  () => import("@/components/SmoothScrollingLenis"),
+  { ssr: false }
+);
+
 function ScrollResetOnRoute({ pathname }: { pathname: string }) {
   useEffect(() => {
     if (typeof window !== "undefined" && window.history.scrollRestoration) {
@@ -25,27 +30,6 @@ function ScrollResetOnRoute({ pathname }: { pathname: string }) {
     }
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, [pathname]);
-  return null;
-}
-
-// Componente interno para acessar a instância do Lenis (apenas desktop)
-function LenisWrapper({ pathname }: { pathname: string }) {
-  const lenis = useLenis();
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.history.scrollRestoration) {
-      window.history.scrollRestoration = "manual";
-    }
-    if (lenis) {
-      lenis.scrollTo(0, { immediate: true });
-    } else {
-      const t = setTimeout(() => {
-        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-      }, 0);
-      return () => clearTimeout(t);
-    }
-  }, [pathname, lenis]);
-
   return null;
 }
 
@@ -57,7 +41,6 @@ export default function SmoothScrolling({ children }: SmoothScrollingProps) {
     setTouch(isTouchDevice());
   }, []);
 
-  // Mobile/touch: scroll nativo (melhor performance, sem JS no scroll)
   if (touch === true) {
     return (
       <>
@@ -67,25 +50,14 @@ export default function SmoothScrolling({ children }: SmoothScrollingProps) {
     );
   }
 
-  // Desktop: Lenis para scroll suave
   if (touch === false) {
     return (
-      <ReactLenis
-        root
-        options={{
-          lerp: 0.1,
-          duration: 1.5,
-          smoothWheel: true,
-          touchMultiplier: 1,
-        }}
-      >
-        <LenisWrapper pathname={pathname} />
+      <SmoothScrollingLenis pathname={pathname}>
         {children}
-      </ReactLenis>
+      </SmoothScrollingLenis>
     );
   }
 
-  // SSR/hidratação: renderizar children sem Lenis até saber o dispositivo
   return (
     <>
       <ScrollResetOnRoute pathname={pathname} />

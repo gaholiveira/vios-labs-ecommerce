@@ -1,9 +1,9 @@
 import { CartProvider } from "@/context/CartContext";
 import "./globals.css";
 import SmoothScrolling from "@/components/SmoothScrolling";
-import ToastContainer from "@/components/ToastContainer";
 import ThirdPartyScripts from "@/components/ThirdPartyScripts";
 import ClientCustomCursor from "@/components/ui/ClientCustomCursor";
+import ClientToastContainer from "@/components/ui/ClientToastContainer";
 import ConditionalSiteChrome from "@/components/ConditionalSiteChrome";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
@@ -82,7 +82,7 @@ export default function RootLayout({
         <SmoothScrolling>
           <CartProvider>
             <ConditionalSiteChrome>{children}</ConditionalSiteChrome>
-            <ToastContainer />
+            <ClientToastContainer />
           </CartProvider>
         </SmoothScrolling>
         {/* Scripts de terceiros carregados de forma otimizada */}

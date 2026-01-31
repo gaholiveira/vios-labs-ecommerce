@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useCart } from "@/context/CartContext";
-import { formatPrice } from "@/utils/format";
 
 interface StickyBarProps {
   productName: string;
@@ -17,39 +15,27 @@ interface StickyBarProps {
 
 export default function StickyBar({
   productName,
-  price,
   onAddToCart,
   isOutOfStock = false,
-  onWaitlistClick,
-  isPresale = false,
 }: StickyBarProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
-
+  // IntersectionObserver evita reflow forçado (não lê getBoundingClientRect no scroll)
   useEffect(() => {
-    const handleScroll = () => {
-      if (!buttonRef.current) return;
+    const trigger = document.querySelector("[data-sticky-bar-trigger]");
+    if (!trigger) return;
 
-      const buttonRect = buttonRef.current.getBoundingClientRect();
-      const isButtonOutOfView = buttonRect.bottom < 0;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(!entry.isIntersecting);
+      },
+      {
+        rootMargin: "-1px 0px 0px 0px",
+        threshold: 0,
+      },
+    );
 
-      setIsVisible(isButtonOutOfView);
-    };
-
-    // Encontrar o botão original na página
-    const originalButton = document.querySelector(
-      "[data-sticky-bar-trigger]",
-    ) as HTMLButtonElement;
-
-    if (originalButton) {
-      buttonRef.current = originalButton;
-      window.addEventListener("scroll", handleScroll);
-      handleScroll(); // Verificar estado inicial
-    }
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
+    observer.observe(trigger);
+    return () => observer.disconnect();
   }, []);
 
   return (

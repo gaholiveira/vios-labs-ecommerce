@@ -3,10 +3,10 @@
 import { usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 
 const MobileMenu = dynamic(() => import("@/components/MobileMenu"));
 const SearchOverlay = dynamic(() => import("@/components/SiteSearch"));
+const Footer = dynamic(() => import("@/components/Footer"), { ssr: false });
 
 /**
  * Renderiza Navbar, MobileMenu, SearchOverlay e Footer apenas quando a rota
