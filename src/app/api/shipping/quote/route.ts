@@ -11,9 +11,15 @@ const DEFAULT_WIDTH_CM = 11;
 const DEFAULT_HEIGHT_CM = 17;
 const DEFAULT_LENGTH_CM = 11;
 
-/** CEP de origem (VIOS Labs) - São Paulo */
-const ORIGIN_POSTAL_CODE =
-  process.env.MELHOR_ENVIO_ORIGIN_POSTAL_CODE || "01310100";
+/** CEP de origem padrão (São Paulo - Av. Paulista) */
+const DEFAULT_ORIGIN_CEP = "01310100";
+
+function getOriginPostalCode(): string {
+  const raw =
+    process.env.MELHOR_ENVIO_ORIGIN_POSTAL_CODE?.trim() || DEFAULT_ORIGIN_CEP;
+  const digits = raw.replace(/\D/g, "");
+  return digits.length === 8 ? digits : DEFAULT_ORIGIN_CEP.replace(/\D/g, "");
+}
 
 interface CartItemInput {
   id: string;
@@ -54,13 +60,18 @@ function onlyDigits(s: string): string {
 
 function buildProductsFromCart(cartItems: CartItemInput[]): MelhorEnvioProduct[] {
   return cartItems.map((item, idx) => {
-    const units = item.isKit && item.kitProducts?.length
-      ? item.kitProducts.length * item.quantity
-      : item.quantity;
+    const units =
+      item.isKit && item.kitProducts?.length
+        ? item.kitProducts.length * item.quantity
+        : item.quantity;
     const weight = Math.max(0.1, DEFAULT_WEIGHT_KG * units);
     const insuranceValue = item.price * item.quantity;
+    const productId =
+      typeof item.id === "string" && item.id.trim()
+        ? item.id.trim()
+        : `item_${idx}`;
     return {
-      id: item.id || `item_${idx}`,
+      id: productId,
       width: DEFAULT_WIDTH_CM,
       height: DEFAULT_HEIGHT_CM,
       length: DEFAULT_LENGTH_CM,
@@ -116,8 +127,29 @@ export async function POST(req: Request) {
     );
   }
 
-  const products = buildProductsFromCart(cartItems);
-  const subtotal = cartItems.reduce((acc, i) => acc + i.price * i.quantity, 0);
+  const validCartItems = cartItems.filter(
+    (i) =>
+      i &&
+      typeof i === "object" &&
+      typeof i.price === "number" &&
+      Number.isFinite(i.price) &&
+      i.price > 0 &&
+      typeof i.quantity === "number" &&
+      Number.isInteger(i.quantity) &&
+      i.quantity > 0,
+  );
+  if (validCartItems.length === 0) {
+    return NextResponse.json(
+      { error: "Itens do carrinho inválidos para cálculo de frete." },
+      { status: 400 },
+    );
+  }
+
+  const products = buildProductsFromCart(validCartItems);
+  const subtotal = validCartItems.reduce(
+    (acc, i) => acc + i.price * i.quantity,
+    0,
+  );
   const isFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD;
 
   const baseUrl =
@@ -125,16 +157,16 @@ export async function POST(req: Request) {
       ? "https://sandbox.melhorenvio.com.br"
       : "https://www.melhorenvio.com.br";
 
+  const originCep = getOriginPostalCode();
+
   const payload = {
-    from: { postal_code: ORIGIN_POSTAL_CODE },
+    from: { postal_code: originCep },
     to: { postal_code: postalCode },
     products,
     options: {
       receipt: false,
       own_hand: false,
-      insurance_value: products.reduce((a, p) => a + p.insurance_value, 0),
     },
-    services: "1,2,3,4", // Principais transportadoras
   };
 
   try {
@@ -151,10 +183,27 @@ export async function POST(req: Request) {
     const raw = (await res.json().catch(() => ({}))) as unknown;
 
     if (!res.ok) {
-      const errMsg =
-        typeof raw === "object" && raw !== null && "message" in raw
-          ? String((raw as { message: string }).message)
-          : "Não foi possível calcular o frete. Verifique o CEP.";
+      let errMsg = "Não foi possível calcular o frete. Verifique o CEP.";
+      if (raw && typeof raw === "object") {
+        const obj = raw as Record<string, unknown>;
+        const errors = obj.errors as Record<string, string[]> | undefined;
+        if (errors?.["from.postal_code"]?.[0]) {
+          errMsg = `CEP de origem inválido. Cadastre seu endereço em Configurações → Entrega no painel Melhor Envio (${originCep}).`;
+        } else if (typeof obj.message === "string") {
+          errMsg = obj.message;
+        } else if (typeof obj.error === "string") {
+          errMsg = obj.error;
+        } else if (Array.isArray(obj.errors)) {
+          const first = obj.errors[0];
+          errMsg =
+            typeof first === "string"
+              ? first
+              : first && typeof first === "object" && typeof (first as { message?: string }).message === "string"
+                ? (first as { message: string }).message
+                : errMsg;
+        }
+      }
+      console.error("[MELHOR_ENVIO] API error:", res.status, JSON.stringify(raw));
       return NextResponse.json(
         { error: errMsg, quotes: null },
         { status: res.status >= 500 ? 502 : 400 },

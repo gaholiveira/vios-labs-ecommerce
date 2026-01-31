@@ -8,10 +8,11 @@ import ConditionalSiteChrome from "@/components/ConditionalSiteChrome";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
-// Configuração otimizada da fonte Inter com display: 'swap' para melhor performance
+// Configuração otimizada da fonte Inter: display: 'optional' evita bloqueio de renderização (LCP)
+// O texto é exibido imediatamente com fallback; a fonte customizada só é aplicada se carregar em ~100ms
 const inter = Inter({
   subsets: ["latin"],
-  display: "swap",
+  display: "optional",
   variable: "--font-inter",
   preload: true,
 });

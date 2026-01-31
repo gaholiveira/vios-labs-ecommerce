@@ -139,6 +139,8 @@ Como os produtos VIOS não têm peso/dimensões no banco, a API usa valores padr
 - **Produção:** `https://www.melhorenvio.com.br/api/v2/me/shipment/calculate`
 - **Sandbox:** `https://sandbox.melhorenvio.com.br/api/v2/me/shipment/calculate`
 
+> **Erro "from.postal_code está invalido" (422)**: O CEP de origem precisa estar cadastrado no painel Melhor Envio. Acesse **Área do Vendedor → Configurações → Entrega** e cadastre o endereço de onde os produtos serão enviados. Use esse CEP em `MELHOR_ENVIO_ORIGIN_POSTAL_CODE`.
+
 **Método:** `POST`  
 **Headers:**
 - `Content-Type: application/json`
