@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@theme {
+  /* Definindo as tuas cores de marca no novo Tailwind v4 */
+  --color-brand-green: #0a3323;
+  --color-brand-offwhite: #f2f2f0;
+  --color-brand-softblack: #1a1a1a;
+  --color-brand-gold: #c9a961;
+  --color-brand-champagne: #f7e7ce;
+
+  /* Sobreescrevendo as variáveis padrão do sistema */
+  --color-background: var(--color-brand-offwhite);
+  --color-foreground: var(--color-brand-softblack);
+}
+
+:root {
+  /* Garantindo que as variáveis nativas também usem a tua paleta */
+  --background: #f2f2f0;
+  --foreground: #1a1a1a;
+}
+
+/* Opcional: Se quiseres desativar o modo escuro automático para manter a identidade da marca */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #f2f2f0; /* Mantemos off-white para preservar o estilo Guday */
+    --foreground: #1a1a1a;
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  /* A fonte Inter é injetada automaticamente pelo next/font via className no layout.tsx */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Cursor - Esconder cursor padrão em desktop */
+@media (min-width: 1024px) {
+  html,
+  body,
+  a,
+  button,
+  select,
+  textarea {
+    cursor: none !important;
+  }
+
+  /* Exceção: Restaurar cursor nativo em inputs e textareas para precisão de texto */
+  input,
+  textarea,
+  [contenteditable="true"] {
+    cursor: text !important;
+  }
+}
+
+/* Em telas touch (mobile), manter cursor padrão */
+@media (max-width: 1023px) {
+  html,
+  body,
+  a,
+  button,
+  input,
+  select,
+  textarea {
+    cursor: auto !important;
+  }
+}
+
+/* Otimização LCP: Prevenir layout shift na Hero Section */
+section[class*="h-screen"] {
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Esconder scrollbar no carrossel mobile */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE e Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari e Opera */
+}
