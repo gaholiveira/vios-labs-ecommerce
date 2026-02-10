@@ -55,7 +55,7 @@ const kitsData = [
     badge: "kit" as const,
     price: 797.0,
     oldPrice: 951.0,
-    image: "/images/kits/sinergia.png",
+    image: "",
     longDescription:
       "Um sistema integrado de suplementação desenhado para oferecer suporte nutricional em todas as fases do metabolismo diário.",
     content: {

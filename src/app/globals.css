@@ -65,6 +65,14 @@ body {
   textarea {
     cursor: auto !important;
   }
+
+  /* Evita zoom automático do iOS ao focar em inputs (font-size < 16px dispara zoom),
+     reduzindo a sensação de zoom instável ao tocar em campos */
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1rem);
+  }
 }
 
 /* Otimização LCP: Prevenir layout shift na Hero Section */

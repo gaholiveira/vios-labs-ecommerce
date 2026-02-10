@@ -125,6 +125,13 @@ function ProductCard({ product }: { product: Product }) {
           </h3>
         </Link>
 
+        {/* Descrição curta para conversão */}
+        {product.shortDescription && (
+          <p className="text-[11px] sm:text-xs font-light text-brand-softblack/65 leading-snug line-clamp-2">
+            {product.shortDescription}
+          </p>
+        )}
+
         {/* Rating e Reviews */}
         {product.rating !== undefined && (
           <div className="flex items-center gap-2">

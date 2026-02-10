@@ -5,8 +5,15 @@ import ThirdPartyScripts from "@/components/ThirdPartyScripts";
 import ClientCustomCursor from "@/components/ui/ClientCustomCursor";
 import ClientToastContainer from "@/components/ui/ClientToastContainer";
 import ConditionalSiteChrome from "@/components/ConditionalSiteChrome";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+
+// Permite zoom por pinch no mobile; evita sensação de zoom instável ao não restringir o usuário
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  userScalable: true,
+};
 
 // Configuração otimizada da fonte Inter: display: 'optional' evita bloqueio de renderização (LCP)
 // O texto é exibido imediatamente com fallback; a fonte customizada só é aplicada se carregar em ~100ms
