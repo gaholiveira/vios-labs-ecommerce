@@ -59,14 +59,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         (item) => item.id === product.id && !item.isKit,
       );
       if (existing) {
-        setToastMessage(`${product.name} adicionado novamente ao carrinho`);
+        setToastMessage(`${product.name} adicionado novamente à sacola`);
         return prev.map((item) =>
           item.id === product.id && !item.isKit
             ? { ...item, quantity: item.quantity + 1 }
             : item,
         );
       }
-      setToastMessage(`${product.name} adicionado ao carrinho`);
+      setToastMessage(`${product.name} adicionado à sacola`);
       return [...prev, { ...product, quantity: 1, isKit: false }];
     });
     setIsCartDrawerOpen(true);
@@ -76,14 +76,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setCart((prev) => {
       const existing = prev.find((item) => item.id === kit.id && item.isKit);
       if (existing) {
-        setToastMessage(`${kit.name} adicionado novamente ao carrinho`);
+        setToastMessage(`${kit.name} adicionado novamente à sacola`);
         return prev.map((item) =>
           item.id === kit.id && item.isKit
             ? { ...item, quantity: item.quantity + 1 }
             : item,
         );
       }
-      setToastMessage(`${kit.name} adicionado ao carrinho`);
+      setToastMessage(`${kit.name} adicionado à sacola`);
       // Criar um item de carrinho a partir do kit
       const kitAsCartItem: CartItem = {
         id: kit.id,

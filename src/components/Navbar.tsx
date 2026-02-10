@@ -168,8 +168,8 @@ function Navbar() {
   const cartAriaLabel = useMemo(
     () =>
       totalItems > 0
-        ? `Ir para checkout (${totalItems} item${totalItems !== 1 ? "s" : ""})`
-        : "Ir para checkout",
+        ? `Abrir sua sacola (${totalItems} item${totalItems !== 1 ? "s" : ""})`
+        : "Abrir sua sacola",
     [totalItems],
   );
 
@@ -226,9 +226,9 @@ function Navbar() {
           VIOS
         </Link>
 
-        {/* LADO DIREITO: Carrinho + Avatar/Login */}
+        {/* LADO DIREITO: Sacola + Avatar/Login */}
         <div className="flex-1 flex justify-end items-center space-x-4">
-          {/* Carrinho — abre pré-carrinho lateral */}
+          {/* Sacola — abre drawer lateral */}
           <button
             type="button"
             onClick={() => setIsCartDrawerOpen(true)}

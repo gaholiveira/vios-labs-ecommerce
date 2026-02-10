@@ -104,7 +104,7 @@ function validateCartItems(items: CartItem[]): {
   error?: string;
 } {
   if (!Array.isArray(items) || items.length === 0)
-    return { valid: false, error: "Carrinho vazio" };
+    return { valid: false, error: "Sacola vazia" };
   if (items.length > MAX_ITEMS_PER_CART)
     return {
       valid: false,
@@ -236,7 +236,7 @@ export async function POST(req: Request) {
     const cartValidation = validateCartItems(items);
     if (!cartValidation.valid) {
       return NextResponse.json(
-        { error: cartValidation.error || "Carrinho inválido" },
+        { error: cartValidation.error || "Sacola inválida" },
         { status: 400 }
       );
     }

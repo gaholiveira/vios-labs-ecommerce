@@ -239,7 +239,7 @@ export default function CheckoutPage() {
         style={{ backgroundColor: CHECKOUT_BG, color: CHECKOUT_INK }}
       >
         <p className="text-sm font-light tracking-wide opacity-80 mb-6">
-          Seu carrinho está vazio.
+          Sua sacola está vazia.
         </p>
         <a
           href="/"

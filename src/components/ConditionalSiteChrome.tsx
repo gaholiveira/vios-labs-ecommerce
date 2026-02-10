@@ -14,7 +14,7 @@ const Footer = dynamic(() => import("@/components/Footer"), { ssr: false });
 
 /**
  * Renderiza Navbar, MobileMenu, SearchOverlay e Footer apenas quando a rota
- * NÃO é checkout. One-page checkout: carrinho = link para /checkout (sem drawer/modal).
+ * NÃO é checkout. One-page checkout: sacola = link para /checkout (drawer lateral).
  */
 export default function ConditionalSiteChrome({
   children,

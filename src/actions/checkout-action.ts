@@ -86,7 +86,7 @@ const checkoutInputSchema = z.object({
   form: checkoutFormSchema,
   items: z
     .array(cartItemSchema)
-    .min(1, "Carrinho vazio")
+    .min(1, "Sacola vazia")
     .max(MAX_ITEMS_PER_CART),
   paymentMethod: z.enum(["pix", "card"]),
   cardToken: z.string().optional(),

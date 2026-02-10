@@ -56,7 +56,7 @@ export default function StickyBar({
               </p>
             </div>
 
-            {/* Botão Adicionar ao Carrinho */}
+            {/* Botão Colocar na sacola */}
             <button
               onClick={onAddToCart}
               disabled={isOutOfStock}
@@ -65,9 +65,9 @@ export default function StickyBar({
                   ? "border-stone-300 bg-stone-200 text-stone-500 cursor-not-allowed"
                   : "border-brand-green bg-brand-green text-brand-offwhite hover:bg-brand-softblack hover:border-brand-softblack"
               }`}
-              aria-label={isOutOfStock ? "Esgotado" : "Adicionar ao Carrinho"}
+              aria-label={isOutOfStock ? "Esgotado" : "Colocar na sacola"}
             >
-              {isOutOfStock ? "Esgotado" : "Adicionar"}
+              {isOutOfStock ? "Esgotado" : "Na sacola"}
             </button>
           </div>
         </motion.div>

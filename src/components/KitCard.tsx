@@ -12,7 +12,6 @@ function KitCard({ kit }: { kit: Kit }) {
   const { addKitToCart } = useCart();
 
   const handleAddToCart = () => {
-    // Adicionar o kit como um item único ao carrinho
     addKitToCart(kit);
   };
 
@@ -95,7 +94,7 @@ function KitCard({ kit }: { kit: Kit }) {
           5% off no PIX
         </p>
 
-        {/* Botão Adicionar ao Carrinho - Mesmo estilo do ProductCard */}
+        {/* Botão Colocar na sacola — conversão high-end */}
         <button
           onClick={handleAddToCart}
           disabled

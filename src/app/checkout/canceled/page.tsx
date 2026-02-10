@@ -35,7 +35,7 @@ export default function CanceledPage() {
           <Link href="/" className="block w-full">
             <button className="w-full py-4 md:py-5 bg-[#082f1e] text-white hover:bg-[#082f1e]/90 transition-all duration-300 rounded-sm uppercase tracking-widest text-xs font-medium flex items-center justify-center gap-2 group">
               <ShoppingBag className="w-4 h-4" />
-              Ver Carrinho
+              Ver minha sacola
             </button>
           </Link>
         </div>

@@ -161,7 +161,7 @@ function ProductCard({ product }: { product: Product }) {
           5% off no PIX
         </p>
 
-        {/* Botão Adicionar ao Carrinho - Estilo Minimalista de Luxo */}
+        {/* Botão Colocar na sacola — conversão high-end */}
         <button
           onClick={() => !product.soldOut && addToCart(product)}
           disabled={product.soldOut}
@@ -171,7 +171,7 @@ function ProductCard({ product }: { product: Product }) {
               : "border-brand-green bg-brand-green text-brand-offwhite hover:bg-brand-softblack hover:border-brand-softblack"
           }`}
         >
-          {product.soldOut ? "Esgotado" : "Adicionar ao Carrinho"}
+          {product.soldOut ? "Esgotado" : "Colocar na sacola"}
         </button>
       </div>
     </div>

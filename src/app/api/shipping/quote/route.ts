@@ -122,7 +122,7 @@ export async function POST(req: Request) {
   const cartItems = body.cartItems;
   if (!Array.isArray(cartItems) || cartItems.length === 0) {
     return NextResponse.json(
-      { error: "Carrinho vazio. Adicione itens para calcular o frete." },
+      { error: "Sacola vazia. Adicione itens para calcular o frete." },
       { status: 400 },
     );
   }
@@ -140,7 +140,7 @@ export async function POST(req: Request) {
   );
   if (validCartItems.length === 0) {
     return NextResponse.json(
-      { error: "Itens do carrinho inválidos para cálculo de frete." },
+      { error: "Itens da sacola inválidos para cálculo de frete." },
       { status: 400 },
     );
   }

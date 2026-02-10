@@ -158,18 +158,18 @@ export default function CartDrawer() {
             className="fixed top-0 right-0 z-[101] flex h-full w-full flex-col overflow-hidden bg-brand-offwhite shadow-2xl md:h-full md:w-[420px] md:max-w-[100vw]"
             role="dialog"
             aria-modal="true"
-            aria-label="Carrinho"
+            aria-label="Sua sacola"
           >
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-stone-200/80 px-6 py-5">
           <h2 className="text-sm font-medium uppercase tracking-[0.25em] text-brand-softblack">
-            Seu Carrinho
+            Sua sacola
           </h2>
           <button
             type="button"
             onClick={closeDrawer}
             className="flex h-10 w-10 items-center justify-center rounded-sm text-stone-500 transition-colors hover:bg-stone-200/60 hover:text-brand-softblack"
-            aria-label="Fechar carrinho"
+            aria-label="Fechar sacola"
           >
             <X className="h-5 w-5" />
           </button>
@@ -178,7 +178,7 @@ export default function CartDrawer() {
         {cart.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-12">
             <p className="text-center text-sm font-light uppercase tracking-wider text-stone-500">
-              Seu carrinho está vazio
+              Sua sacola está vazia
             </p>
             <button
               type="button"
@@ -249,7 +249,7 @@ export default function CartDrawer() {
                           type="button"
                           onClick={() => removeFromCart(item.id)}
                           className="flex h-8 w-8 items-center justify-center rounded-sm text-stone-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                          aria-label="Remover do carrinho"
+                          aria-label="Remover da sacola"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>

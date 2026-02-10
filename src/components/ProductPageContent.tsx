@@ -700,7 +700,7 @@ function ProductPageContent({ product }: ProductPageContentProps) {
               ? "Carregando..."
               : isOutOfStock
                 ? "Esgotado"
-                : "Adicionar ao Carrinho"}
+                : "Colocar na sacola"}
           </motion.button>
 
           <motion.div
