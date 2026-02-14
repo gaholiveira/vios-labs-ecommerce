@@ -93,7 +93,7 @@ function Navbar() {
     () => [
       { href: "/", label: "Início" },
       { href: "/sobre", label: "Sobre Nós" },
-      { href: "/lote-zero", label: "Lote Zero" },
+      { href: "/kits", label: "Kits" },
     ],
     [],
   );

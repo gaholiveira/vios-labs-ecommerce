@@ -5,9 +5,7 @@ import { useEffect, useCallback, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useInView, useReducedMotion } from "framer-motion";
 import ProductCard from "@/components/ProductCard";
-import KitCard from "@/components/KitCard";
 import { PRODUCTS } from "@/constants/products";
-import { KITS } from "@/constants/kits";
 import Image from "next/image";
 
 const AboutSection = dynamic(() => import("@/components/AboutSection"), {
@@ -196,32 +194,7 @@ export default function Home() {
         <ProductsGrid products={PRODUCTS} />
       </section>
 
-      {/* Seção de Kits e Protocolos */}
-      <section id="kits" className="max-w-7xl mx-auto px-4 md:px-6 py-24">
-        {/* Título da Seção com TextReveal */}
-        <div className="text-center mb-10 md:mb-12">
-          <TextReveal
-            text="Protocolos & Kits"
-            el="h2"
-            className="text-3xl md:text-4xl font-light uppercase tracking-tighter text-brand-softblack mb-4"
-            delay={0.2}
-            duration={0.6}
-          />
-          <p className="text-brand-softblack/70 text-sm md:text-base font-light tracking-wide max-w-2xl mx-auto mt-4">
-            Combinações científicas desenvolvidas para sinergia máxima
-          </p>
-        </div>
-
-        {/* Faixa de benefícios também aqui, para reforçar mensagem em protocolos */}
-        <div className="mb-12">
-          <CheckoutBenefitsBar />
-        </div>
-
-        {/* Grid de Kits */}
-        <KitsGrid kits={KITS} />
-      </section>
-
-      {/* 2. Seção Sobre (A que acabámos de criar) */}
+      {/* Seção Sobre */}
       <AboutSection />
     </main>
   );
@@ -287,59 +260,3 @@ function ProductsGrid({ products }: { products: typeof PRODUCTS }) {
   );
 }
 
-// Componente separado para o Grid de Kits com animação em cascata
-function KitsGrid({ kits }: { kits: typeof KITS }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
-  const reducedMotion = useReducedMotion();
-  const [hasMounted, setHasMounted] = useState(false);
-
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: reducedMotion ? 0 : 0.15,
-      },
-    },
-  };
-
-  const cardVariants = {
-    hidden: {
-      opacity: reducedMotion ? 1 : 0,
-      y: reducedMotion ? 0 : 30,
-      scale: reducedMotion ? 1 : 0.95,
-    },
-    show: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: {
-        duration: reducedMotion ? 0 : 0.6,
-        ease: "easeOut" as const,
-      },
-    },
-  };
-
-  const shouldAnimate = hasMounted && isInView;
-
-  return (
-    <motion.div
-      ref={ref}
-      variants={containerVariants}
-      initial="hidden"
-      animate={shouldAnimate ? "show" : "hidden"}
-      className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-x-10 sm:gap-y-16"
-    >
-      {kits.map((kit) => (
-        <motion.div key={kit.id} variants={cardVariants}>
-          <KitCard kit={kit} />
-        </motion.div>
-      ))}
-    </motion.div>
-  );
-}

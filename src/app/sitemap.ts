@@ -26,7 +26,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.7,
     },
     {
-      url: `${baseUrl}/lote-zero`,
+      url: `${baseUrl}/kits`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.9,

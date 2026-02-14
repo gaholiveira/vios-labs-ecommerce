@@ -104,7 +104,7 @@ function searchProducts(query: string): Product[] {
 const quickLinks = [
   { href: "/", label: "Início", icon: Home },
   { href: "/sobre", label: "Sobre Nós", icon: BookOpen },
-  { href: "/lote-zero", label: "Lote Zero", icon: Sparkles },
+  { href: "/kits", label: "Kits", icon: Package },
   { href: "/profile", label: "Minha Conta", icon: User },
   { href: "/orders", label: "Meus Pedidos", icon: Package },
 ];
