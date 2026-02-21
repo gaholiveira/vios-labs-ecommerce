@@ -270,14 +270,69 @@ export async function GET(request: NextRequest) {
     return await handlePKCEError(result.error, params.type, params.next, origin, supabase);
   }
 
-  // CENÁRIO 3: URL inválida
-  if (params.type === "recovery") {
-    return NextResponse.redirect(
-      `${origin}/forgot-password?error=${encodeURIComponent("Link inválido. Solicite um novo.")}`
-    );
-  }
+  // CENÁRIO 3: Sem code na query — tokens podem estar no fragment (hash)
+  // O servidor NUNCA recebe o fragment; apenas o cliente vê. Servimos HTML
+  // que processa o hash no browser e redireciona para update-password ou login.
+  return new NextResponse(getAuthCallbackFallbackHtml(origin), {
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
+}
 
-  return NextResponse.redirect(
-    `${origin}/login?error=no-code&message=${encodeURIComponent("Link inválido. Verifique seu email.")}`
-  );
+function getAuthCallbackFallbackHtml(origin: string): string {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+  const base = origin.replace(/\/$/, "");
+
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Processando…</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+  <p style="font-family:system-ui;text-align:center;padding:2rem;">Processando…</p>
+  <script>
+(function() {
+  var hash = window.location.hash && window.location.hash.slice(1);
+  if (!hash) {
+    window.location.replace("${base}/login?error=no-code&message=" + encodeURIComponent("Link inválido. Verifique seu email."));
+    return;
+  }
+  var params = new URLSearchParams(hash);
+  var accessToken = params.get("access_token");
+  var refreshToken = params.get("refresh_token");
+  var type = params.get("type");
+  var error = params.get("error");
+  var errorDescription = params.get("error_description");
+  if (error) {
+    var msg = errorDescription ? decodeURIComponent(errorDescription.replace(/\\+/g, " ")) : "Erro ao processar o link.";
+    var target = type === "recovery" ? "${base}/forgot-password?error=" : "${base}/login?error=auth-error&message=";
+    window.location.replace(target + encodeURIComponent(msg));
+    return;
+  }
+  if (!accessToken || !refreshToken) {
+    window.location.replace("${base}/login?error=no-code&message=" + encodeURIComponent("Link inválido. Verifique seu email."));
+    return;
+  }
+  var supabase = window.supabase.createClient("${supabaseUrl}", "${supabaseKey}");
+  supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+    .then(function() {
+      if (type === "recovery") {
+        window.location.replace("${base}/update-password");
+      } else if (type === "signup") {
+        window.location.replace("${base}/login?email-confirmed=true&message=" + encodeURIComponent("Email confirmado! Faça login com o email e senha que você definiu no cadastro."));
+      } else {
+        window.location.replace("${base}/");
+      }
+    })
+    .catch(function(err) {
+      console.error(err);
+      window.location.replace("${base}/login?error=auth-error&message=" + encodeURIComponent("Erro ao processar. Tente novamente."));
+    });
+})();
+  </script>
+</body>
+</html>`;
 }

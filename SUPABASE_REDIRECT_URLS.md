@@ -32,6 +32,8 @@ http://localhost:3000
 
 ### 2. **Redirect URLs**
 
+⚠️ **Crítico para reset de senha:** Se `/auth/callback` não estiver na lista, o Supabase redireciona para a Site URL (ex.: `/login`) e o usuário não chega na tela de redefinir senha.
+
 Adicione **todas** estas URLs (uma por linha):
 
 #### **Produção:**

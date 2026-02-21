@@ -69,15 +69,18 @@ export default function ForgotPasswordPage() {
       if (resetError) {
         logDatabaseError("Solicitação de redefinição de senha", resetError);
 
-        // Rate limit: apenas quando Supabase retorna 429 ou código explícito
+        const msg = resetError.message?.toLowerCase() ?? "";
         const isRateLimit =
           resetError.status === 429 ||
           resetError.code === "rate_limit_exceeded" ||
-          resetError.message?.toLowerCase() === "too many requests";
+          msg === "too many requests" ||
+          msg.includes("rate limit") ||
+          msg.includes("rate_limit") ||
+          msg.includes("email rate limit");
 
         if (isRateLimit) {
           setError(
-            "Muitas solicitações. Aguarde alguns minutos e tente novamente.",
+            "O limite de envio de e-mails foi atingido (máx. 2/hora no plano gratuito). Aguarde 1 hora ou configure SMTP customizado no Supabase.",
           );
         } else {
           setError(

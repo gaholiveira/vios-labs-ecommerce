@@ -210,12 +210,19 @@ export default function Home() {
 function ProductsGrid({ products }: { products: typeof PRODUCTS }) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
-  const reducedMotion = useReducedMotion();
+  const prefersReducedMotion = useReducedMotion();
   const [hasMounted, setHasMounted] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
-    setHasMounted(true);
-  }, []);
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setHasMounted(true);
+        setReducedMotion(Boolean(prefersReducedMotion));
+      });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [prefersReducedMotion]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
