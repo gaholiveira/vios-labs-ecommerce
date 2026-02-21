@@ -1,6 +1,6 @@
 import { PRODUCTS } from "./products";
 
-/** ID do produto Glow (prod_1) — kits que o contêm ficam inativos (Em Breve). */
+/** ID do produto Glow (prod_1) — referência para integrações (Bling, etc.). */
 export const GLOW_PRODUCT_ID = "prod_1";
 
 export interface Kit {

@@ -90,7 +90,7 @@ function ProductPageContent({ product }: ProductPageContentProps) {
   // Conteúdo específico para cada produto
   const getProductSpecificContent = (productId: string) => {
     if (productId === "prod_1") {
-      // VIOS Glow
+      // VIOS Glow — Hair, Skin & Nails (cápsulas)
       return {
         accordionItems: [
           {
@@ -99,44 +99,29 @@ function ProductPageContent({ product }: ProductPageContentProps) {
               <div className="space-y-4">
                 <div>
                   <strong className="text-[#082f1e] font-medium">
-                    Matriz Nobre Vegana:
+                    Vitaminas:
                   </strong>{" "}
                   <span className="text-brand-softblack/70">
-                    Base de Tapioca e Pectina, livre de gelatina animal.
+                    A (250 µg), E (15 mg), C (90 mg), B1 (1,2 mg), B2 (1,2 mg),
+                    B3 (15 mg NE), B5 (5 mg), B6 (1,3 mg), Biotina (30 µg), B9
+                    (400 µg DFE), B12 (2,4 µg).
                   </span>
                 </div>
                 <div>
                   <strong className="text-[#082f1e] font-medium">
-                    Biotina (45 μg):
+                    Minerais:
                   </strong>{" "}
                   <span className="text-brand-softblack/70">
-                    Concentração máxima para suporte estrutural de cabelos e
-                    unhas.
+                    Cálcio (200 mg), Cromo (35 µg), Selênio (45 µg), Zinco (11
+                    mg).
                   </span>
                 </div>
                 <div>
                   <strong className="text-[#082f1e] font-medium">
-                    Vitamina A (600 μg):
+                    Apresentação:
                   </strong>{" "}
                   <span className="text-brand-softblack/70">
-                    Essencial para a integridade e renovação da pele.
-                  </span>
-                </div>
-                <div>
-                  <strong className="text-[#082f1e] font-medium">
-                    Vitamina C (15 mg):
-                  </strong>{" "}
-                  <span className="text-brand-softblack/70">
-                    Poderoso antioxidante e cofator essencial para o colágeno.
-                  </span>
-                </div>
-                <div>
-                  <strong className="text-[#082f1e] font-medium">
-                    Complexo B Potencializado:
-                  </strong>{" "}
-                  <span className="text-brand-softblack/70">
-                    B12 (9,9 μg), Niacina (20 mg), B6 (2 mg) e Ácido Fólico (240
-                    μg) para renovação celular e equilíbrio metabólico.
+                    60 cápsulas de 550 mg. Dose: 2 cápsulas ao dia.
                   </span>
                 </div>
                 <div>
@@ -153,36 +138,35 @@ function ProductPageContent({ product }: ProductPageContentProps) {
           {
             title: "Como Usar",
             content:
-              "Recomendamos o consumo de 1 (uma) pastilha de goma por dia, preferencialmente acompanhada de uma refeição. Para melhores resultados, mantenha uma rotina consistente, permitindo que os nutrientes atuem na arquitetura celular a longo prazo.",
+              "Recomendamos o consumo de 2 (duas) cápsulas por dia, preferencialmente acompanhadas de uma refeição. Para melhores resultados, mantenha uma rotina consistente, permitindo que os nutrientes atuem na arquitetura celular de cabelos, pele e unhas a longo prazo.",
           },
           {
             title: "Ciência",
             content:
-              "O diferencial do VIOS Glow reside no seu veículo de entrega de pureza absoluta. Diferente das gomas tradicionais que utilizam gelatinas animais, desenvolvemos uma Matriz de Pectina e Tapioca que garante textura superior e ética 100% vegana. Esta forma de entrega otimiza a biodisponibilidade, permitindo que os nutrientes essenciais sejam absorvidos durante a digestão e alcancem as camadas estruturais da derme de dentro para fora.",
+              "O diferencial do VIOS Glow reside na sua fórmula completa de vitaminas e minerais essenciais para a saúde estrutural. O complexo B potencializado, associado ao antioxidante Vitamina C e ao Zinco, atua na síntese de colágeno e na renovação celular. A Biotina e o Selênio contribuem para o suporte de cabelos e unhas. Esta forma de entrega em cápsulas otimiza a biodisponibilidade, permitindo que os nutrientes essenciais sejam absorvidos durante a digestão e alcancem as camadas estruturais da derme de dentro para fora.",
           },
         ],
         keyIngredients: [
           {
-            name: "Matriz Nobre Vegana",
-            benefit: "Base de Tapioca e Pectina, livre de gelatina animal",
+            name: "Complexo B + Biotina",
+            benefit: "Suporte estrutural para cabelos, pele e unhas",
           },
           {
-            name: "Biotina (45 μg)",
-            benefit:
-              "Concentração máxima para suporte estrutural de cabelos e unhas",
-          },
-          {
-            name: "Vitamina A (600 μg)",
-            benefit: "Essencial para a integridade e renovação da pele",
-          },
-          {
-            name: "Vitamina C (15 mg)",
+            name: "Vitamina C (90 mg)",
             benefit:
               "Poderoso antioxidante e cofator essencial para o colágeno",
           },
           {
-            name: "Complexo B Potencializado",
-            benefit: "B12, Niacina, B6 e Ácido Fólico para renovação celular",
+            name: "Vitamina A (250 µg)",
+            benefit: "Integridade e renovação da pele",
+          },
+          {
+            name: "Zinco (11 mg)",
+            benefit: "Síntese proteica e renovação celular",
+          },
+          {
+            name: "Selênio (45 µg)",
+            benefit: "Proteção antioxidante e saúde capilar",
           },
         ],
       };

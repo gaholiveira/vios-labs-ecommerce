@@ -25,10 +25,9 @@ export const PRODUCTS: Product[] = [
     id: 'prod_1',
     name: 'Vios Glow',
     price: 219.00,
-    soldOut: true,
-    image: '/images/products/glow.jpeg',
-    description: 'O VIOS Glow não é apenas um suplemento; é uma joia biotecnológica em forma de pastilha de goma. Desenvolvido para quem exige a máxima performance estética, esta fórmula de alta absorção foi desenhada para restaurar a arquitetura dérmica e elevar o brilho natural da pele ao seu ápice. Sua composição é 100% vegana, utilizando uma base nobre de tapioca com pectina. Este elixir sólido, com o sofisticado sabor de morango, une a precisão farmacêutica a uma experiência sensorial superior.',
-    shortDescription: 'Brilho e arquitetura dérmica em pastilha vegana.',
+    image: '/images/products/newglow.jpeg',
+    description: 'O VIOS Glow é uma joia biotecnológica em cápsulas, desenvolvida para quem exige a máxima performance estética. Esta fórmula de alta absorção foi desenhada para restaurar a arquitetura dérmica e elevar o brilho natural da pele, cabelos e unhas ao seu ápice. Com complexo vitamínico completo e minerais essenciais, o Glow oferece suporte estrutural de dentro para fora, unindo precisão farmacêutica a biodisponibilidade otimizada.',
+    shortDescription: 'Hair, Skin & Nails. Complexo vitamínico em cápsulas.',
     category: 'Suplemento'
   },
   {

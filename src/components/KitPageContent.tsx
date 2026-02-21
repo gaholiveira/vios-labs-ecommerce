@@ -10,9 +10,9 @@ import ProductAccordion from "@/components/ProductAccordion";
 import StickyBar from "@/components/StickyBar";
 import TextReveal from "@/components/ui/text-reveal";
 import { ShareButton } from "@/components/shop/ShareButton";
-import { Kit, GLOW_PRODUCT_ID } from "@/constants/kits";
+import { Kit } from "@/constants/kits";
 import { PRODUCTS } from "@/constants/products";
-import KitImageTemplate from "@/components/KitImageTemplate";
+import KitProductsPreview from "@/components/KitProductsPreview";
 import CheckoutBenefitsBar from "@/components/CheckoutBenefitsBar";
 
 // ============================================================================
@@ -27,7 +27,7 @@ interface KitPageContentProps {
 
 function KitPageContent({ kit }: KitPageContentProps) {
   const { addKitToCart } = useCart();
-  const isActive = !kit.products.includes(GLOW_PRODUCT_ID);
+  const isActive = !kit.products.some((id) => PRODUCTS.find((p) => p.id === id)?.soldOut);
   const [showWaitlistModal, setShowWaitlistModal] = useState(false);
 
   // Garantir que a página sempre comece no topo ao carregar
@@ -244,7 +244,7 @@ function KitPageContent({ kit }: KitPageContentProps) {
               quality={90}
             />
           ) : (
-            <KitImageTemplate kitName={kit.name} badge={kit.badge} />
+            <KitProductsPreview products={kitProducts} badge={kit.badge} />
           )}
         </div>
 
@@ -336,7 +336,7 @@ function KitPageContent({ kit }: KitPageContentProps) {
             transition={{ duration: 0.3, delay: 0.5 }}
             className={`w-full border rounded-sm px-6 py-3 min-h-[44px] uppercase tracking-[0.2em] text-xs font-light transition-all duration-500 ease-out ${
               isActive
-                ? "border-brand-softblack/90 bg-brand-softblack text-brand-offwhite hover:bg-brand-green hover:border-brand-green cursor-pointer"
+                ? "border-brand-green bg-brand-green text-brand-offwhite hover:bg-brand-softblack hover:border-brand-softblack cursor-pointer"
                 : "border-gray-300 bg-gray-200 text-gray-500 cursor-not-allowed"
             }`}
           >

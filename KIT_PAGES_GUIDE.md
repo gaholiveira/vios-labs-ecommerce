@@ -210,7 +210,7 @@ content: {
     usage: {
       title: "Como Usar o Kit",
       instructions: [
-        "VIOS Glow: 1 pastilha por dia, preferencialmente com uma refeição",
+        "VIOS Glow: 2 cápsulas por dia, preferencialmente com uma refeição",
         "VIOS Sleep: 1 gota 30 minutos antes de dormir",
         "VIOS MAG3: 2 cápsulas por dia, com água",
         "VIOS Pulse: 2 cápsulas antes de atividades físicas ou mentais",
