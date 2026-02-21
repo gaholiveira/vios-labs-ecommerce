@@ -31,6 +31,7 @@ export const PRODUCTS: Product[] = [
     category: 'Suplemento',
     rating: 5,
     reviews: 1,
+    soldOut: true,
   },
   {
     id: 'prod_2',
