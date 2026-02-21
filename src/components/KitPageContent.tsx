@@ -13,6 +13,7 @@ import { Kit } from "@/constants/kits";
 import { PRODUCTS } from "@/constants/products";
 import KitProductsPreview from "@/components/KitProductsPreview";
 import FrequentlyBoughtTogether from "@/components/shop/FrequentlyBoughtTogether";
+import ProductReviews from "@/components/shop/ProductReviews";
 import { getFrequentlyBoughtTogetherForKit } from "@/utils/recommendations";
 import CheckoutBenefitsBar from "@/components/CheckoutBenefitsBar";
 import { trackViewItem } from "@/lib/analytics";
@@ -453,6 +454,12 @@ function KitPageContent({ kit }: KitPageContentProps) {
           <ProductAccordion items={kitContent.accordionItems} />
         </div>
       )}
+
+      {/* Avaliações */}
+      <ProductReviews
+        kitId={kit.id}
+        kitProductIds={kit.products}
+      />
 
       {/* Quem comprou também comprou */}
       <FrequentlyBoughtTogether

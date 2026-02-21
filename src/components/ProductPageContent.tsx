@@ -11,6 +11,7 @@ import WaitlistModal from "@/components/WaitlistModal";
 import TextReveal from "@/components/ui/text-reveal";
 import { ShareButton } from "@/components/shop/ShareButton";
 import FrequentlyBoughtTogether from "@/components/shop/FrequentlyBoughtTogether";
+import ProductReviews from "@/components/shop/ProductReviews";
 import { Product } from "@/constants/products";
 import { getFrequentlyBoughtTogetherProducts } from "@/utils/recommendations";
 import { LOW_STOCK_DISPLAY_THRESHOLD } from "@/lib/checkout-config";
@@ -809,6 +810,9 @@ function ProductPageContent({ product }: ProductPageContentProps) {
       <div className="w-full max-w-7xl mx-auto px-6">
         <KeyIngredients ingredients={productContent.keyIngredients} />
       </div>
+
+      {/* Avaliações */}
+      <ProductReviews productId={product.id} />
 
       {/* Quem comprou também comprou */}
       <FrequentlyBoughtTogether products={recommendedProducts} />

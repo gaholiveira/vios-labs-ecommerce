@@ -32,7 +32,7 @@ function ProductCard({ product }: { product: Product }) {
         {Array.from({ length: fullStars }, (_, i) => (
           <svg
             key={`full-${i}`}
-            className="w-3 h-3 text-yellow-400 fill-current"
+            className="w-3 h-3 text-brand-gold fill-current"
             viewBox="0 0 20 20"
             aria-hidden="true"
           >
@@ -41,7 +41,7 @@ function ProductCard({ product }: { product: Product }) {
         ))}
         {hasHalfStar && (
           <svg
-            className="w-3 h-3 text-yellow-400 fill-current"
+            className="w-3 h-3 text-brand-gold fill-current"
             viewBox="0 0 20 20"
             aria-hidden="true"
           >
@@ -132,13 +132,13 @@ function ProductCard({ product }: { product: Product }) {
           </p>
         )}
 
-        {/* Rating e Reviews */}
+        {/* Rating e Reviews — prova social sutil */}
         {product.rating !== undefined && (
           <div className="flex items-center gap-2">
             {renderStars(product.rating)}
-            {product.reviews !== undefined && (
-              <span className="text-[10px] text-brand-softblack/50 font-light">
-                ({product.reviews})
+            {product.reviews !== undefined && product.reviews > 0 && (
+              <span className="text-[10px] text-brand-softblack/50 font-light uppercase tracking-wider">
+                {product.reviews} {product.reviews === 1 ? "avaliação" : "avaliações"}
               </span>
             )}
           </div>
