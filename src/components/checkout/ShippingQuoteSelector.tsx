@@ -76,7 +76,10 @@ export default function ShippingQuoteSelector({
       setError(null);
 
       if (Array.isArray(options) && options.length > 0) {
-        const defaultPick = options.find((q: ShippingQuoteOption) => q.type === "standard") ?? options[0];
+        const defaultPick =
+          options.find((q: ShippingQuoteOption) => q.type === "local") ??
+          options.find((q: ShippingQuoteOption) => q.type === "standard") ??
+          options[0];
         onSelect(defaultPick);
       } else {
         onSelect(null);
@@ -195,11 +198,16 @@ export default function ShippingQuoteSelector({
             >
               <div>
                 <p className="text-sm font-medium text-brand-softblack">
-                  {quote.type === "express" ? "Entrega Expressa" : "Entrega Padrão"}
+                  {quote.type === "local"
+                    ? "Entrega Local — Mesmo Dia"
+                    : quote.type === "express"
+                      ? "Entrega Expressa"
+                      : "Entrega Padrão"}
                 </p>
                 <p className="text-[11px] text-brand-softblack/70 mt-0.5">
-                  {quote.company?.name && `${quote.company.name} · `}
-                  {quote.deliveryTime} a {quote.deliveryTime + 2} dias úteis
+                  {quote.type === "local"
+                    ? "Entrega no mesmo dia na nossa cidade"
+                    : `${quote.company?.name ? `${quote.company.name} · ` : ""}${quote.deliveryTime} a ${quote.deliveryTime + 2} dias úteis`}
                 </p>
               </div>
               <p className="text-sm font-medium text-brand-softblack shrink-0">

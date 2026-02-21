@@ -335,6 +335,62 @@ export async function findProductByCodigo(
   }
 }
 
+/**
+ * Atualiza um produto existente no Bling via PUT.
+ * Usa o mesmo payload do create (nome, codigo, tipo, situacao, formato, descricao, preco).
+ * Retorna success: false em caso de erro — o sync continua retornando o blingId (fail-safe).
+ */
+export async function updateProductInBling(
+  blingId: number,
+  input: BlingCreateProductInput,
+): Promise<{ success: boolean; error?: string }> {
+  const token = await getBlingAccessToken();
+  await blingThrottle();
+  if (!token?.trim()) {
+    return { success: false, error: "BLING_ACCESS_TOKEN não configurado" };
+  }
+
+  const payload = {
+    nome: input.nome,
+    codigo: input.codigo,
+    tipo: "P" as const,
+    situacao: "A" as const,
+    formato: "S" as const,
+    descricao: input.descricao || input.nome,
+    preco: input.preco,
+  };
+
+  try {
+    const res = await fetch(`${BLING_API_BASE}/produtos/${blingId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = (await res.json().catch(() => ({}))) as Record<string, unknown> & {
+      error?: { message?: string };
+    };
+
+    if (!res.ok) {
+      const msg =
+        typeof data.error === "object" && data.error?.message
+          ? String(data.error.message)
+          : JSON.stringify(data.error ?? data) || `HTTP ${res.status}`;
+      console.warn("[BLING] updateProductInBling failed", { blingId, codigo: input.codigo, error: msg });
+      return { success: false, error: msg };
+    }
+
+    return { success: true };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Erro desconhecido";
+    console.warn("[BLING] updateProductInBling exception", { blingId, codigo: input.codigo, error: msg });
+    return { success: false, error: msg };
+  }
+}
+
 export function isBlingConfigured(): boolean {
   const access = process.env.BLING_ACCESS_TOKEN?.trim();
   const refresh = process.env.BLING_REFRESH_TOKEN?.trim();

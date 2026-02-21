@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   createProductInBling,
   findProductByCodigo,
+  updateProductInBling,
   isBlingConfigured,
 } from "@/lib/bling";
 import { PRODUCTS } from "@/constants/products";
@@ -15,16 +16,20 @@ interface SyncItem {
   id: string;
   name: string;
   price: number;
+  description?: string;
 }
 
 async function ensureProductInBling(
   item: SyncItem,
-): Promise<{ id: string; blingId: number; created: boolean; error?: string }> {
-  const created = await createProductInBling({
+): Promise<{ id: string; blingId: number; created: boolean; updated?: boolean; updateFailed?: string; error?: string }> {
+  const createPayload = {
     codigo: item.id,
     nome: item.name,
     preco: item.price,
-  });
+    descricao: item.description || item.name,
+  };
+
+  const created = await createProductInBling(createPayload);
 
   if (created.success && created.blingId) {
     return { id: item.id, blingId: created.blingId, created: true };
@@ -32,7 +37,14 @@ async function ensureProductInBling(
 
   const existing = await findProductByCodigo(item.id);
   if (existing.success && existing.blingId) {
-    return { id: item.id, blingId: existing.blingId, created: false };
+    const updated = await updateProductInBling(existing.blingId, createPayload);
+    return {
+      id: item.id,
+      blingId: existing.blingId,
+      created: false,
+      updated: updated.success,
+      updateFailed: updated.success ? undefined : updated.error,
+    };
   }
 
   return {
@@ -52,23 +64,38 @@ export async function GET() {
   }
 
   const items: SyncItem[] = [
-    ...PRODUCTS.map((p) => ({ id: p.id, name: p.name, price: p.price })),
-    ...KITS.map((k) => ({ id: k.id, name: k.name, price: k.price })),
+    ...PRODUCTS.map((p) => ({
+      id: p.id,
+      name: p.name,
+      price: p.price,
+      description: p.description,
+    })),
+    ...KITS.map((k) => ({
+      id: k.id,
+      name: k.name,
+      price: k.price,
+      description: k.longDescription || k.description,
+    })),
   ];
 
   const results: Array<{
     id: string;
     blingId: number;
     created: boolean;
+    updated?: boolean;
+    updateFailed?: string;
     error?: string;
   }> = [];
   const errors: string[] = [];
+  const updateWarnings: string[] = [];
 
   for (const item of items) {
     const result = await ensureProductInBling(item);
     results.push(result);
     if (result.error) {
       errors.push(`${result.id}: ${result.error}`);
+    } else if (result.updateFailed) {
+      updateWarnings.push(`${result.id}: update failed (${result.updateFailed}) — mapping OK`);
     }
     await new Promise((r) => setTimeout(r, 400));
   }
@@ -86,8 +113,10 @@ export async function GET() {
   return NextResponse.json({
     success: errors.length === 0,
     synced: results.filter((r) => r.blingId > 0).length,
+    updated: results.filter((r) => r.updated).length,
     total: items.length,
     errors: errors.length > 0 ? errors : undefined,
+    updateWarnings: updateWarnings.length > 0 ? updateWarnings : undefined,
     mapping: map,
     envSnippet: mapEnv,
     envJsonSnippet: `BLING_PRODUCT_MAP=${mapJson}`,

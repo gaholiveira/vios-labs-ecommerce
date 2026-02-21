@@ -5,6 +5,16 @@
 
 export const FREE_SHIPPING_THRESHOLD = 289.9;
 export const PIX_DISCOUNT_PERCENT = 0.05; // 5% no PIX
+
+/**
+ * Frete local (entrega mesmo dia na nossa cidade).
+ * CEPs que começam com LOCAL_DELIVERY_CEP_PREFIX recebem opção a R$ LOCAL_DELIVERY_PRICE.
+ * Ex: LOCAL_DELIVERY_CEP_PREFIX=14409 (Franca/SP), LOCAL_DELIVERY_PRICE=10
+ */
+export const LOCAL_DELIVERY_CEP_PREFIX =
+  process.env.LOCAL_DELIVERY_CEP_PREFIX?.trim()?.replace(/\D/g, "") ?? "";
+export const LOCAL_DELIVERY_PRICE =
+  (Number(process.env.LOCAL_DELIVERY_PRICE?.trim()) || 0) || 10;
 export const MAX_INSTALLMENTS = 3;
 
 /** Cupom de teste (produção): 100% de desconto no subtotal. Uso apenas para testes. */

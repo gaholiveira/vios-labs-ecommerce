@@ -45,6 +45,10 @@ Adicione ao `.env.local`:
 MELHOR_ENVIO_TOKEN=seu_token_aqui
 MELHOR_ENVIO_ORIGIN_POSTAL_CODE=01310100
 MELHOR_ENVIO_SANDBOX=false
+
+# Frete local (entrega mesmo dia na nossa cidade)
+LOCAL_DELIVERY_CEP_PREFIX=14409
+LOCAL_DELIVERY_PRICE=10
 ```
 
 | Variável | Obrigatório | Descrição |
@@ -52,6 +56,8 @@ MELHOR_ENVIO_SANDBOX=false
 | `MELHOR_ENVIO_TOKEN` | Sim | Token de acesso da API Melhor Envio |
 | `MELHOR_ENVIO_ORIGIN_POSTAL_CODE` | Não | CEP de origem (padrão: 01310100) |
 | `MELHOR_ENVIO_SANDBOX` | Não | `true` para ambiente de testes (sandbox) |
+| `LOCAL_DELIVERY_CEP_PREFIX` | Não | CEPs que começam com este prefixo recebem opção "Entrega Local — Mesmo Dia" (ex: 14409 = Franca/SP) |
+| `LOCAL_DELIVERY_PRICE` | Não | Valor do frete local em reais (padrão: 10) |
 
 ---
 

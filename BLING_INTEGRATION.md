@@ -159,7 +159,12 @@ Para enviar produtos e kits do catálogo ao Bling e obter o mapeamento:
    - `mapping`: mapa `{ "prod_1": 123456, ... }`
    - `envSnippet`: variáveis prontas para o `.env`
    - `envJsonSnippet`: alternativa em formato JSON
+   - `synced`: quantidade com mapeamento OK
+   - `updated`: quantidade de produtos existentes atualizados (nome, descrição, preço)
+   - `updateWarnings`: se o PUT falhar em algum produto, o mapeamento continua válido (fail-safe)
 4. Copie e cole no `.env`
+
+**Comportamento:** Produtos novos são criados (POST). Produtos já existentes (mesmo código) são atualizados (PUT) com nome, descrição e preço do catálogo. Se o update falhar, o mapeamento ainda é retornado — o sync não bloqueia.
 
 ---
 

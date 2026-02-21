@@ -102,6 +102,7 @@ export default function CartDrawer() {
         const options = Array.isArray(data.quotes) ? data.quotes : [];
         setShippingQuotes(options);
         const defaultPick =
+          options.find((q: ShippingQuoteOption) => q.type === "local") ??
           options.find((q: ShippingQuoteOption) => q.type === "standard") ??
           options[0];
         setShippingQuote(defaultPick);
@@ -317,11 +318,16 @@ export default function CartDrawer() {
                         >
                           <div className="min-w-0">
                             <p className="text-xs font-medium text-brand-softblack">
-                              {quote.type === "express" ? "Entrega Expressa" : "Entrega Padrão"}
+                              {quote.type === "local"
+                                ? "Entrega Local — Mesmo Dia"
+                                : quote.type === "express"
+                                  ? "Entrega Expressa"
+                                  : "Entrega Padrão"}
                             </p>
                             <p className="text-[10px] text-stone-500 mt-0.5">
-                              {quote.company?.name && `${quote.company.name} · `}
-                              {quote.deliveryTime} a {quote.deliveryTime + 2} dias úteis
+                              {quote.type === "local"
+                                ? "Entrega no mesmo dia na nossa cidade"
+                                : `${quote.company?.name ? `${quote.company.name} · ` : ""}${quote.deliveryTime} a ${quote.deliveryTime + 2} dias úteis`}
                             </p>
                           </div>
                           <p className="text-xs font-medium text-brand-softblack shrink-0 tabular-nums">

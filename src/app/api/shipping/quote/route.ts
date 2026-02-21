@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { FREE_SHIPPING_THRESHOLD } from "@/lib/checkout-config";
+import {
+  FREE_SHIPPING_THRESHOLD,
+  LOCAL_DELIVERY_CEP_PREFIX,
+  LOCAL_DELIVERY_PRICE,
+} from "@/lib/checkout-config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -51,7 +55,7 @@ export interface ShippingQuoteOption {
   deliveryTime: number;
   deliveryRange: { min: number; max: number };
   company: { id: number; name: string };
-  type: "standard" | "express";
+  type: "standard" | "express" | "local";
 }
 
 function onlyDigits(s: string): string {
@@ -249,12 +253,26 @@ export async function POST(req: Request) {
       .filter((q): q is NonNullable<typeof q> => q !== null);
 
     if (quotesParsed.length === 0) {
+      const isLocalCep =
+        LOCAL_DELIVERY_CEP_PREFIX.length >= 4 &&
+        postalCode.startsWith(LOCAL_DELIVERY_CEP_PREFIX);
+      const localOption: ShippingQuoteOption = {
+        id: "local_same_day",
+        name: "Entrega Local — Mesmo Dia",
+        price: LOCAL_DELIVERY_PRICE,
+        deliveryTime: 0,
+        deliveryRange: { min: 0, max: 0 },
+        company: { id: 0, name: "VIOS Labs" },
+        type: "local",
+      };
       return NextResponse.json({
-        quotes: null,
+        quotes: isLocalCep ? [localOption] : null,
         freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
         isFreeShipping,
         subtotal,
-        message: "Nenhuma opção de frete disponível para este CEP.",
+        message: isLocalCep
+          ? undefined
+          : "Nenhuma opção de frete disponível para este CEP.",
       });
     }
 
@@ -278,6 +296,22 @@ export async function POST(req: Request) {
     if (express && express.id !== standard?.id) options.push(express);
     if (options.length === 0 && quotesParsed[0]) {
       options.push({ ...quotesParsed[0], type: "standard" });
+    }
+
+    const isLocalCep =
+      LOCAL_DELIVERY_CEP_PREFIX.length >= 4 &&
+      postalCode.startsWith(LOCAL_DELIVERY_CEP_PREFIX);
+    const localOption: ShippingQuoteOption = {
+      id: "local_same_day",
+      name: "Entrega Local — Mesmo Dia",
+      price: LOCAL_DELIVERY_PRICE,
+      deliveryTime: 0,
+      deliveryRange: { min: 0, max: 0 },
+      company: { id: 0, name: "VIOS Labs" },
+      type: "local",
+    };
+    if (isLocalCep) {
+      options.unshift(localOption);
     }
 
     return NextResponse.json({
