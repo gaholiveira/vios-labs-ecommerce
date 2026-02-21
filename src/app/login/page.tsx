@@ -17,6 +17,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showEmailConfirmed, setShowEmailConfirmed] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [showEmailNotConfirmed, setShowEmailNotConfirmed] = useState(false);
   const router = useRouter();
   const { showToast } = useCart();
@@ -72,8 +73,13 @@ export default function LoginPage() {
     }
 
     if (params.get("password-reset") === "true") {
-      showToast("Senha redefinida! Você já pode fazer login.");
+      const message = params.get("message") || "Senha redefinida! Faça login com seu email e nova senha.";
+      setError(null);
+      setShowPasswordReset(true);
+      showToast(message);
       router.replace("/login");
+      const timer = setTimeout(() => setShowPasswordReset(false), 8000);
+      return () => clearTimeout(timer);
     }
 
     if (params.get("email-confirmed") === "true") {
@@ -216,6 +222,33 @@ export default function LoginPage() {
                   <p className="font-medium mb-1">Email confirmado! ✅</p>
                   <p className="text-xs opacity-90">
                     Faça login com o email e senha que você definiu no cadastro.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Banner de senha redefinida */}
+          {showPasswordReset && (
+            <div className="mb-6 p-4 bg-brand-green/10 border border-brand-green/30 text-brand-green text-sm text-center rounded-sm animate-fadeIn">
+              <div className="flex items-center justify-center gap-2">
+                <svg
+                  className="w-5 h-5 shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <div className="text-left">
+                  <p className="font-medium mb-1">Senha redefinida! ✅</p>
+                  <p className="text-xs opacity-90">
+                    Faça login com seu email e nova senha.
                   </p>
                 </div>
               </div>

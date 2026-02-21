@@ -54,45 +54,36 @@ export default function ForgotPasswordPage() {
     try {
       const supabase = createClient();
 
-      // Normalizar a URL para garantir que corresponde às configurações do Supabase
+      // URL de callback — Supabase adiciona code e type automaticamente
       let baseUrl = window.location.origin;
-      // Remove www. do domínio para corresponder ao Site URL do Supabase
       if (baseUrl.includes("www.")) {
         baseUrl = baseUrl.replace("www.", "");
       }
-
-      // URL de callback para recovery - deve ser absoluta e incluir todos os parâmetros
-      const redirectTo = `${baseUrl}/auth/callback?type=recovery&next=/update-password`;
-
-      if (process.env.NODE_ENV === "development") {
-        console.log("📧 Enviando email de reset com redirectTo:", redirectTo);
-      }
+      const redirectTo = `${baseUrl}/auth/callback`;
 
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email.trim(),
-        {
-          redirectTo: redirectTo,
-        },
+        { redirectTo },
       );
 
       if (resetError) {
         logDatabaseError("Solicitação de redefinição de senha", resetError);
 
-        // Tratamento específico para rate limit
+        // Rate limit: apenas quando Supabase retorna 429 ou código explícito
         const isRateLimit =
-          resetError.message?.toLowerCase().includes("rate limit") ||
-          resetError.message?.toLowerCase().includes("rate_limit") ||
-          resetError.message?.toLowerCase().includes("too many requests") ||
+          resetError.status === 429 ||
           resetError.code === "rate_limit_exceeded" ||
-          resetError.status === 429;
+          resetError.message?.toLowerCase() === "too many requests";
 
         if (isRateLimit) {
           setError(
-            "Muitas solicitações foram feitas em pouco tempo. Por favor, aguarde alguns minutos antes de tentar novamente. Isso ajuda a proteger nosso sistema contra abusos.",
+            "Muitas solicitações. Aguarde alguns minutos e tente novamente.",
           );
         } else {
-          const errorMessage = formatDatabaseError(resetError);
-          setError(errorMessage);
+          setError(
+            resetError.message ||
+              "Não foi possível enviar o link. Verifique o e-mail e tente novamente.",
+          );
         }
 
         setLoading(false);

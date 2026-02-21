@@ -181,15 +181,16 @@ export default function UpdatePasswordPage() {
         return;
       }
 
-      // Sucesso
+      // Sucesso — encerrar sessão de recovery e redirecionar para login
       setSuccess(true);
       setLoading(false);
-      showToast("Senha atualizada com sucesso! Você já pode fazer login.");
+      showToast("Senha atualizada! Faça login com seu email e nova senha.");
 
-      // Redirecionar para login após 2 segundos
+      await supabase.auth.signOut();
+
       setTimeout(() => {
-        router.push("/login?password-reset=true");
-      }, 2000);
+        router.push("/login?password-reset=true&message=" + encodeURIComponent("Senha redefinida! Faça login com seu email e nova senha."));
+      }, 1500);
     } catch (err) {
       logDatabaseError("Exceção ao atualizar senha", err);
       const errorMessage = formatDatabaseError(err);
@@ -545,7 +546,9 @@ export default function UpdatePasswordPage() {
               >
                 Sua senha foi atualizada com sucesso.
                 <br />
-                Redirecionando para o login...
+                <span className="text-xs text-brand-softblack/60 mt-2 block">
+                  Faça login com seu email e nova senha.
+                </span>
               </motion.p>
 
               {/* Ação */}
@@ -555,7 +558,7 @@ export default function UpdatePasswordPage() {
                 transition={{ delay: 0.5 }}
               >
                 <Link
-                  href="/login"
+                  href="/login?password-reset=true"
                   className="inline-block text-brand-softblack text-xs uppercase tracking-[0.2em] font-medium border-b border-brand-softblack/30 hover:border-brand-green hover:text-brand-green transition-colors pb-1"
                 >
                   Ir para o Login →

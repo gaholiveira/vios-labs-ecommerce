@@ -74,25 +74,24 @@ export default function AboutSection({ image }: AboutSectionProps) {
             variants={focusRevealVariants}
             className="inline-block text-brand-green uppercase tracking-[0.4em] text-[10px] font-semibold mb-6"
           >
-            A Nossa Essência
+            Nossa História
           </motion.span>
 
           <motion.h2
             variants={focusRevealVariants}
             className="text-brand-softblack text-3xl md:text-4xl font-light uppercase tracking-tighter leading-tight mb-8 md:transition-colors md:duration-500 md:ease-out md:group-hover:text-brand-green"
           >
-            Design minimalista para quem valoriza o essencial.
+            Biomedicina e tecnologia, desenhadas a quatro mãos.
           </motion.h2>
 
           <motion.p
             variants={focusRevealVariants}
             className="text-brand-softblack/70 text-sm md:text-base font-light leading-relaxed tracking-wide"
           >
-            A VIOS LABS nasceu do desejo de simplificar a busca pelo bem-estar. Em
-            um mundo de excessos, escolhemos a clareza. Nossos produtos unem
-            ativos de alta pureza a uma estética que inspira calma e foco. Somos a
-            ponte entre o cuidado que seu corpo exige e o estilo de vida que você
-            merece. Essencial, transparente e eficiente.
+            A VIOS nasceu do encontro de duas paixões: a precisão da Biomedicina e
+            a visão da Tecnologia. Somos um casal que transformou sonho e estudos
+            em uma marca que respeita sua inteligência. Conheça os fundadores e a
+            jornada por trás de cada produto.
           </motion.p>
 
           <motion.div variants={focusRevealVariants} className="mt-10">
