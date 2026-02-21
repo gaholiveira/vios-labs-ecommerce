@@ -48,7 +48,7 @@ MELHOR_ENVIO_SANDBOX=false
 
 # Frete local (entrega mesmo dia na nossa cidade)
 LOCAL_DELIVERY_CEP_PREFIX=14409
-LOCAL_DELIVERY_PRICE=10
+LOCAL_DELIVERY_PRICE=0
 ```
 
 | Variável | Obrigatório | Descrição |
@@ -57,7 +57,7 @@ LOCAL_DELIVERY_PRICE=10
 | `MELHOR_ENVIO_ORIGIN_POSTAL_CODE` | Não | CEP de origem (padrão: 01310100) |
 | `MELHOR_ENVIO_SANDBOX` | Não | `true` para ambiente de testes (sandbox) |
 | `LOCAL_DELIVERY_CEP_PREFIX` | Não | CEPs que começam com este prefixo recebem opção "Entrega Local — Mesmo Dia" (ex: 14409 = Franca/SP) |
-| `LOCAL_DELIVERY_PRICE` | Não | Valor do frete local em reais (padrão: 10) |
+| `LOCAL_DELIVERY_PRICE` | Não | Valor do frete local em reais. 0 = grátis (padrão) |
 
 ---
 

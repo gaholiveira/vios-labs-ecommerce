@@ -82,7 +82,7 @@ const checkoutFormSchema = z.object({
   address: addressSchema,
 });
 
-const checkoutInputSchema = z.object({
+  const checkoutInputSchema = z.object({
   form: checkoutFormSchema,
   items: z
     .array(cartItemSchema)
@@ -91,8 +91,11 @@ const checkoutInputSchema = z.object({
   paymentMethod: z.enum(["pix", "card"]),
   cardToken: z.string().optional(),
   userId: z.string().nullable().optional(),
-  /** Valor do frete em reais (Melhor Envio). Obrigatório quando subtotal < FREE_SHIPPING_THRESHOLD. */
+  /** Valor do frete em reais. Obrigatório quando subtotal < FREE_SHIPPING_THRESHOLD (exceto entrega local grátis). */
   shippingReais: z.number().min(0).optional(),
+  selectedShippingOption: z
+    .object({ id: z.string(), name: z.string(), type: z.string() })
+    .optional(),
 });
 
 export type CheckoutInput = z.infer<typeof checkoutInputSchema>;
@@ -166,7 +169,15 @@ export async function checkoutAction(input: unknown): Promise<CheckoutResult> {
     return { success: false, error: msg ?? "Dados inválidos." };
   }
 
-  const { form, items, paymentMethod, cardToken, userId, shippingReais: inputShippingReais } = parsed.data;
+  const {
+    form,
+    items,
+    paymentMethod,
+    cardToken,
+    userId,
+    shippingReais: inputShippingReais,
+    selectedShippingOption,
+  } = parsed.data;
 
   if (paymentMethod === "card" && (!cardToken || !cardToken.trim())) {
     return {
@@ -199,7 +210,9 @@ export async function checkoutAction(input: unknown): Promise<CheckoutResult> {
     : typeof inputShippingReais === "number" && inputShippingReais >= 0
       ? inputShippingReais
       : 0;
-  if (!isFreeShipping && shippingReais <= 0) {
+  const isLocalFreeDelivery =
+    selectedShippingOption?.type === "local" && shippingReais === 0;
+  if (!isFreeShipping && shippingReais <= 0 && !isLocalFreeDelivery) {
     return {
       success: false,
       error: "Informe o CEP e selecione uma opção de frete para continuar.",

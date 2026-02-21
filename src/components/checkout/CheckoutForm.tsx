@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import {
@@ -69,6 +69,8 @@ function formatBRL(value: number): string {
   return value.toFixed(2).replace(".", ",");
 }
 
+const CHECKOUT_ADDRESS_STORAGE_KEY = "vios_checkout_address";
+
 export default function CheckoutForm({
   onSubmit,
   onCancel,
@@ -101,6 +103,33 @@ export default function CheckoutForm({
   const [isLoadingCEP, setIsLoadingCEP] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const lastCepLookupRef = useRef<string>("");
+  const hasLoadedFromStorageRef = useRef(false);
+
+  // Carregar último endereço salvo (localStorage) — apenas no mount
+  useEffect(() => {
+    if (typeof window === "undefined" || hasLoadedFromStorageRef.current) return;
+    hasLoadedFromStorageRef.current = true;
+    try {
+      const cached = localStorage.getItem(CHECKOUT_ADDRESS_STORAGE_KEY);
+      if (!cached) return;
+      const parsed = JSON.parse(cached) as Partial<AddressData>;
+      const cepDigits = (parsed.cep ?? "").replace(/\D/g, "");
+      if (cepDigits.length !== 8) return;
+      setAddress((prev) => ({
+        ...prev,
+        cep: formatCEP(cepDigits),
+        street: parsed.street ?? "",
+        number: parsed.number ?? "",
+        complement: parsed.complement ?? "",
+        neighborhood: parsed.neighborhood ?? "",
+        city: parsed.city ?? "",
+        state: parsed.state ?? "",
+      }));
+      onCEPChange?.(cepDigits);
+    } catch {
+      // Ignora parse errors
+    }
+  }, [onCEPChange]);
 
   // Estados brasileiros
   const estados = [
@@ -363,6 +392,24 @@ export default function CheckoutForm({
     const cleanedPhone = phone.replace(/\D/g, "");
     const cleanedCEP = address.cep.replace(/\D/g, "");
 
+    // Salvar endereço para pré-preenchimento na próxima compra
+    try {
+      localStorage.setItem(
+        CHECKOUT_ADDRESS_STORAGE_KEY,
+        JSON.stringify({
+          cep: cleanedCEP,
+          street: address.street.trim(),
+          number: address.number.trim(),
+          complement: address.complement?.trim() ?? "",
+          neighborhood: address.neighborhood.trim(),
+          city: address.city.trim(),
+          state: address.state.trim(),
+        })
+      );
+    } catch {
+      // Ignora falhas de localStorage
+    }
+
     onSubmit({
       fullName: fullName.trim(),
       cpf: cleanedCPF,
@@ -429,8 +476,7 @@ export default function CheckoutForm({
           </div>
         ) : null}
         <p className="text-sm font-light text-brand-softblack/60 leading-relaxed">
-          Preencha os dados abaixo. Tudo acontece aqui — seguro, minimalista e
-          sem fricção.
+          Preencha os dados abaixo.
         </p>
       </div>
 
@@ -446,124 +492,7 @@ export default function CheckoutForm({
           "border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-200/40";
         return (
           <div className="space-y-10">
-            {/* Contato & Fiscal */}
-            <div className="p-5 md:p-6 border border-gray-100 bg-white rounded-sm">
-              <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-brand-softblack/50 mb-6">
-                Contato & Fiscal
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Nome completo */}
-                <div>
-                  <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
-                    Nome completo <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    onBlur={() => {
-                      setTouched((prev) => ({ ...prev, fullName: true }));
-                      validateField("fullName", fullName);
-                    }}
-                    placeholder="Nome e sobrenome"
-                    className={`${base} ${errors.fullName ? err : ok}`}
-                  />
-                  {errors.fullName && (
-                    <p className="text-[10px] text-red-500 mt-2">
-                      {errors.fullName}
-                    </p>
-                  )}
-                </div>
-
-                {/* Email */}
-                <div>
-                  <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
-                    E-mail <span className="text-red-500">*</span>
-                  </label>
-                  {initialEmail ? (
-                    <input
-                      type="email"
-                      value={initialEmail}
-                      disabled
-                      className={`${base} border-gray-200 text-brand-softblack/60 cursor-not-allowed`}
-                    />
-                  ) : (
-                    <>
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        onBlur={() => {
-                          setTouched((prev) => ({
-                            ...prev,
-                            email: true,
-                          }));
-                          validateField("email", email);
-                        }}
-                        placeholder="seu@email.com"
-                        className={`${base} ${errors.email ? err : ok}`}
-                      />
-                      {errors.email && (
-                        <p className="text-[10px] text-red-500 mt-2">
-                          {errors.email}
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                {/* CPF */}
-                <div>
-                  <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
-                    CPF <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={cpf}
-                    onChange={(e) => handleCPFChange(e.target.value)}
-                    onBlur={() => {
-                      setTouched((prev) => ({ ...prev, cpf: true }));
-                      validateField("cpf", cpf);
-                    }}
-                    placeholder="000.000.000-00"
-                    maxLength={14}
-                    className={`${base} ${errors.cpf ? err : ok}`}
-                  />
-                  {errors.cpf && (
-                    <p className="text-[10px] text-red-500 mt-2">
-                      {errors.cpf}
-                    </p>
-                  )}
-                </div>
-
-                {/* Telefone */}
-                <div className="md:col-span-2">
-                  <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
-                    Telefone <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={phone}
-                    onChange={(e) => handlePhoneChange(e.target.value)}
-                    onBlur={() => {
-                      setTouched((prev) => ({ ...prev, phone: true }));
-                      validateField("phone", phone);
-                    }}
-                    placeholder="(00) 00000-0000"
-                    maxLength={15}
-                    className={`${base} ${errors.phone ? err : ok}`}
-                  />
-                  {errors.phone && (
-                    <p className="text-[10px] text-red-500 mt-2">
-                      {errors.phone}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Endereço */}
+            {/* Endereço (primeiro: CEP desbloqueia preenchimento automático) */}
             <div className="p-5 md:p-6 border border-gray-100 bg-white rounded-sm">
               <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-brand-softblack/50 mb-6">
                 Endereço de entrega
@@ -678,7 +607,8 @@ export default function CheckoutForm({
                 {/* Complemento */}
                 <div>
                   <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
-                    Complemento
+                    Complemento{" "}
+                    <span className="font-normal text-brand-softblack/50">(opcional)</span>
                   </label>
                   <input
                     type="text"
@@ -689,7 +619,7 @@ export default function CheckoutForm({
                         complement: e.target.value,
                       }))
                     }
-                    placeholder="Apto, Bloco, etc."
+                    placeholder="Opcional — apto, bloco"
                     className={`${base} ${ok}`}
                   />
                 </div>
@@ -800,6 +730,123 @@ export default function CheckoutForm({
                   {errors.state && (
                     <p className="text-[10px] text-red-500 mt-2">
                       {errors.state}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Contato & Fiscal */}
+            <div className="p-5 md:p-6 border border-gray-100 bg-white rounded-sm">
+              <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-brand-softblack/50 mb-6">
+                Contato & Fiscal
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Nome completo */}
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
+                    Nome completo <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    onBlur={() => {
+                      setTouched((prev) => ({ ...prev, fullName: true }));
+                      validateField("fullName", fullName);
+                    }}
+                    placeholder="Nome e sobrenome"
+                    className={`${base} ${errors.fullName ? err : ok}`}
+                  />
+                  {errors.fullName && (
+                    <p className="text-[10px] text-red-500 mt-2">
+                      {errors.fullName}
+                    </p>
+                  )}
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
+                    E-mail <span className="text-red-500">*</span>
+                  </label>
+                  {initialEmail ? (
+                    <input
+                      type="email"
+                      value={initialEmail}
+                      disabled
+                      className={`${base} border-gray-200 text-brand-softblack/60 cursor-not-allowed`}
+                    />
+                  ) : (
+                    <>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        onBlur={() => {
+                          setTouched((prev) => ({
+                            ...prev,
+                            email: true,
+                          }));
+                          validateField("email", email);
+                        }}
+                        placeholder="seu@email.com"
+                        className={`${base} ${errors.email ? err : ok}`}
+                      />
+                      {errors.email && (
+                        <p className="text-[10px] text-red-500 mt-2">
+                          {errors.email}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* CPF */}
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
+                    CPF <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={cpf}
+                    onChange={(e) => handleCPFChange(e.target.value)}
+                    onBlur={() => {
+                      setTouched((prev) => ({ ...prev, cpf: true }));
+                      validateField("cpf", cpf);
+                    }}
+                    placeholder="000.000.000-00"
+                    maxLength={14}
+                    className={`${base} ${errors.cpf ? err : ok}`}
+                  />
+                  {errors.cpf && (
+                    <p className="text-[10px] text-red-500 mt-2">
+                      {errors.cpf}
+                    </p>
+                  )}
+                </div>
+
+                {/* Telefone */}
+                <div className="md:col-span-2">
+                  <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
+                    Telefone (com DDD) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={phone}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    onBlur={() => {
+                      setTouched((prev) => ({ ...prev, phone: true }));
+                      validateField("phone", phone);
+                    }}
+                    placeholder="(00) 00000-0000"
+                    maxLength={15}
+                    className={`${base} ${errors.phone ? err : ok}`}
+                  />
+                  {errors.phone && (
+                    <p className="text-[10px] text-red-500 mt-2">
+                      {errors.phone}
                     </p>
                   )}
                 </div>

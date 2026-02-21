@@ -11,7 +11,12 @@ import CheckoutForm, {
 import CheckoutOrderSummary from "@/components/checkout/CheckoutOrderSummary";
 import CheckoutPaymentStep from "@/components/checkout/CheckoutPaymentStep";
 import ShippingQuoteSelector from "@/components/checkout/ShippingQuoteSelector";
-import { FREE_SHIPPING_THRESHOLD } from "@/lib/checkout-config";
+import SecurityBadges from "@/components/SecurityBadges";
+import {
+  FREE_SHIPPING_THRESHOLD,
+  PIX_DISCOUNT_PERCENT,
+} from "@/lib/checkout-config";
+import { trackBeginCheckout, trackPurchase } from "@/lib/analytics";
 import type {
   PaymentMethod,
   InstallmentOption,
@@ -19,7 +24,6 @@ import type {
   CheckoutCartItem,
 } from "@/types/checkout";
 import type { ShippingQuoteOption } from "@/app/api/shipping/quote/route";
-import { Package } from "lucide-react";
 
 const CHECKOUT_BG = "#F9F7F2";
 const CHECKOUT_INK = "#1B2B22";
@@ -36,11 +40,12 @@ export default function CheckoutPage() {
   const { user } = useAuth();
   const viewRef = useRef<CheckoutView>("form");
 
+  // PIX como padrão — método mais usado no Brasil, reduz fricção
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(
-    null,
+    "pix",
   );
   const [installmentOption, setInstallmentOption] =
-    useState<InstallmentOption | null>(null);
+    useState<InstallmentOption | null>("3x");
   const [view, setView] = useState<CheckoutView>("form");
   const [paymentPayload, setPaymentPayload] =
     useState<CheckoutPaymentPayload | null>(null);
@@ -48,6 +53,7 @@ export default function CheckoutPage() {
   const [showPreparingMessage, setShowPreparingMessage] = useState(false);
   const [pixModalOpen, setPixModalOpen] = useState(false);
   const [couponCode, setCouponCode] = useState("");
+  const [couponExpanded, setCouponExpanded] = useState(false);
   const [checkoutCep, setCheckoutCep] = useState("");
   const [selectedShippingQuote, setSelectedShippingQuote] =
     useState<ShippingQuoteOption | null>(null);
@@ -69,7 +75,10 @@ export default function CheckoutPage() {
         alert("Selecione o número de parcelas.");
         return;
       }
-      if (!isFreeShipping && (!selectedShippingQuote || shippingReais <= 0)) {
+      const hasValidShipping =
+        isFreeShipping ||
+        (selectedShippingQuote && (shippingReais > 0 || selectedShippingQuote.type === "local"));
+      if (!hasValidShipping) {
         alert("Aguarde o cálculo do frete ou informe um CEP válido para continuar.");
         return;
       }
@@ -83,6 +92,23 @@ export default function CheckoutPage() {
         kitProducts: item.kitProducts,
         isKit: item.isKit,
       }));
+
+      const checkoutValue = totalPrice + shippingReais;
+      const pixDiscount =
+        paymentMethod === "pix" ? totalPrice * PIX_DISCOUNT_PERCENT : 0;
+      const finalValue = checkoutValue - pixDiscount;
+
+      trackBeginCheckout({
+        value: finalValue,
+        items: items.map((i) => ({
+          id: i.id,
+          name: i.name,
+          price: i.price,
+          quantity: i.quantity,
+          category: i.isKit ? "Kit" : "Produto",
+        })),
+        coupon: couponCode.trim() || null,
+      });
 
       const userId = user?.id ?? null;
       const opt = installmentOption ?? "1x";
@@ -211,6 +237,23 @@ export default function CheckoutPage() {
 
   const handlePaymentSuccess = useCallback(
     (orderId: string) => {
+      const pixDiscount =
+        paymentMethod === "pix" ? totalPrice * PIX_DISCOUNT_PERCENT : 0;
+      const purchaseValue = totalPrice + shippingReais - pixDiscount;
+
+      trackPurchase({
+        transactionId: orderId,
+        value: purchaseValue,
+        items: cart.map((i) => ({
+          id: i.id,
+          name: i.name,
+          price: i.price,
+          quantity: i.quantity,
+          category: i.isKit ? "Kit" : i.category,
+        })),
+        coupon: couponCode.trim() || null,
+      });
+
       if (viewRef.current === "card_form") {
         setShowPreparingMessage(true);
         setTimeout(() => {
@@ -225,7 +268,14 @@ export default function CheckoutPage() {
         );
       }
     },
-    [router],
+    [
+      router,
+      cart,
+      totalPrice,
+      shippingReais,
+      paymentMethod,
+      couponCode,
+    ],
   );
 
   const handlePaymentError = useCallback((message: string) => {
@@ -258,33 +308,6 @@ export default function CheckoutPage() {
       style={{ backgroundColor: CHECKOUT_BG, color: CHECKOUT_INK }}
     >
       <div className="max-w-6xl mx-auto">
-        {/* Faixa Lote Zero — Envio a partir de 16 de Fevereiro */}
-        <div
-          className="mb-6 md:mb-8 flex items-center gap-3 px-4 py-3 rounded-sm border-[0.5px]"
-          style={{
-            borderColor: "rgba(27,43,34,0.15)",
-            backgroundColor: "rgba(255,255,255,0.6)",
-          }}
-        >
-          <span
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-            style={{ backgroundColor: "rgba(27,43,34,0.08)" }}
-          >
-            <Package
-              className="h-4 w-4"
-              style={{ color: CHECKOUT_INK }}
-              aria-hidden
-            />
-          </span>
-          <p
-            className="text-[10px] md:text-[11px] uppercase tracking-[0.18em] font-light opacity-90"
-            style={{ color: CHECKOUT_INK }}
-          >
-            Compras realizadas no período de Lote Zero serão enviadas a partir
-            do dia <strong>16 de Fevereiro</strong>.
-          </p>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14">
           {/* Coluna esquerda: Formulário (Dados Pessoais > Endereço > Frete > Pagamento) */}
           <div className="lg:col-span-7 order-2 lg:order-1">
@@ -314,24 +337,35 @@ export default function CheckoutPage() {
                     />
                   </div>
 
-                  {/* Cupom (opcional — teste) */}
+                  {/* Cupom — colapsável (menos fricção; só quem tem cupom abre) */}
                   <div
                     className="py-4 border-t border-[0.5px] px-6 md:px-8"
                     style={{ borderColor: "rgba(27,43,34,0.1)" }}
                   >
-                    <label htmlFor="checkout-coupon" className="block text-[10px] uppercase tracking-[0.2em] opacity-60 mb-2">
-                      Cupom
-                    </label>
-                    <input
-                      id="checkout-coupon"
-                      type="text"
-                      placeholder="Código do cupom"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value.trim().toUpperCase())}
-                      className="w-full bg-white/70 border border-gray-200 rounded-sm px-3 py-2.5 text-sm font-light text-brand-softblack placeholder:text-gray-400 focus:outline-none focus:border-brand-green"
-                      style={{ color: CHECKOUT_INK }}
-                      aria-label="Cupom de desconto"
-                    />
+                    <button
+                      type="button"
+                      onClick={() => setCouponExpanded((p) => !p)}
+                      className="text-[10px] uppercase tracking-[0.2em] opacity-60 hover:opacity-90 transition-opacity"
+                      aria-expanded={couponExpanded}
+                    >
+                      {couponExpanded ? "Ocultar cupom" : "Tem cupom?"}
+                    </button>
+                    {couponExpanded && (
+                      <div className="mt-3">
+                        <input
+                          id="checkout-coupon"
+                          type="text"
+                          placeholder="Código do cupom"
+                          value={couponCode}
+                          onChange={(e) =>
+                            setCouponCode(e.target.value.trim().toUpperCase())
+                          }
+                          className="w-full bg-white/70 border border-gray-200 rounded-sm px-3 py-2.5 text-sm font-light text-brand-softblack placeholder:text-gray-400 focus:outline-none focus:border-brand-green"
+                          style={{ color: CHECKOUT_INK }}
+                          aria-label="Cupom de desconto"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Pagamento: toggle elegante PIX (5% OFF) | Cartão (3x sem juros) */}
@@ -364,7 +398,10 @@ export default function CheckoutPage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setPaymentMethod("card")}
+                        onClick={() => {
+                          setPaymentMethod("card");
+                          setInstallmentOption((prev) => prev ?? "3x");
+                        }}
                         className={`flex-1 py-4 px-5 rounded-sm border-[0.5px] text-left transition-all duration-200 ${
                           paymentMethod === "card"
                             ? "border-[#1B2B22] bg-[#1B2B22]/6"
@@ -475,6 +512,17 @@ export default function CheckoutPage() {
               />
             </div>
           </div>
+        </div>
+
+        {/* Selos de Segurança */}
+        <div
+          className="mt-8 py-6 px-4 rounded-sm border-[0.5px]"
+          style={{
+            borderColor: "rgba(27,43,34,0.12)",
+            backgroundColor: "rgba(255,255,255,0.5)",
+          }}
+        >
+          <SecurityBadges variant="compact" theme="light" />
         </div>
       </div>
 

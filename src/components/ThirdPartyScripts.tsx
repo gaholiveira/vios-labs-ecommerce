@@ -2,25 +2,23 @@
 
 import Script from 'next/script';
 
+const GA_ID =
+  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() ??
+  process.env.NEXT_PUBLIC_GA_ID?.trim();
+
 /**
  * Componente para carregar scripts de terceiros de forma otimizada
  * Usa 'afterInteractive' ou 'lazyOnload' para não bloquear a thread principal
- * 
- * Para adicionar Google Analytics:
- * - Descomente e adicione seu G-XXXXXXXXXX ID
- * 
- * Para adicionar Facebook Pixel:
- * - Descomente e adicione seu Pixel ID
+ *
+ * Google Analytics 4: defina NEXT_PUBLIC_GA_MEASUREMENT_ID ou NEXT_PUBLIC_GA_ID (G-XXXXXXXXXX)
  */
 export default function ThirdPartyScripts() {
   return (
     <>
-      {/* Google Analytics - Estratégia afterInteractive para não bloquear renderização inicial */}
-      {/* 
-      {process.env.NEXT_PUBLIC_GA_ID && (
+      {GA_ID && (
         <>
           <Script
-            src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
+            src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
             strategy="afterInteractive"
           />
           <Script id="google-analytics" strategy="afterInteractive">
@@ -28,12 +26,11 @@ export default function ThirdPartyScripts() {
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
-              gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}');
+              gtag('config', '${GA_ID}');
             `}
           </Script>
         </>
       )}
-      */}
 
       {/* Facebook Pixel - Estratégia lazyOnload para carregar apenas quando necessário */}
       {/* 

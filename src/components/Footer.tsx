@@ -4,6 +4,7 @@ import { memo } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import TextReveal from "@/components/ui/text-reveal";
+import SecurityBadges from "@/components/SecurityBadges";
 
 interface FooterProps {
   className?: string;
@@ -204,6 +205,14 @@ function Footer({ className = "" }: FooterProps) {
               </span>
             </div>
           </div>
+        </div>
+
+        {/* Selos de Segurança */}
+        <div className="mt-8 pt-6 border-t border-brand-offwhite/10">
+          <h4 className="text-[10px] uppercase tracking-[0.3em] mb-4 font-bold opacity-80 text-center">
+            Selos de Segurança
+          </h4>
+          <SecurityBadges variant="horizontal" theme="dark" />
         </div>
       </motion.div>
 

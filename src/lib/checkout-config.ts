@@ -13,9 +13,17 @@ export const PIX_DISCOUNT_PERCENT = 0.05; // 5% no PIX
  */
 export const LOCAL_DELIVERY_CEP_PREFIX =
   process.env.LOCAL_DELIVERY_CEP_PREFIX?.trim()?.replace(/\D/g, "") ?? "";
+/** Valor do frete local em reais. 0 = grátis. Padrão: 0 (grátis). */
 export const LOCAL_DELIVERY_PRICE =
-  (Number(process.env.LOCAL_DELIVERY_PRICE?.trim()) || 0) || 10;
+  Number(process.env.LOCAL_DELIVERY_PRICE?.trim()) || 0;
 export const MAX_INSTALLMENTS = 3;
+
+/**
+ * Exibe "Poucas unidades" quando available_quantity <= este valor (e > 0).
+ * Útil para criar urgência mesmo com estoque (ex: 100 unidades, threshold 150).
+ */
+export const LOW_STOCK_DISPLAY_THRESHOLD =
+  Number(process.env.LOW_STOCK_DISPLAY_THRESHOLD?.trim()) || 150;
 
 /** Cupom de teste (produção): 100% de desconto no subtotal. Uso apenas para testes. */
 export const COUPON_CODE_TESTE90 = "TESTE90";

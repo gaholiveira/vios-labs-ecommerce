@@ -18,15 +18,15 @@ export default function StickyBar({
   onAddToCart,
   isOutOfStock = false,
 }: StickyBarProps) {
-  const [isVisible, setIsVisible] = useState(false);
-  // IntersectionObserver evita reflow forçado (não lê getBoundingClientRect no scroll)
+  const [triggerOutOfView, setTriggerOutOfView] = useState(false);
+
   useEffect(() => {
     const trigger = document.querySelector("[data-sticky-bar-trigger]");
     if (!trigger) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsVisible(!entry.isIntersecting);
+        setTriggerOutOfView(!entry.isIntersecting);
       },
       {
         rootMargin: "-1px 0px 0px 0px",
@@ -37,6 +37,8 @@ export default function StickyBar({
     observer.observe(trigger);
     return () => observer.disconnect();
   }, []);
+
+  const isVisible = triggerOutOfView;
 
   return (
     <AnimatePresence>
@@ -67,7 +69,7 @@ export default function StickyBar({
               }`}
               aria-label={isOutOfStock ? "Esgotado" : "Colocar na sacola"}
             >
-              {isOutOfStock ? "Esgotado" : "Na sacola"}
+              {isOutOfStock ? "Esgotado" : "Colocar na sacola"}
             </button>
           </div>
         </motion.div>

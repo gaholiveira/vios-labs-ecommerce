@@ -320,7 +320,13 @@ export async function POST(req: Request) {
         bodyShippingReais >= 0
       ? bodyShippingReais
       : 0;
-    if (!isFreeShipping && shippingReais <= 0) {
+    const isLocalFreeDelivery =
+      selectedShippingOption?.type === "local" && shippingReais === 0;
+    if (
+      !isFreeShipping &&
+      shippingReais <= 0 &&
+      !isLocalFreeDelivery
+    ) {
       return NextResponse.json(
         {
           error: "Informe o CEP e selecione uma opção de frete para continuar.",

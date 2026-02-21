@@ -7,19 +7,15 @@ import { motion } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/utils/format";
 import ProductAccordion from "@/components/ProductAccordion";
-import StickyBar from "@/components/StickyBar";
 import TextReveal from "@/components/ui/text-reveal";
 import { ShareButton } from "@/components/shop/ShareButton";
 import { Kit } from "@/constants/kits";
 import { PRODUCTS } from "@/constants/products";
 import KitProductsPreview from "@/components/KitProductsPreview";
+import FrequentlyBoughtTogether from "@/components/shop/FrequentlyBoughtTogether";
+import { getFrequentlyBoughtTogetherForKit } from "@/utils/recommendations";
 import CheckoutBenefitsBar from "@/components/CheckoutBenefitsBar";
-
-// ============================================================================
-// CONFIGURAÇÃO DE PRÉ-VENDA
-// ============================================================================
-const IS_PRESALE = true;
-const SHIPPING_STARTS_AT = "16 de Fevereiro";
+import { trackViewItem } from "@/lib/analytics";
 
 interface KitPageContentProps {
   kit: Kit;
@@ -37,6 +33,17 @@ function KitPageContent({ kit }: KitPageContentProps) {
       window.history.scrollRestoration = "manual";
     }
   }, [kit.id]);
+
+  // Analytics: view_item
+  useEffect(() => {
+    trackViewItem({
+      itemId: kit.id,
+      itemName: kit.name,
+      price: kit.price,
+      category: kit.badge === "kit" ? "Kit" : "Protocolo",
+      isKit: true,
+    });
+  }, [kit.id, kit.name, kit.price, kit.badge]);
 
   const handleAddToCart = useCallback(() => {
     addKitToCart(kit);
@@ -56,6 +63,11 @@ function KitPageContent({ kit }: KitPageContentProps) {
       .map((productId) => PRODUCTS.find((p) => p.id === productId))
       .filter((p): p is NonNullable<typeof p> => p !== undefined);
   }, [kit.products]);
+
+  const { products: recommendedProducts, kits: recommendedKits } = useMemo(
+    () => getFrequentlyBoughtTogetherForKit(kit.id),
+    [kit.id]
+  );
 
   // Conteúdo específico para cada kit
   const getKitSpecificContent = (kitId: string) => {
@@ -328,7 +340,6 @@ function KitPageContent({ kit }: KitPageContentProps) {
 
           {/* Botão de Compra */}
           <motion.button
-            data-sticky-bar-trigger
             onClick={handleAddToCart}
             disabled={!isActive}
             initial={{ opacity: 0 }}
@@ -393,7 +404,7 @@ function KitPageContent({ kit }: KitPageContentProps) {
                 <path d="M9.207 16.454C9.207 17.86 8.095 19 6.724 19s-2.483-1.14-2.483-2.546m4.966 0c0-1.405-1.112-2.545-2.483-2.545s-2.483 1.14-2.483 2.545m4.966 0h5.586m-10.552 0H3V6a1 1 0 0 1 1-1h9.793a1 1 0 0 1 1 1v2.182m5.586 8.272c0 1.406-1.111 2.546-2.482 2.546c-1.372 0-2.483-1.14-2.483-2.546m4.965 0c0-1.405-1.111-2.545-2.482-2.545c-1.372 0-2.483 1.14-2.483 2.545m4.965 0H21v-5.09l-2.515-2.579a2 2 0 0 0-1.431-.603h-2.26m.62 8.272h-.62m0 0V8.182" />
               </svg>
               <span className="text-[10px] uppercase tracking-wider font-light text-brand-gold">
-                {IS_PRESALE ? `Envio ${SHIPPING_STARTS_AT}` : "Envio Imediato"}
+                Envio Imediato
               </span>
             </div>
           </div>
@@ -443,14 +454,10 @@ function KitPageContent({ kit }: KitPageContentProps) {
         </div>
       )}
 
-      {/* Sticky Bar */}
-      <StickyBar
-        productName={kit.name}
-        price={kit.price}
-        productId={kit.id}
-        onAddToCart={handleAddToCart}
-        isOutOfStock={!isActive}
-        isPresale={IS_PRESALE}
+      {/* Quem comprou também comprou */}
+      <FrequentlyBoughtTogether
+        products={recommendedProducts}
+        kits={recommendedKits}
       />
     </>
   );

@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { Product } from "@/constants/products";
 import { Kit } from "@/constants/kits";
+import { trackAddToCart } from "@/lib/analytics";
 
 interface CartItem extends Product {
   quantity: number;
@@ -58,11 +59,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const existing = prev.find(
         (item) => item.id === product.id && !item.isKit,
       );
+      const newQty = existing ? existing.quantity + 1 : 1;
+      trackAddToCart({
+        itemId: product.id,
+        itemName: product.name,
+        price: product.price,
+        quantity: newQty,
+        category: product.category,
+      });
       if (existing) {
         setToastMessage(`${product.name} adicionado novamente à sacola`);
         return prev.map((item) =>
           item.id === product.id && !item.isKit
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: newQty }
             : item,
         );
       }
@@ -75,23 +84,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const addKitToCart = useCallback((kit: Kit) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.id === kit.id && item.isKit);
+      const newQty = existing ? existing.quantity + 1 : 1;
+      const category = kit.badge === "kit" ? "Kit" : "Protocolo";
+      trackAddToCart({
+        itemId: kit.id,
+        itemName: kit.name,
+        price: kit.price,
+        quantity: newQty,
+        category,
+      });
       if (existing) {
         setToastMessage(`${kit.name} adicionado novamente à sacola`);
         return prev.map((item) =>
           item.id === kit.id && item.isKit
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: newQty }
             : item,
         );
       }
       setToastMessage(`${kit.name} adicionado à sacola`);
-      // Criar um item de carrinho a partir do kit
       const kitAsCartItem: CartItem = {
         id: kit.id,
         name: kit.name,
         price: kit.price,
-        image: kit.image || "/images/products/glow.jpeg", // Usa imagem do kit ou placeholder
+        image: kit.image || "/images/products/glow.jpeg",
         description: kit.description,
-        category: kit.badge === "kit" ? "Kit" : "Protocolo",
+        category,
         quantity: 1,
         kitProducts: kit.products,
         isKit: true,

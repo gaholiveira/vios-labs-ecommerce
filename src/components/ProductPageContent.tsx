@@ -6,21 +6,18 @@ import { motion } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/utils/format";
 import ProductAccordion from "@/components/ProductAccordion";
-import StickyBar from "@/components/StickyBar";
 import KeyIngredients from "@/components/KeyIngredients";
 import WaitlistModal from "@/components/WaitlistModal";
 import TextReveal from "@/components/ui/text-reveal";
 import { ShareButton } from "@/components/shop/ShareButton";
+import FrequentlyBoughtTogether from "@/components/shop/FrequentlyBoughtTogether";
 import { Product } from "@/constants/products";
+import { getFrequentlyBoughtTogetherProducts } from "@/utils/recommendations";
+import { LOW_STOCK_DISPLAY_THRESHOLD } from "@/lib/checkout-config";
 import { useAuth } from "@/hooks/useAuth";
 import CheckoutBenefitsBar from "@/components/CheckoutBenefitsBar";
+import { trackViewItem } from "@/lib/analytics";
 import type { InventoryStatus } from "@/types/database";
-
-// ============================================================================
-// CONFIGURAÇÃO DE PRÉ-VENDA
-// ============================================================================
-const IS_PRESALE = true;
-const SHIPPING_STARTS_AT = "16 de Fevereiro";
 
 interface ProductPageContentProps {
   product: Product;
@@ -35,14 +32,22 @@ function ProductPageContent({ product }: ProductPageContentProps) {
 
   // Garantir que a página sempre comece no topo ao carregar
   useEffect(() => {
-    // Scroll para o topo quando o componente montar
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-
-    // Resetar scroll history
     if (typeof window !== "undefined" && window.history.scrollRestoration) {
       window.history.scrollRestoration = "manual";
     }
-  }, [product.id]); // Reexecutar se o produto mudar
+  }, [product.id]);
+
+  // Analytics: view_item
+  useEffect(() => {
+    trackViewItem({
+      itemId: product.id,
+      itemName: product.name,
+      price: product.price,
+      category: product.category,
+      isKit: false,
+    });
+  }, [product.id, product.name, product.price, product.category]);
 
   // Buscar estoque do produto
   useEffect(() => {
@@ -86,6 +91,16 @@ function ProductPageContent({ product }: ProductPageContentProps) {
     if (product.soldOut) return true;
     return inventory !== null && inventory.available_quantity === 0;
   }, [inventory, product.soldOut]);
+
+  const isLowStock = useMemo(() => {
+    if (!inventory || inventory.available_quantity <= 0) return false;
+    return inventory.available_quantity <= LOW_STOCK_DISPLAY_THRESHOLD;
+  }, [inventory]);
+
+  const recommendedProducts = useMemo(
+    () => getFrequentlyBoughtTogetherProducts(product.id),
+    [product.id]
+  );
 
   // Conteúdo específico para cada produto
   const getProductSpecificContent = (productId: string) => {
@@ -666,9 +681,15 @@ function ProductPageContent({ product }: ProductPageContentProps) {
             />
           </div>
 
+          {/* Indicador de estoque baixo (urgência) */}
+          {isLowStock && !isOutOfStock && (
+            <p className="mb-4 text-xs text-amber-700/90 font-medium uppercase tracking-wider">
+              Poucas unidades disponíveis
+            </p>
+          )}
+
           {/* Botão de Compra */}
           <motion.button
-            data-sticky-bar-trigger
             onClick={handleAddToCart}
             disabled={isOutOfStock || isLoadingInventory}
             initial={{ opacity: 0 }}
@@ -766,26 +787,6 @@ function ProductPageContent({ product }: ProductPageContentProps) {
             </div>
           </div>
 
-          {/* Aviso de Envio (Pré-Venda) */}
-          {IS_PRESALE && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.2 }}
-              className="mt-4 p-4 bg-stone-50/50 border border-stone-200/50 rounded-sm"
-            >
-              <p className="text-xs text-brand-gold/80 leading-relaxed">
-                <span className="font-medium">🔒 Lote de Lançamento:</span>{" "}
-                Devido à alta procura, sua unidade será despachada
-                prioritariamente a partir de{" "}
-                <span className="font-medium text-brand-gold">
-                  {SHIPPING_STARTS_AT}
-                </span>
-                .
-              </p>
-            </motion.div>
-          )}
-
           {/* Texto Legal ANVISA */}
           <div className="mt-6">
             {product.anvisaRecord ? (
@@ -809,16 +810,8 @@ function ProductPageContent({ product }: ProductPageContentProps) {
         <KeyIngredients ingredients={productContent.keyIngredients} />
       </div>
 
-      {/* Sticky Bar - Aparece apenas no mobile quando o botão sai da tela */}
-      <StickyBar
-        productName={product.name}
-        price={product.price}
-        productId={product.id}
-        onAddToCart={handleAddToCart}
-        isOutOfStock={isOutOfStock}
-        onWaitlistClick={handleWaitlistClick}
-        isPresale={IS_PRESALE}
-      />
+      {/* Quem comprou também comprou */}
+      <FrequentlyBoughtTogether products={recommendedProducts} />
 
       {/* Modal de Waitlist */}
       <WaitlistModal
