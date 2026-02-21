@@ -1,4 +1,3 @@
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
@@ -8,6 +7,9 @@ import { NextResponse, type NextRequest } from "next/server";
  * - Confirmação de email (signup)
  * - Redefinição de senha (recovery)
  * - OAuth providers (Google, etc.)
+ *
+ * Redireciona para /auth/confirm com botão obrigatório (recomendação Supabase)
+ * para evitar que scanners de email consumam o token.
  */
 
 interface CallbackParams {
@@ -17,48 +19,6 @@ interface CallbackParams {
   error: string | null;
   errorCode: string | null;
   errorDescription: string | null;
-}
-
-interface CookieToSet {
-  name: string;
-  value: string;
-  options?: {
-    sameSite?: "lax" | "strict" | "none";
-    path?: string;
-    httpOnly?: boolean;
-    secure?: boolean;
-    maxAge?: number;
-  };
-}
-
-const isDev = process.env.NODE_ENV === "development";
-
-function createSupabaseClient(request: NextRequest, cookieStore: CookieToSet[]) {
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => request.cookies.getAll(),
-        setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.push({
-              name,
-              value,
-              options: {
-                ...options,
-                sameSite: (options?.sameSite as "lax" | "strict" | "none") || "lax",
-                path: options?.path || "/",
-                httpOnly: false,
-                secure: process.env.NODE_ENV === "production",
-                maxAge: options?.maxAge || 60 * 60 * 24 * 7,
-              },
-            });
-          });
-        },
-      },
-    }
-  );
 }
 
 function processAuthError(
@@ -100,98 +60,6 @@ function processAuthError(
   return { message, isEmailConfirmed, isRecovery };
 }
 
-async function exchangeCodeForSession(
-  supabase: ReturnType<typeof createSupabaseClient>,
-  code: string
-): Promise<{ success: boolean; error?: any; user?: any; session?: any }> {
-  try {
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-
-    if (error) {
-      if (isDev) console.error("❌ Erro exchangeCode:", error.message);
-      return { success: false, error };
-    }
-
-    if (!data?.session) {
-      if (isDev) console.error("❌ Sessão não criada");
-      return { success: false, error: { message: "Sessão não criada" } };
-    }
-
-    return { success: true, user: data.user, session: data.session };
-  } catch (err: any) {
-    if (isDev) console.error("❌ Exceção exchangeCode:", err);
-    return { success: false, error: err };
-  }
-}
-
-function getRedirectUrl(type: string | null, next: string, origin: string): string {
-  // Recovery tem prioridade — nunca redirecionar para home quando for reset de senha
-  if (
-    type === "recovery" ||
-    next === "/update-password" ||
-    next === "/reset-password"
-  ) {
-    return `${origin}/update-password`;
-  }
-
-  let decodedNext = next;
-  try {
-    decodedNext = decodeURIComponent(next);
-  } catch {
-    // Usar valor original
-  }
-
-  const isValid =
-    decodedNext &&
-    decodedNext.startsWith("/") &&
-    !decodedNext.includes("//") &&
-    !decodedNext.includes("..") &&
-    !decodedNext.startsWith("/auth/callback");
-
-  return `${origin}${isValid ? decodedNext : "/"}`;
-}
-
-async function handlePKCEError(
-  error: any,
-  type: string | null,
-  next: string,
-  origin: string,
-  supabase: ReturnType<typeof createSupabaseClient>
-): Promise<NextResponse> {
-  const isLinkUsedOrExpired =
-    error?.message?.includes("PKCE") ||
-    error?.message?.includes("code verifier") ||
-    error?.message?.includes("already been used") ||
-    error?.message?.includes("expired") ||
-    error?.message?.includes("invalid");
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) {
-    const validNext = next?.startsWith("/") ? next : "/";
-    return NextResponse.redirect(`${origin}${validNext}`);
-  }
-
-  if (!isLinkUsedOrExpired) {
-    return NextResponse.redirect(
-      `${origin}/login?error=auth-error&message=${encodeURIComponent(error?.message || "Erro ao autenticar.")}`
-    );
-  }
-
-  if (type === "recovery" || next === "/update-password") {
-    return NextResponse.redirect(
-      `${origin}/forgot-password?error=${encodeURIComponent("Link expirado. Solicite um novo.")}`
-    );
-  }
-
-  // Signup ou fluxo sem type: instruir a fazer login (evita "sessão expirada" confuso)
-  return NextResponse.redirect(
-    `${origin}/login?email-confirmed=true&message=${encodeURIComponent("Link expirado ou já utilizado. Se você já confirmou, faça login com seu email e senha.")}`
-  );
-}
-
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const searchParams = requestUrl.searchParams;
@@ -214,9 +82,6 @@ export async function GET(request: NextRequest) {
     errorDescription: searchParams.get("error_description"),
   };
 
-  const cookieStore: CookieToSet[] = [];
-  const supabase = createSupabaseClient(request, cookieStore);
-
   // CENÁRIO 1: Erros explícitos
   if (params.error || params.errorCode) {
     const { message, isEmailConfirmed, isRecovery } = processAuthError(
@@ -237,49 +102,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=auth-error&message=${encodeURIComponent(message)}`);
   }
 
-  // CENÁRIO 2: Código presente
+  // CENÁRIO 2: Código presente — redirecionar para página com botão obrigatório
+  // (recomendação Supabase: evita scanners de email consumirem o token)
   if (params.code) {
-    const result = await exchangeCodeForSession(supabase, params.code);
-
-    if (result.success && result.session) {
-      // Recovery: next=/update-password tem prioridade (Supabase pode enviar type=email para ambos os fluxos)
-      const isRecovery =
-        params.type === "recovery" ||
-        params.next === "/update-password" ||
-        params.next === "/reset-password";
-      if (isRecovery) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        const { error: verifyError } = await supabase.auth.getSession();
-
-        if (verifyError) {
-          return NextResponse.redirect(
-            `${origin}/forgot-password?error=${encodeURIComponent("Erro ao processar. Solicite novo link.")}`
-          );
-        }
-      }
-
-      // Signup/confirmação: apenas quando NÃO for recovery
-      const isSignup =
-        !isRecovery &&
-        (params.type === "signup" || params.type === "email");
-      if (isSignup) {
-        return NextResponse.redirect(
-          `${origin}/login?email-confirmed=true&message=${encodeURIComponent("Email confirmado! Faça login com o email e senha que você definiu no cadastro.")}`
-        );
-      }
-
-      const redirectUrl = getRedirectUrl(params.type, params.next, origin);
-      const redirectResponse = NextResponse.redirect(redirectUrl);
-
-      // Aplicar cookies (OAuth, recovery)
-      cookieStore.forEach(({ name, value, options }) => {
-        redirectResponse.cookies.set(name, value, options);
-      });
-
-      return redirectResponse;
-    }
-
-    return await handlePKCEError(result.error, params.type, params.next, origin, supabase);
+    const confirmUrl = new URL(`${origin}/auth/confirm`);
+    confirmUrl.searchParams.set("code", params.code);
+    if (params.type) confirmUrl.searchParams.set("type", params.type);
+    if (params.next) confirmUrl.searchParams.set("next", params.next);
+    return NextResponse.redirect(confirmUrl.toString());
   }
 
   // CENÁRIO 3: Sem code na query — tokens podem estar no fragment (hash)

@@ -54,12 +54,8 @@ export default function ForgotPasswordPage() {
     try {
       const supabase = createClient();
 
-      // URL de callback — Supabase adiciona code e type automaticamente
-      let baseUrl = window.location.origin;
-      if (baseUrl.includes("www.")) {
-        baseUrl = baseUrl.replace("www.", "");
-      }
-      const redirectTo = `${baseUrl}/auth/callback?next=/update-password`;
+      // URL de callback — usar origin exato (www vs non-www) para cookies baterem
+      const redirectTo = `${window.location.origin}/auth/callback?next=/update-password`;
 
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email.trim(),

@@ -137,8 +137,23 @@ https://seu-dominio.com/auth/callback?next=/update-password
 
 ---
 
+## 7. Página com botão obrigatório (recomendação Supabase)
+
+O app usa uma página intermediária em `/auth/confirm` com o botão **"Continuar"** que o usuário deve clicar antes de prosseguir. Isso evita que scanners de email consumam o token automaticamente.
+
+**Fluxo:** Link no email → Supabase verifica → redireciona para `/auth/callback` → redireciona para `/auth/confirm` → usuário clica em "Continuar" → exchange → redireciona para `/update-password` ou `/login`.
+
+## 8. "Link expirado" ao clicar (PKCE)
+
+O fluxo PKCE exige que o **code_verifier** esteja no **mesmo navegador** onde o reset foi solicitado. Se o usuário abrir o email em outro dispositivo ou navegador, o exchange falha e aparece "Link expirado".
+
+**Outro dispositivo**: o link realmente expira — o usuário deve solicitar novo link no dispositivo onde vai redefinir.
+
+---
+
 ## Resumo
 
 1. Template **Reset password** separado e usando `{{ .ConfirmationURL }}`
 2. Link tracking do Resend **desativado**
 3. Redirect URL `https://seu-dominio.com/auth/callback` na lista de URLs permitidas do Supabase
+4. Página `/auth/confirm` com botão obrigatório (recomendação Supabase para evitar consumo por scanners)
