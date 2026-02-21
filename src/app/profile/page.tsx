@@ -23,6 +23,11 @@ export default function ProfilePage() {
     email: '',
   });
   const [fullNameError, setFullNameError] = useState<string | null>(null);
+  const [passwordSection, setPasswordSection] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [updatingPassword, setUpdatingPassword] = useState(false);
 
   // Função para obter iniciais do nome - Memoizada
   const getInitials = useCallback((name: string): string => {
@@ -282,6 +287,45 @@ export default function ProfilePage() {
     }
   }, [profile.full_name, showToast]);
 
+  const handlePasswordUpdate = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setPasswordError(null);
+
+      if (newPassword.length < 6) {
+        setPasswordError("A senha deve ter pelo menos 6 caracteres.");
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        setPasswordError("As senhas não coincidem.");
+        return;
+      }
+
+      setUpdatingPassword(true);
+      try {
+        const supabase = createClient();
+        const { error: updateError } = await supabase.auth.updateUser({
+          password: newPassword,
+        });
+
+        if (updateError) {
+          setPasswordError(updateError.message ?? "Erro ao alterar senha.");
+          return;
+        }
+
+        setNewPassword("");
+        setConfirmPassword("");
+        setPasswordSection(false);
+        showToast("Senha alterada com sucesso.");
+      } catch (err) {
+        setPasswordError("Erro ao processar. Tente novamente.");
+      } finally {
+        setUpdatingPassword(false);
+      }
+    },
+    [newPassword, confirmPassword, showToast]
+  );
+
   const handleLogout = useCallback(async () => {
     try {
       // Importar e usar função centralizada de logout
@@ -532,6 +576,91 @@ export default function ProfilePage() {
               )}
             </button>
           </form>
+
+          {/* Alterar Senha */}
+          <div className="mt-12 pt-8 border-t border-gray-200">
+            <h3 className="text-[10px] uppercase tracking-widest opacity-70 font-medium text-brand-softblack mb-4">
+              Alterar Senha
+            </h3>
+            {!passwordSection ? (
+              <button
+                type="button"
+                onClick={() => setPasswordSection(true)}
+                className="text-brand-green text-xs uppercase tracking-[0.2em] font-medium border-b border-brand-green/30 hover:border-brand-green transition-colors pb-1"
+              >
+                Definir nova senha
+              </button>
+            ) : (
+              <form onSubmit={handlePasswordUpdate} className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="new_password"
+                    className="text-[10px] uppercase tracking-widest block mb-2 opacity-70 font-medium text-brand-softblack"
+                  >
+                    Nova senha
+                  </label>
+                  <input
+                    id="new_password"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => {
+                      setNewPassword(e.target.value);
+                      if (passwordError) setPasswordError(null);
+                    }}
+                    className="w-full bg-transparent border-b py-3 focus:outline-none transition text-brand-softblack placeholder:text-gray-400 font-light border-gray-300 focus:border-brand-green"
+                    placeholder="Mínimo 6 caracteres"
+                    minLength={6}
+                    autoComplete="new-password"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="confirm_password"
+                    className="text-[10px] uppercase tracking-widest block mb-2 opacity-70 font-medium text-brand-softblack"
+                  >
+                    Confirmar senha
+                  </label>
+                  <input
+                    id="confirm_password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      if (passwordError) setPasswordError(null);
+                    }}
+                    className="w-full bg-transparent border-b py-3 focus:outline-none transition text-brand-softblack placeholder:text-gray-400 font-light border-gray-300 focus:border-brand-green"
+                    placeholder="Repita a nova senha"
+                    minLength={6}
+                    autoComplete="new-password"
+                  />
+                </div>
+                {passwordError && (
+                  <p className="text-[10px] text-red-500">{passwordError}</p>
+                )}
+                <div className="flex gap-4">
+                  <button
+                    type="submit"
+                    disabled={updatingPassword}
+                    className="bg-brand-green text-brand-offwhite py-3 px-6 uppercase text-xs tracking-[0.2em] hover:bg-brand-softblack transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  >
+                    {updatingPassword ? "Salvando…" : "Salvar senha"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPasswordSection(false);
+                      setNewPassword("");
+                      setConfirmPassword("");
+                      setPasswordError(null);
+                    }}
+                    className="text-gray-500 text-xs uppercase tracking-[0.2em] font-medium hover:text-brand-softblack transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
 
           {/* Separador */}
           <div className="mt-12 pt-8 border-t border-gray-200">

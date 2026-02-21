@@ -5,9 +5,9 @@ import { useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
 /**
- * Processa tokens no hash (implicit flow) e salva a sessão em cookies.
- * Usado quando o reset de senha usa implicit flow — tokens vêm no # da URL.
- * O cliente do CDN usa localStorage; nosso createClient usa cookies (SSR).
+ * Processa tokens no hash (implicit flow) — usado por OAuth/signup quando
+ * Supabase retorna tokens no fragment. Salva sessão em cookies.
+ * O fluxo de reset de senha agora usa senha temporária por email (não passa aqui).
  */
 function ProcessHashContent() {
   const searchParams = useSearchParams();
@@ -61,8 +61,11 @@ function ProcessHashContent() {
     supabase.auth
       .setSession({ access_token: accessToken, refresh_token: refreshToken })
       .then(() => {
-        // Limpar hash da URL antes de redirecionar (segurança)
-        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        window.history.replaceState(
+          null,
+          "",
+          window.location.pathname + window.location.search
+        );
         if (isRecovery) {
           window.location.replace("/update-password");
         } else if (type === "signup" || type === "email") {

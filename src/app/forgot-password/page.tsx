@@ -1,8 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createImplicitClient } from "@/utils/supabase/client-implicit";
-import { formatDatabaseError, logDatabaseError } from "@/utils/errorHandler";
+import { requestPasswordReset } from "@/actions/reset-password-action";
 import Link from "next/link";
 import { Mail } from "lucide-react";
 import { useCart } from "@/context/CartContext";
@@ -51,54 +50,15 @@ export default function ForgotPasswordPage() {
     setError(null);
     setSuccess(false);
 
-    try {
-      // Cliente implicit flow — tokens no hash, sem code_verifier (funciona em nova aba/WebView)
-      const supabase = createImplicitClient();
+    const result = await requestPasswordReset(email.trim());
 
-      const redirectTo = `${window.location.origin}/auth/callback?next=/update-password`;
-
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        email.trim(),
-        { redirectTo },
-      );
-
-      if (resetError) {
-        logDatabaseError("Solicitação de redefinição de senha", resetError);
-
-        const msg = resetError.message?.toLowerCase() ?? "";
-        const isRateLimit =
-          resetError.status === 429 ||
-          resetError.code === "rate_limit_exceeded" ||
-          msg === "too many requests" ||
-          msg.includes("rate limit") ||
-          msg.includes("rate_limit") ||
-          msg.includes("email rate limit");
-
-        if (isRateLimit) {
-          setError(
-            "O limite de envio de e-mails foi atingido (máx. 2/hora no plano gratuito). Aguarde 1 hora ou configure SMTP customizado no Supabase.",
-          );
-        } else {
-          setError(
-            resetError.message ||
-              "Não foi possível enviar o link. Verifique o e-mail e tente novamente.",
-          );
-        }
-
-        setLoading(false);
-        return;
-      }
-
-      // Sucesso - mostrar mensagem
+    if (result.success) {
       setSuccess(true);
-      setLoading(false);
-      showToast("Link de redefinição enviado! Verifique seu e-mail.");
-    } catch (err) {
-      logDatabaseError("Exceção ao solicitar redefinição de senha", err);
-      const errorMessage = formatDatabaseError(err);
-      setError(errorMessage);
-      setLoading(false);
+      showToast("Senha temporária enviada! Verifique seu e-mail e faça login.");
+    } else {
+      setError(result.error ?? "Não foi possível processar. Tente novamente.");
     }
+    setLoading(false);
   };
 
   return (
@@ -119,8 +79,8 @@ export default function ForgotPasswordPage() {
                   Recuperar Acesso
                 </h1>
                 <p className="text-sm font-light text-brand-softblack/60 leading-relaxed">
-                  Digite seu e-mail para receber as instruções de recuperação de
-                  acesso.
+                  Digite seu e-mail para receber uma senha temporária. Faça login
+                  e altere-a em Perfil.
                 </p>
               </div>
 
@@ -195,7 +155,7 @@ export default function ForgotPasswordPage() {
                         <span>A enviar...</span>
                       </span>
                     ) : (
-                      "Enviar Link"
+                      "Enviar Senha Temporária"
                     )}
                   </button>
                 </form>
@@ -245,7 +205,7 @@ export default function ForgotPasswordPage() {
                 transition={{ delay: 0.3 }}
                 className="text-2xl md:text-3xl font-light uppercase tracking-widest mb-6 text-brand-softblack"
               >
-                Link Enviado
+                E-mail Enviado
               </motion.h2>
 
               {/* Mensagem */}
@@ -255,11 +215,11 @@ export default function ForgotPasswordPage() {
                 transition={{ delay: 0.4 }}
                 className="text-sm font-light text-brand-softblack/70 leading-relaxed mb-8"
               >
-                Enviamos um e-mail para{" "}
+                Enviamos uma senha temporária para{" "}
                 <span className="font-medium text-brand-softblack">
                   {email}
-                </span>{" "}
-                com instruções para redefinir sua senha.
+                </span>
+                . Faça login e altere sua senha em Perfil.
                 <br />
                 <span className="text-xs text-brand-softblack/50 mt-2 block">
                   Não recebeu? Verifique sua pasta de spam.

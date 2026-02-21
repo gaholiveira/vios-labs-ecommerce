@@ -59,7 +59,8 @@ export default function SobrePage() {
             A VIOS LABS é o encontro de duas paixões. De um lado, o olhar atento
             da Biomedicina, que entende cada célula, cada reação e o milagre da
             vida. Do outro, a visão estruturada da Tecnologia, que constrói o
-            futuro e busca inovação.
+            futuro e busca inovação. Transformamos nosso sonho e nossos estudos
+            em uma marca que respeita a sua inteligência.
           </p>
 
           <p>
@@ -74,8 +75,7 @@ export default function SobrePage() {
 
           <p>
             Somos um casal movido pelo desejo de criar algo que não existia.
-            Transformamos nosso sonho e nossos estudos em uma marca que respeita
-            a sua inteligência. Não vendemos apenas suplementos; entregamos a
+            Não vendemos apenas suplementos; entregamos a
             arquitetura de uma vida mais plena, desenhada a quatro mãos, com o
             rigor que a saúde exige e a beleza que ela merece.
           </p>

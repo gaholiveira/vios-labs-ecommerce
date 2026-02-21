@@ -1,8 +1,20 @@
 # Configuração dos Templates de Email do Supabase
 
-## Problema: Reset de senha e confirmação de email com o mesmo comportamento
+## Reset de senha (fluxo próprio)
 
-Se o link de **redefinir senha** está redirecionando para a tela de login (como se fosse confirmação de email), verifique o seguinte:
+O app **não usa** o template Supabase para reset de senha. O fluxo é:
+1. Usuário solicita em `/forgot-password`
+2. Server action gera senha temporária e atualiza no Supabase (service role)
+3. Email enviado via **Resend** com a senha
+4. Usuário faz login e altera a senha em **Perfil**
+
+O template **Reset password** do Supabase pode ficar como está (não é usado).
+
+---
+
+## Problema: Confirmação de email
+
+Se o link de **confirmação de cadastro** está com comportamento incorreto, verifique o seguinte:
 
 ---
 
@@ -44,6 +56,8 @@ O `{{ .ConfirmationURL }}` é preenchido pelo Supabase com a URL correta, inclui
 
 Use este HTML no **Reset password** do Supabase. O link usa `{{ .ConfirmationURL }}` corretamente.
 
+**Se o link não for clicável:** verifique se o **Site URL** no Supabase (Authentication → URL Configuration) começa com `https://`. URLs sem protocolo são sanitizadas pelo Go e quebram o link.
+
 ```html
 <!DOCTYPE html>
 <html>
@@ -69,14 +83,25 @@ Use este HTML no **Reset password** do Supabase. O link usa `{{ .ConfirmationURL
               </h1>
 
               <p style="margin: 0 0 30px 0; font-size: 14px; line-height: 1.6; color: #666666; text-align: center;">
-                Recebemos uma solicitação para redefinir a senha da sua conta VIOS. Clique no botão abaixo para criar uma nova senha segura.
+                Recebemos uma solicitação para redefinir a senha da sua conta VIOS. Clique no link abaixo para criar uma nova senha segura.
               </p>
 
-              <div style="text-align: center; margin-bottom: 30px;">
-                <a href="{{ .ConfirmationURL }}" style="background-color: #082f1e; color: #ffffff; padding: 14px 32px; text-decoration: none; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; display: inline-block; border-radius: 2px;">
-                  Redefinir Senha
-                </a>
-              </div>
+              <table align="center" cellpadding="0" cellspacing="0" role="presentation" style="margin: 0 auto 30px;">
+                <tr>
+                  <td align="center" style="background-color: #082f1e; border-radius: 2px;">
+                    <a href="{{ .ConfirmationURL }}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 14px 32px; color: #ffffff !important; text-decoration: none; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 500;">
+                      Redefinir Senha
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin: 0 0 20px; font-size: 11px; color: #999999; text-align: center;">
+                Se o botão não funcionar, copie e cole este link no navegador:
+              </p>
+              <p style="margin: 0 0 20px; font-size: 11px; color: #082f1e; text-align: center; word-break: break-all;">
+                <a href="{{ .ConfirmationURL }}" target="_blank" rel="noopener noreferrer" style="color: #082f1e; text-decoration: underline;">{{ .ConfirmationURL }}</a>
+              </p>
 
               <p style="margin: 0; font-size: 12px; color: #999999; text-align: center;">
                 Este link expira em breve. Se você não solicitou esta alteração, sua conta continua segura e nenhuma ação é necessária.
@@ -99,6 +124,15 @@ Use este HTML no **Reset password** do Supabase. O link usa `{{ .ConfirmationURL
 </body>
 </html>
 ```
+
+### Link não clicável — checklist
+
+| Causa | Solução |
+|-------|---------|
+| Site URL sem `https://` | Supabase → Authentication → URL Configuration → Site URL deve ser `https://vioslabs.com.br` |
+| Link tracking do Resend | Desative (veja seção 4) — pode reescrever o link |
+| Cliente de email bloqueando | Use o link de fallback (texto abaixo do botão) |
+| Template com variável errada | Use exatamente `{{ .ConfirmationURL }}` (com ponto e maiúsculas) |
 
 ---
 
@@ -143,11 +177,11 @@ O app usa uma página intermediária em `/auth/confirm` com o botão **"Continua
 
 **Fluxo:** Link no email → Supabase verifica → redireciona para `/auth/callback` → redireciona para `/auth/confirm` → usuário clica em "Continuar" → exchange → redireciona para `/update-password` ou `/login`.
 
-## 8. Implicit flow para reset de senha (evita "link expirado")
+## 8. Reset de senha (senha temporária)
 
-O app usa **implicit flow** para reset de senha: o `forgot-password` envia `resetPasswordForEmail` via `createImplicitClient` (flowType: 'implicit'). Assim, os tokens vêm no hash da URL — não exige code_verifier. Funciona em nova aba, WebView do email ou outro dispositivo.
+O app usa **senha temporária** enviada por email (Resend). Não usa link do Supabase.
 
-**Fluxo:** Link no email → Supabase verifica → redireciona para `/auth/callback#access_token=...` → fallback redireciona para `/auth/process-hash` → processa hash, salva sessão em cookies → redireciona para `/update-password`.
+**Fluxo:** Usuário solicita → server action gera senha → atualiza no Supabase (admin) → envia email com senha → usuário faz login → altera senha em Perfil.
 
 ---
 

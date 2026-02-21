@@ -231,3 +231,115 @@ export async function sendOrderConfirmationEmail(
 export function isEmailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY?.trim());
 }
+
+// ============================================================================
+// PASSWORD RESET (senha temporária)
+// ============================================================================
+
+export interface SendPasswordResetParams {
+  to: string;
+  tempPassword: string;
+}
+
+function generatePasswordResetHtml(params: SendPasswordResetParams): string {
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://vioslabs.com.br";
+  const loginUrl = `${siteUrl}/login`;
+  const profileUrl = `${siteUrl}/profile`;
+
+  return `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recuperação de Acesso — VIOS Labs</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: sans-serif; background-color: ${BACKGROUND}; color: ${TEXT};">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: ${BACKGROUND}; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: ${BACKGROUND}; border-radius: 4px; border: 1px solid ${BORDER}; overflow: hidden;">
+          <tr>
+            <td style="padding: 32px 40px; text-align: center; border-bottom: 1px solid ${BORDER};">
+              <h1 style="margin: 0; font-size: 22px; font-weight: 300; letter-spacing: 0.1em; text-transform: uppercase; color: ${TEXT};">VIOS LABS</h1>
+              <p style="margin: 12px 0 0 0; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: ${TEXT}; opacity: 0.7;">
+                Recuperação de Acesso
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 32px 40px;">
+              <p style="margin: 0 0 24px 0; font-size: 15px; line-height: 1.6; color: ${TEXT};">
+                Você solicitou a redefinição de senha. Segue sua senha temporária:
+              </p>
+              <div style="background: rgba(27,43,34,0.08); border: 1px solid ${BORDER}; border-radius: 4px; padding: 20px; margin-bottom: 24px;">
+                <p style="margin: 0 0 8px 0; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: ${TEXT}; opacity: 0.7;">Senha temporária</p>
+                <p style="margin: 0; font-size: 18px; font-family: monospace; letter-spacing: 0.1em; color: ${TEXT}; word-break: break-all;">${escapeHtml(params.tempPassword)}</p>
+              </div>
+              <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: ${TEXT};">
+                Faça login com esta senha e altere-a em <strong>Perfil</strong> por uma senha de sua escolha.
+              </p>
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 32px;">
+                <tr><td align="center">
+                  <a href="${escapeHtml(loginUrl)}" style="display: inline-block; padding: 14px 28px; background-color: ${TEXT}; color: ${BACKGROUND}; text-decoration: none; font-size: 12px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; border-radius: 4px;">
+                    Fazer Login
+                  </a>
+                </td></tr>
+              </table>
+              <p style="margin: 24px 0 0 0; font-size: 12px; color: ${TEXT}; opacity: 0.7;">
+                Após o login, acesse <a href="${escapeHtml(profileUrl)}" style="color: ${TEXT}; text-decoration: underline;">Meu Perfil</a> para alterar sua senha.
+              </p>
+              <p style="margin: 24px 0 0 0; font-size: 11px; color: ${TEXT}; opacity: 0.6;">
+                Se você não solicitou esta alteração, ignore este e-mail. Sua conta continua segura.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 24px 40px; text-align: center; border-top: 1px solid ${BORDER};">
+              <p style="margin: 0 0 8px 0; font-size: 11px; color: ${TEXT}; opacity: 0.7;">VIOS LABS</p>
+              <p style="margin: 0; font-size: 11px; color: ${TEXT}; opacity: 0.6;">Dúvidas? Acesse <a href="${escapeHtml(siteUrl)}" style="color: ${TEXT}; text-decoration: underline;">${escapeHtml(siteUrl)}</a></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`.trim();
+}
+
+/**
+ * Envia e-mail com senha temporária para recuperação de acesso.
+ */
+export async function sendPasswordResetEmail(
+  params: SendPasswordResetParams
+): Promise<{ success: boolean; error?: string }> {
+  const key = process.env.RESEND_API_KEY?.trim();
+  if (!key) {
+    console.warn("[EMAIL] RESEND_API_KEY não configurada.");
+    return { success: false, error: "E-mail não configurado." };
+  }
+
+  try {
+    const html = generatePasswordResetHtml(params);
+    const resend = getResendClient();
+
+    const { error } = await resend.emails.send({
+      from: `${FROM_NAME} <${FROM_EMAIL}>`,
+      to: params.to,
+      subject: "Recuperação de Acesso — VIOS Labs",
+      html,
+    });
+
+    if (error) {
+      console.error("[EMAIL] Password reset error:", error);
+      return { success: false, error: String(error.message ?? error) };
+    }
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[EMAIL] sendPasswordResetEmail error:", err);
+    return { success: false, error: message };
+  }
+}
