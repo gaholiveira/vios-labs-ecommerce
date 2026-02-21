@@ -121,8 +121,6 @@ export async function GET(request: NextRequest) {
 }
 
 function getAuthCallbackFallbackHtml(origin: string): string {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
   const base = origin.replace(/\/$/, "");
 
   return `<!DOCTYPE html>
@@ -131,50 +129,28 @@ function getAuthCallbackFallbackHtml(origin: string): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Processando…</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
   <p style="font-family:system-ui;text-align:center;padding:2rem;">Processando…</p>
   <script>
 (function() {
   var hash = window.location.hash && window.location.hash.slice(1);
+  var search = window.location.search || "";
   if (!hash) {
     window.location.replace("${base}/login?error=no-code&message=" + encodeURIComponent("Link inválido. Verifique seu email."));
     return;
   }
   var params = new URLSearchParams(hash);
-  var accessToken = params.get("access_token");
-  var refreshToken = params.get("refresh_token");
-  var type = params.get("type");
   var error = params.get("error");
   var errorDescription = params.get("error_description");
-  var nextParam = new URLSearchParams(window.location.search).get("next");
-  var isRecovery = type === "recovery" || nextParam === "/update-password" || nextParam === "/reset-password";
+  var type = params.get("type");
   if (error) {
     var msg = errorDescription ? decodeURIComponent(errorDescription.replace(/\\+/g, " ")) : "Erro ao processar o link.";
     var target = type === "recovery" ? "${base}/forgot-password?error=" : "${base}/login?error=auth-error&message=";
     window.location.replace(target + encodeURIComponent(msg));
     return;
   }
-  if (!accessToken || !refreshToken) {
-    window.location.replace("${base}/login?error=no-code&message=" + encodeURIComponent("Link inválido. Verifique seu email."));
-    return;
-  }
-  var supabase = window.supabase.createClient("${supabaseUrl}", "${supabaseKey}");
-  supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-    .then(function() {
-      if (isRecovery) {
-        window.location.replace("${base}/update-password");
-      } else if (type === "signup" || type === "email") {
-        window.location.replace("${base}/login?email-confirmed=true&message=" + encodeURIComponent("Email confirmado! Faça login com o email e senha que você definiu no cadastro."));
-      } else {
-        window.location.replace("${base}/");
-      }
-    })
-    .catch(function(err) {
-      console.error(err);
-      window.location.replace("${base}/login?error=auth-error&message=" + encodeURIComponent("Erro ao processar. Tente novamente."));
-    });
+  window.location.replace("${base}/auth/process-hash" + search + window.location.hash);
 })();
   </script>
 </body>

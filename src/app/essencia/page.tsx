@@ -173,6 +173,25 @@ export default function EssenciaPage() {
           <p className="text-brand-offwhite/70 text-sm md:text-base font-light leading-relaxed tracking-wide mb-10">
             Cada formulação pensada para equilíbrio e uso contínuo.
           </p>
+
+          <span className="block text-brand-gold uppercase tracking-[0.5em] text-[10px] font-semibold mb-6">
+            Rigor
+          </span>
+          <div className="space-y-6 text-brand-offwhite/80 text-sm md:text-base font-light leading-relaxed tracking-wide mb-12 text-left max-w-2xl mx-auto">
+            <p>
+              Cada formulação VIOS nasce de análise técnica e seleção criteriosa
+              de ativos reconhecidos na literatura científica nutricional.
+            </p>
+            <p>
+              Não buscamos superdosagens nem fórmulas infladas. Buscamos
+              compatibilidade com o funcionamento do organismo ao longo do tempo.
+            </p>
+            <p>
+              O resultado não é uma resposta agressiva ao corpo, mas um suporte
+              consistente à sua fisiologia.
+            </p>
+          </div>
+
           <Link
             href="/"
             className="inline-block border border-brand-offwhite rounded-sm px-10 py-4 text-[10px] uppercase tracking-widest text-brand-offwhite font-light hover:bg-brand-offwhite hover:text-brand-softblack transition-all duration-500"

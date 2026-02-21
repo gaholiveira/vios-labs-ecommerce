@@ -143,11 +143,11 @@ O app usa uma página intermediária em `/auth/confirm` com o botão **"Continua
 
 **Fluxo:** Link no email → Supabase verifica → redireciona para `/auth/callback` → redireciona para `/auth/confirm` → usuário clica em "Continuar" → exchange → redireciona para `/update-password` ou `/login`.
 
-## 8. "Link expirado" ao clicar (PKCE)
+## 8. Implicit flow para reset de senha (evita "link expirado")
 
-O fluxo PKCE exige que o **code_verifier** esteja no **mesmo navegador** onde o reset foi solicitado. Se o usuário abrir o email em outro dispositivo ou navegador, o exchange falha e aparece "Link expirado".
+O app usa **implicit flow** para reset de senha: o `forgot-password` envia `resetPasswordForEmail` via `createImplicitClient` (flowType: 'implicit'). Assim, os tokens vêm no hash da URL — não exige code_verifier. Funciona em nova aba, WebView do email ou outro dispositivo.
 
-**Outro dispositivo**: o link realmente expira — o usuário deve solicitar novo link no dispositivo onde vai redefinir.
+**Fluxo:** Link no email → Supabase verifica → redireciona para `/auth/callback#access_token=...` → fallback redireciona para `/auth/process-hash` → processa hash, salva sessão em cookies → redireciona para `/update-password`.
 
 ---
 

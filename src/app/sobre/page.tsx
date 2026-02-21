@@ -63,6 +63,16 @@ export default function SobrePage() {
           </p>
 
           <p>
+            Desenvolvemos cada formulação a partir de critérios de estabilidade,
+            biodisponibilidade e tolerabilidade para uso contínuo.
+          </p>
+
+          <p>
+            Antes da escolha estética ou sensorial, avaliamos como o organismo
+            reage ao longo do tempo, não apenas após o primeiro uso.
+          </p>
+
+          <p>
             Somos um casal movido pelo desejo de criar algo que não existia.
             Transformamos nosso sonho e nossos estudos em uma marca que respeita
             a sua inteligência. Não vendemos apenas suplementos; entregamos a

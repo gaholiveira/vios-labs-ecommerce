@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createClient } from "@/utils/supabase/client";
+import { createImplicitClient } from "@/utils/supabase/client-implicit";
 import { formatDatabaseError, logDatabaseError } from "@/utils/errorHandler";
 import Link from "next/link";
 import { Mail } from "lucide-react";
@@ -52,9 +52,9 @@ export default function ForgotPasswordPage() {
     setSuccess(false);
 
     try {
-      const supabase = createClient();
+      // Cliente implicit flow — tokens no hash, sem code_verifier (funciona em nova aba/WebView)
+      const supabase = createImplicitClient();
 
-      // URL de callback — usar origin exato (www vs non-www) para cookies baterem
       const redirectTo = `${window.location.origin}/auth/callback?next=/update-password`;
 
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
