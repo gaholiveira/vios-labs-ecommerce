@@ -11,6 +11,38 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 const BLING_API_BASE = "https://api.bling.com.br/Api/v3";
 const BLING_TOKEN_URL = "https://www.bling.com.br/Api/v3/oauth/token";
 
+/** Bling: 3 req/s. Espaçamento mínimo entre chamadas para evitar 429 em fluxo único (contato + venda = 2–6 req). */
+const BLING_MIN_DELAY_MS = 450;
+let lastBlingFetchAt = 0;
+
+async function blingThrottle(): Promise<void> {
+  const now = Date.now();
+  const elapsed = now - lastBlingFetchAt;
+  if (elapsed < BLING_MIN_DELAY_MS) {
+    await new Promise((r) => setTimeout(r, BLING_MIN_DELAY_MS - elapsed));
+  }
+  lastBlingFetchAt = Date.now();
+}
+
+/** Retry em 429 (rate limit): até 3 tentativas com backoff exponencial (2s, 4s, 8s) */
+async function fetchWithRateLimitRetry(
+  url: string,
+  init: RequestInit,
+  maxRetries = 3,
+): Promise<Response> {
+  let lastRes: Response | null = null;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    await blingThrottle();
+    const res = await fetch(url, init);
+    lastRes = res;
+    if (res.status !== 429 || attempt === maxRetries) return res;
+    const delayMs = Math.min(2000 * 2 ** attempt, 10000);
+    console.warn("[BLING] Rate limit 429, aguardando", { delayMs, attempt: attempt + 1 });
+    await new Promise((r) => setTimeout(r, delayMs));
+  }
+  return lastRes!;
+}
+
 /** Margem em segundos antes de expirar para considerar token como "expirado" e renovar */
 const TOKEN_EXPIRY_MARGIN_SEC = 5 * 60; // 5 min
 
@@ -402,14 +434,17 @@ async function createOrGetContactInBling(
     cep: payload.cep,
   });
 
-  const res = await fetch(`${BLING_API_BASE}/contatos`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+  const res = await fetchWithRateLimitRetry(
+    `${BLING_API_BASE}/contatos`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
     },
-    body: JSON.stringify(payload),
-  });
+  );
 
   const data = (await res.json().catch(() => ({}))) as {
     data?: { id?: number };
@@ -441,6 +476,7 @@ async function createOrGetContactInBling(
     type ContactItem = { id?: number; cpfCnpj?: string; numeroDocumento?: string; nome?: string };
     type ContatosResponse = { data?: ContactItem[]; total?: number };
 
+    await blingThrottle();
     const searchRes = await fetch(
       `${BLING_API_BASE}/contatos?cpfCnpj=${encodeURIComponent(doc)}`,
       { headers: { Authorization: `Bearer ${token}` } },
@@ -453,6 +489,7 @@ async function createOrGetContactInBling(
       const match = errMsg.match(/no contato ([^.]+)/i) || errMsg.match(/contato ([^.]+)/i);
       const nomeNoErro = match?.[1]?.trim();
       if (nomeNoErro) {
+        await blingThrottle();
         const byNameRes = await fetch(
           `${BLING_API_BASE}/contatos?nome=${encodeURIComponent(nomeNoErro)}`,
           { headers: { Authorization: `Bearer ${token}` } },
@@ -464,6 +501,7 @@ async function createOrGetContactInBling(
     }
 
     if (existing?.id == null && list.length === 0 && cpfJaCadastrado) {
+      await blingThrottle();
       const listRes = await fetch(
         `${BLING_API_BASE}/contatos?pagina=1&limite=100`,
         { headers: { Authorization: `Bearer ${token}` } },
@@ -504,6 +542,7 @@ async function createOrGetContactInBling(
   }
 
   if (existingId != null) {
+    await blingThrottle();
     const updateRes = await fetch(`${BLING_API_BASE}/contatos/${existingId}`, {
       method: "PUT",
       headers: {
@@ -686,14 +725,17 @@ export async function createSaleInBling(
       totalAmount: input.totalAmount,
     });
 
-    const res = await fetch(`${BLING_API_BASE}/pedidos/vendas`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+    const res = await fetchWithRateLimitRetry(
+      `${BLING_API_BASE}/pedidos/vendas`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    });
+    );
 
     const data = (await res.json().catch(() => ({}))) as {
       data?: { id?: number } | Array<{ id?: number; numero?: string }>;

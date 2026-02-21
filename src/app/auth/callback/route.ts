@@ -125,7 +125,12 @@ async function exchangeCodeForSession(
 }
 
 function getRedirectUrl(type: string | null, next: string, origin: string): string {
-  if (type === "recovery" || next === "/update-password" || next === "/reset-password") {
+  // Recovery tem prioridade — nunca redirecionar para home quando for reset de senha
+  if (
+    type === "recovery" ||
+    next === "/update-password" ||
+    next === "/reset-password"
+  ) {
     return `${origin}/update-password`;
   }
 
@@ -237,8 +242,10 @@ export async function GET(request: NextRequest) {
     const result = await exchangeCodeForSession(supabase, params.code);
 
     if (result.success && result.session) {
-      // Signup: não fazer login automático — redirecionar para login com instrução
-      if (params.type === "signup") {
+      // Signup/confirmação de email: type=signup ou type=email
+      const isSignup =
+        params.type === "signup" || params.type === "email";
+      if (isSignup) {
         return NextResponse.redirect(
           `${origin}/login?email-confirmed=true&message=${encodeURIComponent("Email confirmado! Faça login com o email e senha que você definiu no cadastro.")}`
         );
@@ -321,7 +328,7 @@ function getAuthCallbackFallbackHtml(origin: string): string {
     .then(function() {
       if (type === "recovery") {
         window.location.replace("${base}/update-password");
-      } else if (type === "signup") {
+      } else if (type === "signup" || type === "email") {
         window.location.replace("${base}/login?email-confirmed=true&message=" + encodeURIComponent("Email confirmado! Faça login com o email e senha que você definiu no cadastro."));
       } else {
         window.location.replace("${base}/");

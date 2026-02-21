@@ -2,7 +2,7 @@
 import { memo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Kit } from "@/constants/kits";
+import { Kit, GLOW_PRODUCT_ID } from "@/constants/kits";
 import { PRODUCTS } from "@/constants/products";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/utils/format";
@@ -10,6 +10,7 @@ import KitImageTemplate from "./KitImageTemplate";
 
 function KitCard({ kit }: { kit: Kit }) {
   const { addKitToCart } = useCart();
+  const isActive = !kit.products.includes(GLOW_PRODUCT_ID);
 
   const handleAddToCart = () => {
     addKitToCart(kit);
@@ -97,10 +98,14 @@ function KitCard({ kit }: { kit: Kit }) {
         {/* Botão Colocar na sacola — conversão high-end */}
         <button
           onClick={handleAddToCart}
-          disabled
-          className="w-full border border-gray-300 rounded-sm bg-gray-200 text-gray-500 px-6 py-3 min-h-[44px] uppercase tracking-wider text-xs font-light cursor-not-allowed transition-all duration-500 ease-out mt-2"
+          disabled={!isActive}
+          className={`w-full border rounded-sm px-6 py-3 min-h-[44px] uppercase tracking-wider text-xs font-light transition-all duration-500 ease-out mt-2 ${
+            isActive
+              ? "border-brand-softblack/90 bg-brand-softblack text-brand-offwhite hover:bg-brand-green hover:border-brand-green cursor-pointer"
+              : "border-gray-300 bg-gray-200 text-gray-500 cursor-not-allowed"
+          }`}
         >
-          Em Breve
+          {isActive ? "Colocar na sacola" : "Em Breve"}
         </button>
       </div>
     </div>

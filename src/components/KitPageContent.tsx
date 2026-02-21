@@ -10,7 +10,7 @@ import ProductAccordion from "@/components/ProductAccordion";
 import StickyBar from "@/components/StickyBar";
 import TextReveal from "@/components/ui/text-reveal";
 import { ShareButton } from "@/components/shop/ShareButton";
-import { Kit } from "@/constants/kits";
+import { Kit, GLOW_PRODUCT_ID } from "@/constants/kits";
 import { PRODUCTS } from "@/constants/products";
 import KitImageTemplate from "@/components/KitImageTemplate";
 import CheckoutBenefitsBar from "@/components/CheckoutBenefitsBar";
@@ -27,6 +27,7 @@ interface KitPageContentProps {
 
 function KitPageContent({ kit }: KitPageContentProps) {
   const { addKitToCart } = useCart();
+  const isActive = !kit.products.includes(GLOW_PRODUCT_ID);
   const [showWaitlistModal, setShowWaitlistModal] = useState(false);
 
   // Garantir que a página sempre comece no topo ao carregar
@@ -329,13 +330,17 @@ function KitPageContent({ kit }: KitPageContentProps) {
           <motion.button
             data-sticky-bar-trigger
             onClick={handleAddToCart}
-            disabled
+            disabled={!isActive}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.5 }}
-            className="w-full border border-gray-300 rounded-sm bg-gray-200 text-gray-500 px-6 py-3 min-h-[44px] uppercase tracking-[0.2em] text-xs font-light cursor-not-allowed transition-all duration-500 ease-out"
+            className={`w-full border rounded-sm px-6 py-3 min-h-[44px] uppercase tracking-[0.2em] text-xs font-light transition-all duration-500 ease-out ${
+              isActive
+                ? "border-brand-softblack/90 bg-brand-softblack text-brand-offwhite hover:bg-brand-green hover:border-brand-green cursor-pointer"
+                : "border-gray-300 bg-gray-200 text-gray-500 cursor-not-allowed"
+            }`}
           >
-            Em Breve
+            {isActive ? "Colocar na sacola" : "Em Breve"}
           </motion.button>
 
           <motion.div
@@ -444,7 +449,7 @@ function KitPageContent({ kit }: KitPageContentProps) {
         price={kit.price}
         productId={kit.id}
         onAddToCart={handleAddToCart}
-        isOutOfStock={true} // Kits sempre "fora de estoque" por enquanto
+        isOutOfStock={!isActive}
         isPresale={IS_PRESALE}
       />
     </>
