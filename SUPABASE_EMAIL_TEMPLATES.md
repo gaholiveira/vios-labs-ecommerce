@@ -40,13 +40,64 @@ O `{{ .ConfirmationURL }}` é preenchido pelo Supabase com a URL correta, inclui
 
 ---
 
-## 3. Exemplo do template Reset password
+## 3. Template Reset password (VIOS)
+
+Use este HTML no **Reset password** do Supabase. O link usa `{{ .ConfirmationURL }}` corretamente.
 
 ```html
-<h2>Redefinir senha</h2>
-<p>Você solicitou a redefinição de senha. Clique no link abaixo:</p>
-<p><a href="{{ .ConfirmationURL }}">Redefinir minha senha</a></p>
-<p>Se não foi você, ignore este email.</p>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #faf9f6; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  
+  <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background-color: #faf9f6; padding: 40px 0;">
+    <tr>
+      <td align="center">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="max-width: 480px; background-color: #ffffff; border: 1px solid #e5e5e5; border-radius: 4px;">
+          <tr>
+            <td style="padding: 40px;">
+              
+              <div style="text-align: center; margin-bottom: 30px;">
+                <span style="font-size: 20px; font-weight: 600; letter-spacing: 2px; color: #082f1e; text-transform: uppercase;">VIOS LABS</span>
+              </div>
+
+              <h1 style="margin: 0 0 20px 0; font-size: 24px; font-weight: 400; color: #1a1a1a; text-align: center; font-family: 'Times New Roman', serif;">
+                Recuperação de Acesso
+              </h1>
+
+              <p style="margin: 0 0 30px 0; font-size: 14px; line-height: 1.6; color: #666666; text-align: center;">
+                Recebemos uma solicitação para redefinir a senha da sua conta VIOS. Clique no botão abaixo para criar uma nova senha segura.
+              </p>
+
+              <div style="text-align: center; margin-bottom: 30px;">
+                <a href="{{ .ConfirmationURL }}" style="background-color: #082f1e; color: #ffffff; padding: 14px 32px; text-decoration: none; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; display: inline-block; border-radius: 2px;">
+                  Redefinir Senha
+                </a>
+              </div>
+
+              <p style="margin: 0; font-size: 12px; color: #999999; text-align: center;">
+                Este link expira em breve. Se você não solicitou esta alteração, sua conta continua segura e nenhuma ação é necessária.
+              </p>
+
+            </td>
+          </tr>
+        </table>
+
+        <div style="margin-top: 20px; text-align: center;">
+          <p style="font-size: 10px; color: #b3b3b3; text-transform: uppercase; letter-spacing: 1px;">
+            © VIOS LABS • Science of Longevity
+          </p>
+        </div>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
 ```
 
 ---
@@ -72,6 +123,17 @@ https://[seu-projeto].supabase.co/auth/v1/verify?token_hash=...&type=recovery&re
 ```
 
 Se aparecer `type=email` em vez de `type=recovery`, o template de Reset password está incorreto.
+
+---
+
+## 6. redirectTo com `next` para recovery
+
+O `forgot-password` envia `redirectTo: /auth/callback?next=/update-password`. Assim, mesmo se o Supabase enviar `type=email` para recovery (igual ao signup), o callback identifica recovery pelo `next` e redireciona para `/update-password`.
+
+**Adicione a URL permitida no Supabase:**
+```
+https://seu-dominio.com/auth/callback?next=/update-password
+```
 
 ---
 

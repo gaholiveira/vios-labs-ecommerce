@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
       if (baseUrl.includes("www.")) {
         baseUrl = baseUrl.replace("www.", "");
       }
-      const redirectTo = `${baseUrl}/auth/callback`;
+      const redirectTo = `${baseUrl}/auth/callback?next=/update-password`;
 
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email.trim(),

@@ -242,17 +242,12 @@ export async function GET(request: NextRequest) {
     const result = await exchangeCodeForSession(supabase, params.code);
 
     if (result.success && result.session) {
-      // Signup/confirmação de email: type=signup ou type=email
-      const isSignup =
-        params.type === "signup" || params.type === "email";
-      if (isSignup) {
-        return NextResponse.redirect(
-          `${origin}/login?email-confirmed=true&message=${encodeURIComponent("Email confirmado! Faça login com o email e senha que você definiu no cadastro.")}`
-        );
-      }
-
-      // Recovery: verificar sessão e aplicar cookies
-      if (params.type === "recovery") {
+      // Recovery: next=/update-password tem prioridade (Supabase pode enviar type=email para ambos os fluxos)
+      const isRecovery =
+        params.type === "recovery" ||
+        params.next === "/update-password" ||
+        params.next === "/reset-password";
+      if (isRecovery) {
         await new Promise((resolve) => setTimeout(resolve, 100));
         const { error: verifyError } = await supabase.auth.getSession();
 
@@ -261,6 +256,16 @@ export async function GET(request: NextRequest) {
             `${origin}/forgot-password?error=${encodeURIComponent("Erro ao processar. Solicite novo link.")}`
           );
         }
+      }
+
+      // Signup/confirmação: apenas quando NÃO for recovery
+      const isSignup =
+        !isRecovery &&
+        (params.type === "signup" || params.type === "email");
+      if (isSignup) {
+        return NextResponse.redirect(
+          `${origin}/login?email-confirmed=true&message=${encodeURIComponent("Email confirmado! Faça login com o email e senha que você definiu no cadastro.")}`
+        );
       }
 
       const redirectUrl = getRedirectUrl(params.type, params.next, origin);
@@ -313,6 +318,8 @@ function getAuthCallbackFallbackHtml(origin: string): string {
   var type = params.get("type");
   var error = params.get("error");
   var errorDescription = params.get("error_description");
+  var nextParam = new URLSearchParams(window.location.search).get("next");
+  var isRecovery = type === "recovery" || nextParam === "/update-password" || nextParam === "/reset-password";
   if (error) {
     var msg = errorDescription ? decodeURIComponent(errorDescription.replace(/\\+/g, " ")) : "Erro ao processar o link.";
     var target = type === "recovery" ? "${base}/forgot-password?error=" : "${base}/login?error=auth-error&message=";
@@ -326,7 +333,7 @@ function getAuthCallbackFallbackHtml(origin: string): string {
   var supabase = window.supabase.createClient("${supabaseUrl}", "${supabaseKey}");
   supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
     .then(function() {
-      if (type === "recovery") {
+      if (isRecovery) {
         window.location.replace("${base}/update-password");
       } else if (type === "signup" || type === "email") {
         window.location.replace("${base}/login?email-confirmed=true&message=" + encodeURIComponent("Email confirmado! Faça login com o email e senha que você definiu no cadastro."));

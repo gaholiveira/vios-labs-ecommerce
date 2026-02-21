@@ -39,6 +39,7 @@ Adicione **todas** estas URLs (uma por linha):
 #### **Produção:**
 ```
 https://seu-dominio.com/auth/callback
+https://seu-dominio.com/auth/callback?next=/update-password
 https://seu-dominio.com/auth/callback?next=/
 https://seu-dominio.com/auth/callback?next=/profile
 https://seu-dominio.com/reset-password
