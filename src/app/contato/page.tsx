@@ -9,11 +9,11 @@ export const metadata: Metadata = {
 
 export default function ContatoPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-x-hidden">
       {/* Hero Section */}
       <div className="relative bg-brand-softblack text-brand-offwhite py-24 px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-light uppercase tracking-[0.3em] mb-6">
+          <h1 className="text-4xl md:text-5xl font-light uppercase tracking-[0.2em] md:tracking-[0.3em] mb-6 overflow-hidden">
             Central de Atendimento
           </h1>
           <p className="text-sm md:text-base font-light tracking-wider opacity-80 leading-relaxed max-w-2xl mx-auto">
@@ -84,7 +84,7 @@ export default function ContatoPage() {
 
         {/* Informações Adicionais */}
         <div className="border-t border-gray-200 pt-16">
-          <h2 className="text-2xl font-light uppercase tracking-[0.3em] text-brand-softblack mb-12 text-center">
+          <h2 className="text-2xl font-light uppercase tracking-[0.2em] md:tracking-[0.3em] text-brand-softblack mb-12 text-center overflow-hidden">
             Outras Informações
           </h2>
 
@@ -133,7 +133,7 @@ export default function ContatoPage() {
       {/* Seção de FAQ Rápido */}
       <div className="bg-gray-50 py-20 px-6">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-light uppercase tracking-[0.3em] text-brand-softblack mb-4 text-center">
+          <h2 className="text-2xl font-light uppercase tracking-[0.2em] md:tracking-[0.3em] text-brand-softblack mb-4 text-center overflow-hidden">
             Perguntas Frequentes
           </h2>
           <p className="text-sm text-gray-600 text-center mb-12 font-light">
@@ -143,12 +143,12 @@ export default function ContatoPage() {
           <div className="space-y-4">
             {/* FAQ Item 1 - Frete */}
             <details className="group border border-gray-200 rounded-sm bg-white">
-              <summary className="flex justify-between items-center cursor-pointer p-6 hover:bg-gray-50 transition-colors">
-                <span className="text-sm font-light uppercase tracking-wider text-brand-softblack">
+              <summary className="flex justify-between items-center gap-4 cursor-pointer p-6 hover:bg-gray-50 transition-colors">
+                <span className="text-sm font-light uppercase tracking-wider text-brand-softblack min-w-0 flex-1">
                   Como funciona o frete?
                 </span>
                 <svg
-                  className="w-5 h-5 text-gray-400 transition-transform group-open:rotate-180"
+                  className="w-5 h-5 shrink-0 text-gray-400 transition-transform group-open:rotate-180"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -174,12 +174,12 @@ export default function ContatoPage() {
 
             {/* FAQ Item 2 */}
             <details className="group border border-gray-200 rounded-sm bg-white">
-              <summary className="flex justify-between items-center cursor-pointer p-6 hover:bg-gray-50 transition-colors">
-                <span className="text-sm font-light uppercase tracking-wider text-brand-softblack">
+              <summary className="flex justify-between items-center gap-4 cursor-pointer p-6 hover:bg-gray-50 transition-colors">
+                <span className="text-sm font-light uppercase tracking-wider text-brand-softblack min-w-0 flex-1">
                   Como faço para trocar ou devolver um produto?
                 </span>
                 <svg
-                  className="w-5 h-5 text-gray-400 transition-transform group-open:rotate-180"
+                  className="w-5 h-5 shrink-0 text-gray-400 transition-transform group-open:rotate-180"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -211,12 +211,12 @@ export default function ContatoPage() {
 
             {/* FAQ Item 3 */}
             <details className="group border border-gray-200 rounded-sm bg-white">
-              <summary className="flex justify-between items-center cursor-pointer p-6 hover:bg-gray-50 transition-colors">
-                <span className="text-sm font-light uppercase tracking-wider text-brand-softblack">
+              <summary className="flex justify-between items-center gap-4 cursor-pointer p-6 hover:bg-gray-50 transition-colors">
+                <span className="text-sm font-light uppercase tracking-wider text-brand-softblack min-w-0 flex-1">
                   Quais formas de pagamento vocês aceitam?
                 </span>
                 <svg
-                  className="w-5 h-5 text-gray-400 transition-transform group-open:rotate-180"
+                  className="w-5 h-5 shrink-0 text-gray-400 transition-transform group-open:rotate-180"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -240,12 +240,12 @@ export default function ContatoPage() {
 
             {/* FAQ Item 4 */}
             <details className="group border border-gray-200 rounded-sm bg-white">
-              <summary className="flex justify-between items-center cursor-pointer p-6 hover:bg-gray-50 transition-colors">
-                <span className="text-sm font-light uppercase tracking-wider text-brand-softblack">
+              <summary className="flex justify-between items-center gap-4 cursor-pointer p-6 hover:bg-gray-50 transition-colors">
+                <span className="text-sm font-light uppercase tracking-wider text-brand-softblack min-w-0 flex-1">
                   Os produtos possuem registro na ANVISA?
                 </span>
                 <svg
-                  className="w-5 h-5 text-gray-400 transition-transform group-open:rotate-180"
+                  className="w-5 h-5 shrink-0 text-gray-400 transition-transform group-open:rotate-180"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -273,7 +273,7 @@ export default function ContatoPage() {
 
       {/* CTA Final */}
       <div className="max-w-4xl mx-auto px-6 py-20 text-center">
-        <h2 className="text-2xl md:text-3xl font-light uppercase tracking-[0.3em] text-brand-softblack mb-4">
+        <h2 className="text-2xl md:text-3xl font-light uppercase tracking-[0.2em] md:tracking-[0.3em] text-brand-softblack mb-4 overflow-hidden">
           Não Encontrou sua Resposta?
         </h2>
         <p className="text-sm text-gray-600 mb-8 font-light max-w-2xl mx-auto leading-relaxed">

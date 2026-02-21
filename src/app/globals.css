@@ -27,9 +27,14 @@
   }
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
+  overflow-x: hidden;
   /* A fonte Inter é injetada automaticamente pelo next/font via className no layout.tsx */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
