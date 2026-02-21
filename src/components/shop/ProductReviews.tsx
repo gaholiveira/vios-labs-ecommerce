@@ -1,9 +1,10 @@
 "use client";
 
-import { memo, useMemo } from "react";
+import { memo, useMemo, useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { TESTIMONIALS } from "@/constants/testimonials";
 import type { Testimonial } from "@/types/reviews";
+import ReviewForm from "@/components/shop/ReviewForm";
 
 interface ProductReviewsProps {
   /** ID do produto (prod_1, prod_2...) */
@@ -12,6 +13,15 @@ interface ProductReviewsProps {
   kitId?: string;
   /** IDs dos produtos do kit (para buscar testemunhos dos produtos incluídos) */
   kitProductIds?: string[];
+}
+
+interface DbReview {
+  id: string;
+  product_id: string;
+  rating: number;
+  text: string;
+  author_name: string;
+  created_at: string;
 }
 
 function StarRating({ rating }: { rating: number }) {
@@ -35,11 +45,20 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-function TestimonialCard({
-  testimonial,
+/** Formato unificado para exibir testemunhos curados ou reviews do banco */
+interface ReviewDisplay {
+  id: string;
+  text: string;
+  author: string;
+  context?: string;
+  rating: number;
+}
+
+function ReviewCard({
+  review,
   index,
 }: {
-  testimonial: Testimonial;
+  review: ReviewDisplay;
   index: number;
 }) {
   return (
@@ -50,21 +69,19 @@ function TestimonialCard({
       transition={{ duration: 0.4, delay: index * 0.08 }}
       className="flex flex-col p-6 md:p-8 bg-brand-offwhite/50 border border-gray-200/80 rounded-sm"
     >
-      {testimonial.rating !== undefined && (
-        <div className="mb-3">
-          <StarRating rating={testimonial.rating} />
-        </div>
-      )}
+      <div className="mb-3">
+        <StarRating rating={review.rating} />
+      </div>
       <blockquote className="text-sm md:text-base font-light text-brand-softblack/85 leading-relaxed flex-1">
-        &ldquo;{testimonial.text}&rdquo;
+        &ldquo;{review.text}&rdquo;
       </blockquote>
       <footer className="mt-4 pt-4 border-t border-gray-200/60">
         <cite className="not-italic text-xs uppercase tracking-[0.15em] font-medium text-brand-softblack">
-          {testimonial.author}
+          {review.author}
         </cite>
-        {testimonial.context && (
+        {review.context && (
           <span className="block text-[10px] uppercase tracking-wider text-brand-gold/90 font-light mt-0.5">
-            {testimonial.context}
+            {review.context}
           </span>
         )}
       </footer>
@@ -114,7 +131,10 @@ function ProductReviews({
   kitId,
   kitProductIds = [],
 }: ProductReviewsProps) {
-  const testimonials = useMemo(() => {
+  const [dbReviews, setDbReviews] = useState<DbReview[]>([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(true);
+
+  const curated = useMemo(() => {
     return TESTIMONIALS.filter((t) => {
       if (t.kitId && kitId && t.kitId === kitId) return true;
       if (t.productId && productId && t.productId === productId) return true;
@@ -123,7 +143,56 @@ function ProductReviews({
     });
   }, [productId, kitId, kitProductIds]);
 
-  const hasTestimonials = testimonials.length > 0;
+  const fetchReviews = useCallback(async () => {
+    const idsToFetch = productId
+      ? [productId]
+      : kitProductIds.length > 0
+        ? kitProductIds
+        : [];
+    if (idsToFetch.length === 0) {
+      setIsLoadingReviews(false);
+      return;
+    }
+    try {
+      const results = await Promise.all(
+        idsToFetch.map((id) =>
+          fetch(`/api/reviews?product_id=${encodeURIComponent(id)}`).then(
+            (r) => r.json() as Promise<DbReview[]>
+          )
+        )
+      );
+      const flat = results.flat();
+      setDbReviews(flat);
+    } catch {
+      setDbReviews([]);
+    } finally {
+      setIsLoadingReviews(false);
+    }
+  }, [productId, kitProductIds]);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
+
+  const allReviews: ReviewDisplay[] = useMemo(() => {
+    const curatedDisplay: ReviewDisplay[] = curated.map((t) => ({
+      id: t.id,
+      text: t.text,
+      author: t.author,
+      context: t.context,
+      rating: t.rating ?? 5,
+    }));
+    const dbDisplay: ReviewDisplay[] = dbReviews.map((r) => ({
+      id: r.id,
+      text: r.text,
+      author: r.author_name,
+      rating: r.rating,
+    }));
+    return [...curatedDisplay, ...dbDisplay];
+  }, [curated, dbReviews]);
+
+  const hasReviews = allReviews.length > 0;
+  const showForm = !!productId;
 
   return (
     <section className="w-full max-w-7xl mx-auto px-6 py-16 md:py-20 border-t border-gray-200">
@@ -134,14 +203,26 @@ function ProductReviews({
         Avaliações
       </h2>
 
-      {hasTestimonials ? (
+      {showForm && (
+        <div className="mb-10">
+          <ReviewForm productId={productId} onSuccess={fetchReviews} />
+        </div>
+      )}
+
+      {isLoadingReviews && !hasReviews ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {testimonials.map((testimonial, index) => (
-            <TestimonialCard
-              key={testimonial.id}
-              testimonial={testimonial}
-              index={index}
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-48 bg-gray-100 animate-pulse rounded-sm"
+              aria-hidden
             />
+          ))}
+        </div>
+      ) : hasReviews ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {allReviews.map((review, index) => (
+            <ReviewCard key={review.id} review={review} index={index} />
           ))}
         </div>
       ) : (

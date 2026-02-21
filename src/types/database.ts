@@ -212,3 +212,18 @@ export interface ReleaseReservationResponse {
   product_id?: string;
   quantity_released?: number;
 }
+
+/**
+ * Avaliação de produto (tabela reviews)
+ */
+export interface Review {
+  id: string;
+  product_id: string;
+  rating: number;
+  text: string;
+  author_name: string;
+  author_email: string;
+  status: "pending" | "approved" | "rejected";
+  user_id: string | null;
+  created_at: string;
+}
