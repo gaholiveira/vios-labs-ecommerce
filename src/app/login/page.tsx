@@ -213,10 +213,9 @@ export default function LoginPage() {
                   />
                 </svg>
                 <div className="text-left">
-                  <p className="font-medium mb-1">Email já confirmado! ✅</p>
+                  <p className="font-medium mb-1">Email confirmado! ✅</p>
                   <p className="text-xs opacity-90">
-                    Seu email já está confirmado. Faça login com suas
-                    credenciais abaixo para continuar.
+                    Faça login com o email e senha que você definiu no cadastro.
                   </p>
                 </div>
               </div>

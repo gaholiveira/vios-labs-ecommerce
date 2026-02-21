@@ -141,11 +141,11 @@ export default function ContatoPage() {
           </p>
 
           <div className="space-y-4">
-            {/* FAQ Item 1 */}
+            {/* FAQ Item 1 - Frete */}
             <details className="group border border-gray-200 rounded-sm bg-white">
               <summary className="flex justify-between items-center cursor-pointer p-6 hover:bg-gray-50 transition-colors">
                 <span className="text-sm font-light uppercase tracking-wider text-brand-softblack">
-                  Qual o prazo de entrega?
+                  Como funciona o frete?
                 </span>
                 <svg
                   className="w-5 h-5 text-gray-400 transition-transform group-open:rotate-180"
@@ -163,9 +163,11 @@ export default function ContatoPage() {
               </summary>
               <div className="px-6 pb-6 text-sm text-gray-600 font-light leading-relaxed border-t border-gray-100 pt-4">
                 <p>
-                  O prazo de entrega é de 3 a 14 dias úteis para todo o Brasil,
-                  dependendo da sua localização. Entregas para capitais e
-                  regiões metropolitanas geralmente ocorrem em 3 a 7 dias úteis.
+                  O frete é calculado em tempo real no checkout com base no seu CEP,
+                  através do Melhor Envio. Oferecemos duas opções: <strong>Entrega Padrão</strong> (mais econômica)
+                  e <strong>Entrega Expressa</strong> (mais rápida). Compras a partir de R$ 289,90 têm{" "}
+                  <strong>frete grátis</strong>. O prazo varia conforme sua localização e a opção escolhida,
+                  geralmente entre 3 e 14 dias úteis para todo o Brasil.
                 </p>
               </div>
             </details>

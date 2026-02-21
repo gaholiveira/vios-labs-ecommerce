@@ -181,14 +181,9 @@ async function handlePKCEError(
     );
   }
 
-  if (type === "signup") {
-    return NextResponse.redirect(
-      `${origin}/login?email-confirmed=true&message=${encodeURIComponent("Email já confirmado! Faça login.")}`
-    );
-  }
-
+  // Signup ou fluxo sem type: instruir a fazer login (evita "sessão expirada" confuso)
   return NextResponse.redirect(
-    `${origin}/login?error=session-expired&message=${encodeURIComponent("Sessão expirada. Faça login novamente.")}`
+    `${origin}/login?email-confirmed=true&message=${encodeURIComponent("Link expirado ou já utilizado. Se você já confirmou, faça login com seu email e senha.")}`
   );
 }
 
@@ -242,7 +237,14 @@ export async function GET(request: NextRequest) {
     const result = await exchangeCodeForSession(supabase, params.code);
 
     if (result.success && result.session) {
-      // Recovery: verificar sessão
+      // Signup: não fazer login automático — redirecionar para login com instrução
+      if (params.type === "signup") {
+        return NextResponse.redirect(
+          `${origin}/login?email-confirmed=true&message=${encodeURIComponent("Email confirmado! Faça login com o email e senha que você definiu no cadastro.")}`
+        );
+      }
+
+      // Recovery: verificar sessão e aplicar cookies
       if (params.type === "recovery") {
         await new Promise((resolve) => setTimeout(resolve, 100));
         const { error: verifyError } = await supabase.auth.getSession();
@@ -257,7 +259,7 @@ export async function GET(request: NextRequest) {
       const redirectUrl = getRedirectUrl(params.type, params.next, origin);
       const redirectResponse = NextResponse.redirect(redirectUrl);
 
-      // Aplicar cookies
+      // Aplicar cookies (OAuth, recovery)
       cookieStore.forEach(({ name, value, options }) => {
         redirectResponse.cookies.set(name, value, options);
       });
