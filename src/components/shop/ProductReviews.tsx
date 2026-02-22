@@ -2,8 +2,6 @@
 
 import { memo, useMemo, useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { TESTIMONIALS } from "@/constants/testimonials";
-import type { Testimonial } from "@/types/reviews";
 import ReviewForm from "@/components/shop/ReviewForm";
 
 interface ProductReviewsProps {
@@ -45,12 +43,10 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-/** Formato unificado para exibir testemunhos curados ou reviews do banco */
 interface ReviewDisplay {
   id: string;
   text: string;
   author: string;
-  context?: string;
   rating: number;
 }
 
@@ -79,11 +75,6 @@ function ReviewCard({
         <cite className="not-italic text-xs uppercase tracking-[0.15em] font-medium text-brand-softblack">
           {review.author}
         </cite>
-        {review.context && (
-          <span className="block text-[10px] uppercase tracking-wider text-brand-gold/90 font-light mt-0.5">
-            {review.context}
-          </span>
-        )}
       </footer>
     </motion.article>
   );
@@ -126,29 +117,21 @@ function EmptyState() {
   );
 }
 
+const EMPTY_IDS: string[] = [];
+
 function ProductReviews({
   productId,
   kitId,
-  kitProductIds = [],
+  kitProductIds,
 }: ProductReviewsProps) {
   const [dbReviews, setDbReviews] = useState<DbReview[]>([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState(true);
 
-  const curated = useMemo(() => {
-    return TESTIMONIALS.filter((t) => {
-      if (t.kitId && kitId && t.kitId === kitId) return true;
-      if (t.productId && productId && t.productId === productId) return true;
-      if (t.productId && kitProductIds.includes(t.productId)) return true;
-      return false;
-    });
-  }, [productId, kitId, kitProductIds]);
+  const idsToFetch = productId
+    ? [productId]
+    : (kitProductIds?.length ? kitProductIds : EMPTY_IDS);
 
   const fetchReviews = useCallback(async () => {
-    const idsToFetch = productId
-      ? [productId]
-      : kitProductIds.length > 0
-        ? kitProductIds
-        : [];
     if (idsToFetch.length === 0) {
       setIsLoadingReviews(false);
       return;
@@ -161,35 +144,28 @@ function ProductReviews({
           )
         )
       );
-      const flat = results.flat();
-      setDbReviews(flat);
+      setDbReviews(results.flat());
     } catch {
       setDbReviews([]);
     } finally {
       setIsLoadingReviews(false);
     }
-  }, [productId, kitProductIds]);
+  }, [productId ?? "", kitProductIds?.join(",") ?? ""]);
 
   useEffect(() => {
     fetchReviews();
   }, [fetchReviews]);
 
-  const allReviews: ReviewDisplay[] = useMemo(() => {
-    const curatedDisplay: ReviewDisplay[] = curated.map((t) => ({
-      id: t.id,
-      text: t.text,
-      author: t.author,
-      context: t.context,
-      rating: t.rating ?? 5,
-    }));
-    const dbDisplay: ReviewDisplay[] = dbReviews.map((r) => ({
-      id: r.id,
-      text: r.text,
-      author: r.author_name,
-      rating: r.rating,
-    }));
-    return [...curatedDisplay, ...dbDisplay];
-  }, [curated, dbReviews]);
+  const allReviews: ReviewDisplay[] = useMemo(
+    () =>
+      dbReviews.map((r) => ({
+        id: r.id,
+        text: r.text,
+        author: r.author_name,
+        rating: r.rating,
+      })),
+    [dbReviews]
+  );
 
   const hasReviews = allReviews.length > 0;
   const showForm = !!productId;

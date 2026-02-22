@@ -92,6 +92,7 @@ function Navbar() {
   const desktopMenuItems = useMemo(
     () => [
       { href: "/", label: "Início" },
+      { href: "/essencia", label: "A Essência" },
       { href: "/sobre", label: "Sobre Nós" },
       { href: "/kits", label: "Kits" },
     ],

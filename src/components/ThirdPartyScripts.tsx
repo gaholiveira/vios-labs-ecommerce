@@ -7,10 +7,9 @@ const GA_ID =
   process.env.NEXT_PUBLIC_GA_ID?.trim();
 
 /**
- * Componente para carregar scripts de terceiros de forma otimizada
- * Usa 'afterInteractive' ou 'lazyOnload' para não bloquear a thread principal
- *
- * Google Analytics 4: defina NEXT_PUBLIC_GA_MEASUREMENT_ID ou NEXT_PUBLIC_GA_ID (G-XXXXXXXXXX)
+ * Google Analytics 4 — usa o snippet padrão do Google
+ * Variáveis: NEXT_PUBLIC_GA_MEASUREMENT_ID ou NEXT_PUBLIC_GA_ID (ex: G-XXXXXXXXXX)
+ * beforeInteractive = carrega no head antes da página, igual à tag padrão
  */
 export default function ThirdPartyScripts() {
   return (
@@ -19,9 +18,9 @@ export default function ThirdPartyScripts() {
         <>
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
-            strategy="afterInteractive"
+            strategy="beforeInteractive"
           />
-          <Script id="google-analytics" strategy="afterInteractive">
+          <Script id="google-analytics" strategy="beforeInteractive">
             {`
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}

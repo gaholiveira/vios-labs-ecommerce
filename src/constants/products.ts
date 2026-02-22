@@ -25,12 +25,10 @@ export const PRODUCTS: Product[] = [
     id: 'prod_1',
     name: 'Vios Glow',
     price: 219.00,
-    image: '/images/products/newglow.jpeg',
+    image: '/images/products/glownew.jpeg',
     description: 'O VIOS Glow é uma joia biotecnológica em cápsulas, desenvolvida para quem exige a máxima performance estética. Esta fórmula de alta absorção foi desenhada para restaurar a arquitetura dérmica e elevar o brilho natural da pele, cabelos e unhas ao seu ápice. Com complexo vitamínico completo e minerais essenciais, o Glow oferece suporte estrutural de dentro para fora, unindo precisão farmacêutica a biodisponibilidade otimizada.',
     shortDescription: 'Hair, Skin & Nails. Complexo vitamínico em cápsulas.',
     category: 'Suplemento',
-    rating: 5,
-    reviews: 1,
     soldOut: true,
   },
   {
@@ -42,8 +40,6 @@ export const PRODUCTS: Product[] = [
     shortDescription: 'Sono reparador em solução oral. Sabor maracujá.',
     category: 'Suplemento',
     anvisaRecord: '25351.088701/2025-70',
-    rating: 5,
-    reviews: 1,
   },
   {
     id: 'prod_3',
@@ -54,8 +50,6 @@ export const PRODUCTS: Product[] = [
     shortDescription: 'Tripla infusão de magnésio. Ossos e músculos.',
     category: 'Suplemento',
     anvisaRecord: '25351.066423/2025-08',
-    rating: 5,
-    reviews: 1,
   },
   {
     id: 'prod_4',
@@ -65,8 +59,6 @@ export const PRODUCTS: Product[] = [
     description: 'O VIOS Pulse é uma joia da bioengenharia, desenvolvida para quem busca o ápice da performance física e mental. Este suplemento de alta performance combina ativos de precisão para proporcionar um estado de foco inabalável e energia contínua, elevando a termogênese e a resistência sistêmica. Projetado como um estimulante de elite, o Pulse é o aliado definitivo para transformar rituais de atividade física em experiências de máximo rendimento e clareza cognitiva.',
     shortDescription: 'Foco e energia para performance física e mental.',
     category: 'Suplemento',
-    rating: 5,
-    reviews: 1,
   },
   {
     id: 'prod_5',
@@ -77,7 +69,5 @@ export const PRODUCTS: Product[] = [
     shortDescription: 'Mobilidade, articulações e bem-estar estrutural.',
     category: 'Suplemento',
     anvisaRecord: '25351.215933/2025-15',
-    rating: 5,
-    reviews: 1,
   },
 ];

@@ -206,6 +206,12 @@ export default function Home() {
     </main>
   );
 }
+interface ReviewSummary {
+  product_id: string;
+  rating: number;
+  reviews: number;
+}
+
 // Componente separado para o Grid de Produtos com animação em cascata
 function ProductsGrid({ products }: { products: typeof PRODUCTS }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -213,6 +219,22 @@ function ProductsGrid({ products }: { products: typeof PRODUCTS }) {
   const prefersReducedMotion = useReducedMotion();
   const [hasMounted, setHasMounted] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [reviewSummary, setReviewSummary] = useState<ReviewSummary[]>([]);
+
+  useEffect(() => {
+    fetch("/api/reviews/summary")
+      .then((r) => r.json())
+      .then((data) => setReviewSummary(Array.isArray(data) ? data : []))
+      .catch(() => setReviewSummary([]));
+  }, []);
+
+  const productsWithReviews = useMemo(() => {
+    const byId = new Map(reviewSummary.map((s) => [s.product_id, s]));
+    return products.map((p) => {
+      const s = byId.get(p.id);
+      return s ? { ...p, rating: s.rating, reviews: s.reviews } : p;
+    });
+  }, [products, reviewSummary]);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
@@ -259,7 +281,7 @@ function ProductsGrid({ products }: { products: typeof PRODUCTS }) {
       animate={shouldAnimate ? "show" : "hidden"}
       className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-x-10 sm:gap-y-16"
     >
-      {products.map((product, index) => (
+      {productsWithReviews.map((product, index) => (
         <motion.div
           key={product.id}
           variants={cardVariants}

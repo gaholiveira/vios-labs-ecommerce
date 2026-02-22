@@ -2,17 +2,14 @@
 
 ## Variável de ambiente
 
-Adicione ao `.env`:
+**Vercel:** Settings → Environment Variables
 
-```
-NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
-```
+| Nome | Valor | Exemplo |
+|------|-------|---------|
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | ID do GA4 | `G-XXXXXXXXXX` |
+| ou `NEXT_PUBLIC_GA_ID` | (alias) | `G-XXXXXXXXXX` |
 
-Ou use o alias legado:
-
-```
-NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
-```
+**Importante:** Variáveis `NEXT_PUBLIC_*` são embutidas no build. Após alterar na Vercel, faça um novo deploy.
 
 Obtenha o ID em: [Google Analytics](https://analytics.google.com/) → Admin → Fluxos de dados → Seu fluxo → ID de medição.
 

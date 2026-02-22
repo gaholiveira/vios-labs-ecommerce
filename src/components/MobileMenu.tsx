@@ -106,6 +106,7 @@ function MobileMenu() {
   const menuItems = useMemo(
     () => [
       { href: "/", label: "Início", icon: "home" },
+      { href: "/essencia", label: "A Essência", icon: "star" },
       { href: "/sobre", label: "Sobre Nós", icon: "info" },
       { href: "/kits", label: "Kits", icon: "box" },
     ],
