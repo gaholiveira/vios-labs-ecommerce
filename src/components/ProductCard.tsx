@@ -72,7 +72,7 @@ function ProductCard({ product }: { product: Product }) {
   };
 
   return (
-    <div className="group flex flex-col">
+    <div className="group flex flex-col h-full">
       {/* Container da Imagem com Badge e Overlay */}
       <Link
         href={`/produto/${product.id}`}
@@ -109,40 +109,46 @@ function ProductCard({ product }: { product: Product }) {
         </div>
       </Link>
 
-      {/* Informações do Produto */}
-      <div className="flex flex-col gap-3">
+      {/* Informações do Produto — alturas fixas para cards uniformes */}
+      <div className="flex flex-col gap-3 flex-1 min-h-0">
         {/* Categoria */}
-        {product.category && (
-          <p className="text-[10px] uppercase tracking-[0.2em] text-brand-gold font-light">
-            {product.category}
-          </p>
-        )}
+        <div className="min-h-5">
+          {product.category && (
+            <p className="text-[10px] uppercase tracking-[0.2em] text-brand-gold font-light">
+              {product.category}
+            </p>
+          )}
+        </div>
 
         {/* Nome do Produto */}
-        <Link href={`/produto/${product.id}`}>
-          <h3 className="text-xs sm:text-sm uppercase tracking-wider font-light text-brand-softblack group-hover:text-brand-green transition-colors duration-500 ease-out leading-tight">
+        <Link href={`/produto/${product.id}`} className="min-h-10 flex items-start">
+          <h3 className="text-xs sm:text-sm uppercase tracking-wider font-light text-brand-softblack group-hover:text-brand-green transition-colors duration-500 ease-out leading-tight line-clamp-2">
             {product.name}
           </h3>
         </Link>
 
         {/* Descrição curta para conversão */}
-        {product.shortDescription && (
-          <p className="text-[11px] sm:text-xs font-light text-brand-softblack/65 leading-snug line-clamp-2">
-            {product.shortDescription}
-          </p>
-        )}
+        <div className="min-h-10">
+          {product.shortDescription && (
+            <p className="text-[11px] sm:text-xs font-light text-brand-softblack/65 leading-snug line-clamp-2">
+              {product.shortDescription}
+            </p>
+          )}
+        </div>
 
         {/* Rating e Reviews — prova social sutil */}
-        {product.rating !== undefined && (
-          <div className="flex items-center gap-2">
-            {renderStars(product.rating)}
-            {product.reviews !== undefined && product.reviews > 0 && (
-              <span className="text-[10px] text-brand-softblack/50 font-light uppercase tracking-wider">
-                {product.reviews} {product.reviews === 1 ? "avaliação" : "avaliações"}
-              </span>
-            )}
-          </div>
-        )}
+        <div className="min-h-5 flex items-center">
+          {product.rating !== undefined && (
+            <div className="flex items-center gap-2">
+              {renderStars(product.rating)}
+              {product.reviews !== undefined && product.reviews > 0 && (
+                <span className="text-[10px] text-brand-softblack/50 font-light uppercase tracking-wider">
+                  {product.reviews} {product.reviews === 1 ? "avaliação" : "avaliações"}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Preço */}
         <div className="flex items-baseline gap-2">

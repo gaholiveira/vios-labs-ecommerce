@@ -5,6 +5,7 @@ import { useEffect, useCallback, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useInView, useReducedMotion } from "framer-motion";
 import ProductCard from "@/components/ProductCard";
+import KitsPreviewCard from "@/components/KitsPreviewCard";
 import { PRODUCTS } from "@/constants/products";
 import Image from "next/image";
 
@@ -279,19 +280,16 @@ function ProductsGrid({ products }: { products: typeof PRODUCTS }) {
       variants={containerVariants}
       initial="hidden"
       animate={shouldAnimate ? "show" : "hidden"}
-      className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-x-10 sm:gap-y-16"
+      className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-x-10 sm:gap-y-16 items-stretch"
     >
-      {productsWithReviews.map((product, index) => (
-        <motion.div
-          key={product.id}
-          variants={cardVariants}
-          className={
-            index === products.length - 1 ? "col-span-2 lg:col-span-1" : ""
-          }
-        >
+      {productsWithReviews.map((product) => (
+        <motion.div key={product.id} variants={cardVariants} className="h-full">
           <ProductCard product={product} />
         </motion.div>
       ))}
+      <motion.div variants={cardVariants} className="h-full">
+        <KitsPreviewCard />
+      </motion.div>
     </motion.div>
   );
 }
