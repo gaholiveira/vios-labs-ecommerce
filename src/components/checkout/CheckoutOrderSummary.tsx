@@ -115,7 +115,7 @@ export default function CheckoutOrderSummary({
         </div>
         {paymentMethod === "pix" && pixDiscount > 0 && (
           <div className="flex justify-between text-sm text-brand-green font-light">
-            <span>Desconto 5% (PIX)</span>
+            <span>Desconto 10% (PIX)</span>
             <span>- R$ {formatBRL(pixDiscount)}</span>
           </div>
         )}
@@ -167,7 +167,7 @@ export default function CheckoutOrderSummary({
                 PIX
               </span>
               <span className="text-[10px] text-brand-softblack/60 mt-0.5">
-                5% off
+                10% off
               </span>
             </button>
 

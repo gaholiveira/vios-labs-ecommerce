@@ -368,7 +368,7 @@ export default function CheckoutPage() {
                     )}
                   </div>
 
-                  {/* Pagamento: toggle elegante PIX (5% OFF) | Cartão (3x sem juros) */}
+                  {/* Pagamento: toggle elegante PIX (10% OFF) | Cartão (3x sem juros) */}
                   <div
                     className="py-6 border-t border-[0.5px] px-6 md:px-8"
                     style={{ borderColor: "rgba(27,43,34,0.1)" }}
@@ -387,13 +387,13 @@ export default function CheckoutPage() {
                         }`}
                         style={{ color: CHECKOUT_INK }}
                         aria-pressed={paymentMethod === "pix"}
-                        aria-label="PIX com 5% de desconto"
+                        aria-label="PIX com 10% de desconto"
                       >
                         <span className="block text-xs font-medium uppercase tracking-wider mb-0.5">
                           PIX
                         </span>
                         <span className="text-[11px] opacity-80">
-                          5% OFF
+                          10% OFF
                         </span>
                       </button>
                       <button

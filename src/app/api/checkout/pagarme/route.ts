@@ -12,6 +12,7 @@ import {
 } from "@/lib/pagarme";
 import {
   PIX_EXPIRATION_SECONDS,
+  PIX_DISCOUNT_PERCENT,
   COUPON_CODE_TESTE90,
   COUPON_TESTE90_DISCOUNT_PERCENT,
 } from "@/lib/checkout-config";
@@ -25,7 +26,6 @@ export const maxDuration = 30;
 // CONSTANTES DE NEGÓCIO
 // ============================================================================
 const FREE_SHIPPING_THRESHOLD = 289.9;
-const PIX_DISCOUNT_PERCENT = 0.05;
 const MIN_SUBTOTAL = 10;
 const MAX_SUBTOTAL = 100000;
 const MIN_QUANTITY = 1;

@@ -443,7 +443,7 @@ export default function CartDrawer() {
                   </span>
                 </div>
                 <p className="text-[10px] uppercase tracking-wider text-brand-green pt-1">
-                  5% off no PIX — {formatPrice(totalWithPix)}
+                  10% off no PIX — {formatPrice(totalWithPix)}
                 </p>
               </div>
 

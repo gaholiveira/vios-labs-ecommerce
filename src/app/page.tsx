@@ -21,6 +21,7 @@ import { useMobileViewportHeight } from "@/hooks/useMobileViewportHeight";
 import { useCart } from "@/context/CartContext";
 import TextReveal from "@/components/ui/text-reveal";
 import CheckoutBenefitsBar from "@/components/CheckoutBenefitsBar";
+import StatusStories from "@/components/StatusStories";
 
 export default function Home() {
   const router = useRouter();
@@ -176,6 +177,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Status (estilo Stories) */}
+      <StatusStories />
 
       {/* Grid de Produtos */}
       <section id="produtos" className="max-w-7xl mx-auto px-4 md:px-6 py-24">

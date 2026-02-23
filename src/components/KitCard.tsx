@@ -95,7 +95,7 @@ function KitCard({ kit }: { kit: Kit }) {
 
         {/* Benefício PIX */}
         <p className="text-[10px] uppercase tracking-wider text-brand-green/90 font-light">
-          5% off no PIX
+          10% off no PIX
         </p>
 
         {/* Botão Colocar na sacola — conversão high-end */}

@@ -4,7 +4,7 @@
  */
 
 export const FREE_SHIPPING_THRESHOLD = 289.9;
-export const PIX_DISCOUNT_PERCENT = 0.05; // 5% no PIX
+export const PIX_DISCOUNT_PERCENT = 0.1; // 10% no PIX
 
 /**
  * Frete local (entrega mesmo dia na nossa cidade).
