@@ -23,6 +23,7 @@ export default function StatusStories() {
               type="button"
               onClick={() => setActiveItem(item)}
               className="shrink-0 flex flex-col items-center gap-2 group text-left"
+              aria-label={`Ver status: ${item.title}`}
             >
             {/* Círculo com borda gradiente (estilo Instagram) */}
             <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full p-[3px] bg-gradient-to-br from-brand-gold via-brand-green to-brand-softblack">

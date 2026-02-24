@@ -5,16 +5,47 @@ import React, {
   useState,
   useMemo,
   useCallback,
+  useEffect,
 } from "react";
-import { Product } from "@/constants/products";
-import { Kit } from "@/constants/kits";
+import { Product, PRODUCTS } from "@/constants/products";
+import { Kit, KITS } from "@/constants/kits";
 import { trackAddToCart } from "@/lib/analytics";
+
+const CART_STORAGE_KEY = "vios_cart";
 
 interface CartItem extends Product {
   quantity: number;
   // Para kits, armazena os IDs dos produtos que compõem o kit
   kitProducts?: string[];
   isKit?: boolean;
+}
+
+function loadCartFromStorage(): CartItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as CartItem[];
+    if (!Array.isArray(parsed)) return [];
+    const productIds = new Set(PRODUCTS.map((p) => p.id));
+    const kitIds = new Set(KITS.map((k) => k.id));
+    return parsed.filter((item) => {
+      if (!item?.id || typeof item.quantity !== "number" || item.quantity < 1)
+        return false;
+      return item.isKit ? kitIds.has(item.id) : productIds.has(item.id);
+    });
+  } catch {
+    return [];
+  }
+}
+
+function saveCartToStorage(cart: CartItem[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+  } catch {
+    // Ignora falhas (quota excedida, privado, etc.)
+  }
 }
 
 interface CartContextType {
@@ -33,7 +64,8 @@ interface CartContextType {
   isCartDrawerOpen: boolean;
   setIsCartDrawerOpen: (open: boolean) => void;
   toastMessage: string | null;
-  showToast: (message: string) => void;
+  toastType: "default" | "error";
+  showToast: (message: string, type?: "default" | "error") => void;
   hideToast: () => void;
 }
 
@@ -41,14 +73,20 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<"default" | "error">("default");
 
-  const showToast = useCallback((message: string) => {
-    setToastMessage(message);
-  }, []);
+  const showToast = useCallback(
+    (message: string, type: "default" | "error" = "default") => {
+      setToastMessage(message);
+      setToastType(type);
+    },
+    [],
+  );
 
   const hideToast = useCallback(() => {
     setToastMessage(null);
@@ -69,6 +107,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       });
       if (existing) {
         setToastMessage(`${product.name} adicionado novamente à sacola`);
+        setToastType("default");
         return prev.map((item) =>
           item.id === product.id && !item.isKit
             ? { ...item, quantity: newQty }
@@ -76,6 +115,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         );
       }
       setToastMessage(`${product.name} adicionado à sacola`);
+      setToastType("default");
       return [...prev, { ...product, quantity: 1, isKit: false }];
     });
     setIsCartDrawerOpen(true);
@@ -95,6 +135,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       });
       if (existing) {
         setToastMessage(`${kit.name} adicionado novamente à sacola`);
+        setToastType("default");
         return prev.map((item) =>
           item.id === kit.id && item.isKit
             ? { ...item, quantity: newQty }
@@ -102,6 +143,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         );
       }
       setToastMessage(`${kit.name} adicionado à sacola`);
+      setToastType("default");
       const kitAsCartItem: CartItem = {
         id: kit.id,
         name: kit.name,
@@ -138,6 +180,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setCart([]);
   }, []);
 
+  useEffect(() => {
+    setCart(loadCartFromStorage());
+    setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    saveCartToStorage(cart);
+  }, [cart, isHydrated]);
+
   const totalItems = useMemo(
     () => cart.reduce((acc, item) => acc + item.quantity, 0),
     [cart],
@@ -166,6 +218,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         isCartDrawerOpen,
         setIsCartDrawerOpen,
         toastMessage,
+        toastType,
         showToast,
         hideToast,
       }}

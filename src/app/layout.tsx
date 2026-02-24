@@ -1,4 +1,5 @@
 import { CartProvider } from "@/context/CartContext";
+import SkipLink from "@/components/SkipLink";
 import "./globals.css";
 import SmoothScrolling from "@/components/SmoothScrolling";
 import ThirdPartyScripts from "@/components/ThirdPartyScripts";
@@ -13,6 +14,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   userScalable: true,
+  themeColor: "#0a3323",
 };
 
 // Configuração otimizada da fonte Inter: display: 'optional' evita bloqueio de renderização (LCP)
@@ -76,6 +78,17 @@ export const metadata: Metadata = {
   alternates: {
     canonical: siteUrl,
   },
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: siteName,
+  },
+  formatDetection: {
+    telephone: false,
+    email: false,
+    address: false,
+  },
 };
 
 export default function RootLayout({
@@ -86,6 +99,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={inter.variable}>
       <body className={`${inter.className} antialiased bg-white`}>
+        <SkipLink />
         <SmoothScrolling>
           <CartProvider>
             <ConditionalSiteChrome>{children}</ConditionalSiteChrome>

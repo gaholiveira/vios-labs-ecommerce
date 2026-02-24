@@ -46,14 +46,14 @@ function KitsPreviewCard() {
         </div>
         <div className="min-h-5" />
         <p className="text-base font-light text-brand-softblack">
-          Economia garantida nos combos
+          Economia garantida
         </p>
         <p className="text-[10px] uppercase tracking-wider text-brand-green/90 font-light">
           10% off no PIX
         </p>
         <Link
           href="/kits"
-          className="w-full border border-brand-green rounded-sm px-6 py-3 min-h-[44px] uppercase tracking-wider text-xs font-light transition-all duration-500 ease-out mt-2 flex items-center justify-center text-brand-green hover:bg-brand-green hover:text-brand-offwhite"
+          className="w-full border rounded-sm px-6 py-3 min-h-[44px] uppercase tracking-wider text-xs font-light transition-all duration-500 ease-out mt-2 flex items-center justify-center border-brand-green bg-brand-green text-brand-offwhite hover:bg-brand-softblack hover:border-brand-softblack"
         >
           Explorar Kits
         </Link>

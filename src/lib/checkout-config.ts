@@ -25,6 +25,12 @@ export const MAX_INSTALLMENTS = 3;
 export const LOW_STOCK_DISPLAY_THRESHOLD =
   Number(process.env.LOW_STOCK_DISPLAY_THRESHOLD?.trim()) || 150;
 
+/** Exibe "Últimas unidades!" quando available_quantity <= este valor. */
+export const LAST_UNITS_THRESHOLD = 5;
+
+/** Exibe "Apenas X unidades" quando available_quantity <= este valor (e > LAST_UNITS_THRESHOLD). */
+export const FEW_UNITS_THRESHOLD = 15;
+
 /** Cupom de teste (produção): 100% de desconto no subtotal. Uso apenas para testes. */
 export const COUPON_CODE_TESTE90 = "TESTE90";
 export const COUPON_TESTE90_DISCOUNT_PERCENT = 1;

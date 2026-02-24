@@ -494,7 +494,7 @@ export default function CheckoutForm({
           <div className="space-y-10">
             {/* Endereço (primeiro: CEP desbloqueia preenchimento automático) */}
             <div className="p-5 md:p-6 border border-gray-100 bg-white rounded-sm">
-              <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-brand-softblack/50 mb-6">
+              <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-brand-softblack/70 mb-6">
                 Endereço de entrega
               </p>
 
@@ -525,7 +525,7 @@ export default function CheckoutForm({
                     )}
                   </div>
                   {isLoadingCEP ? (
-                    <p className="text-[10px] text-brand-softblack/50 mt-2">
+                    <p className="text-[10px] text-brand-softblack/70 mt-2">
                       Buscando endereço…
                     </p>
                   ) : null}
@@ -738,7 +738,7 @@ export default function CheckoutForm({
 
             {/* Contato & Fiscal */}
             <div className="p-5 md:p-6 border border-gray-100 bg-white rounded-sm">
-              <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-brand-softblack/50 mb-6">
+              <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-brand-softblack/70 mb-6">
                 Contato & Fiscal
               </p>
 

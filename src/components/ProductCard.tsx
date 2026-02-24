@@ -5,6 +5,7 @@ import { memo } from "react";
 import { Product } from "@/constants/products";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/utils/format";
+import { LAST_UNITS_THRESHOLD, FEW_UNITS_THRESHOLD } from "@/lib/checkout-config";
 
 const BADGE_CONFIG = {
   bestseller: { text: "Bestseller", color: "bg-brand-green" },
@@ -12,10 +13,16 @@ const BADGE_CONFIG = {
   vegano: { text: "Vegano", color: "bg-brand-green/80" },
 } as const;
 
-function ProductCard({ product }: { product: Product }) {
+function ProductCard({ product, priority }: { product: Product; priority?: boolean }) {
   const { addToCart } = useCart();
   const hasDiscount = product.oldPrice && product.oldPrice > product.price;
   const badgeConfig = product.badge ? BADGE_CONFIG[product.badge] : null;
+  const avail = product.availableQuantity ?? null;
+  const isLastUnits = avail !== null && avail > 0 && avail <= LAST_UNITS_THRESHOLD;
+  const isFewUnits =
+    avail !== null &&
+    avail > LAST_UNITS_THRESHOLD &&
+    avail <= FEW_UNITS_THRESHOLD;
 
   const renderStars = (rating: number = 0) => {
     const fullStars = Math.floor(rating);
@@ -84,18 +91,32 @@ function ProductCard({ product }: { product: Product }) {
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 33vw"
           className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-          loading="lazy"
+          priority={priority}
+          loading={priority ? undefined : "lazy"}
           quality={85}
           placeholder="blur"
           blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
         />
 
-        {/* Badge */}
+        {/* Badge (categoria: bestseller, novo, vegano) */}
         {badgeConfig && (
           <div
             className={`absolute top-3 left-3 ${badgeConfig.color} text-brand-offwhite px-3 py-1 text-[9px] uppercase tracking-wider font-medium z-10`}
           >
             {badgeConfig.text}
+          </div>
+        )}
+
+        {/* Badge de urgência (últimas unidades) */}
+        {!product.soldOut && (isLastUnits || isFewUnits) && (
+          <div
+            className={`absolute top-3 right-3 px-3 py-1 text-[9px] uppercase tracking-wider font-medium z-10 ${
+              isLastUnits
+                ? "bg-amber-500 text-white"
+                : "bg-amber-500/90 text-white"
+            }`}
+          >
+            {isLastUnits ? "Últimas unidades!" : `Apenas ${avail} un.`}
           </div>
         )}
 
@@ -142,7 +163,7 @@ function ProductCard({ product }: { product: Product }) {
             <div className="flex items-center gap-2">
               {renderStars(product.rating)}
               {product.reviews !== undefined && product.reviews > 0 && (
-                <span className="text-[10px] text-brand-softblack/50 font-light uppercase tracking-wider">
+                <span className="text-[10px] text-brand-softblack/65 font-light uppercase tracking-wider">
                   {product.reviews} {product.reviews === 1 ? "avaliação" : "avaliações"}
                 </span>
               )}
@@ -171,6 +192,11 @@ function ProductCard({ product }: { product: Product }) {
         <button
           onClick={() => !product.soldOut && addToCart(product)}
           disabled={product.soldOut}
+          aria-label={
+            product.soldOut
+              ? `${product.name} esgotado`
+              : `Colocar ${product.name} na sacola`
+          }
           className={`w-full border rounded-sm px-6 py-3 min-h-[44px] uppercase tracking-wider text-xs font-light transition-all duration-500 ease-out mt-2 ${
             product.soldOut
               ? "border-stone-300 bg-stone-200 text-stone-500 cursor-not-allowed"

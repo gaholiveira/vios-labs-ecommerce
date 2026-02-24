@@ -10,7 +10,7 @@ import DropdownMenu from "@/components/ui/DropdownMenu";
 import SiteSearch from "@/components/SiteSearch";
 
 function Navbar() {
-  const { totalItems, setIsMenuOpen, setIsCartDrawerOpen } = useCart();
+  const { totalItems, isMenuOpen, setIsMenuOpen, setIsCartDrawerOpen } = useCart();
   const { user } = useAuth();
   const [profile, setProfile] = useState<{
     full_name: string | null;
@@ -188,8 +188,8 @@ function Navbar() {
           <button
             onClick={handleOpenMenu}
             className="flex flex-col space-y-1.5 w-6 min-h-[44px] min-w-[44px] items-center justify-center -ml-2 -my-2 p-2 group active:opacity-70 transition-opacity"
-            aria-label="Abrir menu de navegação"
-            aria-expanded={false}
+            aria-label={isMenuOpen ? "Fechar menu de navegação" : "Abrir menu de navegação"}
+            aria-expanded={isMenuOpen}
           >
             <span className="h-0.5 w-full bg-brand-softblack transition-all"></span>
             <span className="h-0.5 w-full bg-brand-softblack"></span>
@@ -263,7 +263,7 @@ function Navbar() {
           {/* Avatar/Login - Apenas Desktop */}
           <div className="hidden md:block">
             {user ? (
-              <DropdownMenu items={dropdownItems} align="right">
+              <DropdownMenu items={dropdownItems} align="right" ariaLabel="Menu da conta">
                 <Avatar
                   src={profile?.avatar_url || null}
                   name={profile?.full_name || user.email || null}

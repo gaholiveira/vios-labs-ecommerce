@@ -110,7 +110,7 @@ export default function ShippingQuoteSelector({
   if (cepDigits.length < 8) {
     return (
       <div className={`space-y-2 ${className}`}>
-        <p className="text-[10px] uppercase tracking-[0.2em] opacity-60">
+        <p className="text-[10px] uppercase tracking-[0.2em] opacity-75">
           Frete
         </p>
         <p className="text-sm font-light text-brand-softblack/70">
@@ -123,7 +123,7 @@ export default function ShippingQuoteSelector({
   if (loading) {
     return (
       <div className={`space-y-3 ${className}`}>
-        <p className="text-[10px] uppercase tracking-[0.2em] opacity-60">
+        <p className="text-[10px] uppercase tracking-[0.2em] opacity-75">
           Frete
         </p>
         <div className="flex items-center gap-3 py-4">
@@ -142,7 +142,7 @@ export default function ShippingQuoteSelector({
   if (error) {
     return (
       <div className={`space-y-2 ${className}`}>
-        <p className="text-[10px] uppercase tracking-[0.2em] opacity-60">
+        <p className="text-[10px] uppercase tracking-[0.2em] opacity-75">
           Frete
         </p>
         <p className="text-sm text-amber-700">{error}</p>
@@ -160,7 +160,7 @@ export default function ShippingQuoteSelector({
   if (!quotes || quotes.length === 0) {
     return (
       <div className={`space-y-2 ${className}`}>
-        <p className="text-[10px] uppercase tracking-[0.2em] opacity-60">
+        <p className="text-[10px] uppercase tracking-[0.2em] opacity-75">
           Frete
         </p>
         <p className="text-sm font-light text-brand-softblack/70">
@@ -172,7 +172,7 @@ export default function ShippingQuoteSelector({
 
   return (
     <div className={`space-y-3 ${className}`}>
-      <p className="text-[10px] uppercase tracking-[0.2em] opacity-60">
+      <p className="text-[10px] uppercase tracking-[0.2em] opacity-75">
         Frete
       </p>
       {isFreeShipping && (

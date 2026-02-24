@@ -36,7 +36,9 @@ export default function ConditionalSiteChrome({
       <SearchOverlay />
       <CartDrawer />
       <WhatsAppButton />
-      {children}
+      <div id="main-content" tabIndex={-1}>
+        {children}
+      </div>
       <Footer className="lote-zero-footer" />
     </>
   );

@@ -1,10 +1,10 @@
 "use client";
 
-import { Shield, Lock, CreditCard } from "lucide-react";
+import { Shield, Lock, CreditCard, BadgeCheck } from "lucide-react";
 
 interface SecurityBadgesProps {
-  /** Layout: horizontal (footer) ou compact (checkout) */
-  variant?: "horizontal" | "compact";
+  /** Layout: horizontal (footer), compact (checkout) ou checkout-full (com ANVISA e garantia) */
+  variant?: "horizontal" | "compact" | "checkout-full";
   /** Tema: dark (footer) ou light (checkout) */
   theme?: "dark" | "light";
   className?: string;
@@ -59,6 +59,59 @@ export default function SecurityBadges({
             </span>
           </div>
         ))}
+      </div>
+    );
+  }
+
+  if (variant === "checkout-full") {
+    return (
+      <div
+        className={`rounded-sm border border-brand-softblack/10 bg-white/80 py-6 px-6 ${className}`}
+        role="group"
+        aria-label="Selos de confiança e garantias"
+      >
+        <p className="text-[10px] uppercase tracking-[0.25em] font-medium text-brand-softblack/70 text-center mb-5">
+          Sua compra é 100% segura
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-5">
+          {/* ANVISA */}
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-green/15">
+              <BadgeCheck
+                className="w-5 h-5 text-brand-green"
+                strokeWidth={1.5}
+                aria-hidden
+              />
+            </span>
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.2em] font-medium text-brand-softblack">
+                Produtos regulados ANVISA
+              </p>
+              <p className="text-[9px] uppercase tracking-wider text-brand-softblack/70">
+                Registro ou dispensa RDC 240/2018
+              </p>
+            </div>
+          </div>
+          {BADGES.map(({ icon: Icon, label, sublabel }) => (
+            <div key={label} className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-green/15">
+                <Icon
+                  className="w-5 h-5 text-brand-green"
+                  strokeWidth={1.5}
+                  aria-hidden
+                />
+              </span>
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.2em] font-medium text-brand-softblack">
+                  {label}
+                </p>
+                <p className="text-[9px] uppercase tracking-wider text-brand-softblack/70">
+                  {sublabel}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

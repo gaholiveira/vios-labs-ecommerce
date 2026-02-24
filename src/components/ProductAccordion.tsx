@@ -30,6 +30,7 @@ export default function ProductAccordion({ items }: ProductAccordionProps) {
             className="w-full flex justify-between items-center py-4 text-left min-h-[44px] active:opacity-70 md:hover:opacity-70 transition-opacity"
             aria-expanded={openIndex === index}
             aria-controls={`accordion-content-${index}`}
+            aria-label={`${item.title}, ${openIndex === index ? "recolher" : "expandir"}`}
           >
             <h3 className="text-sm uppercase tracking-[0.1em] font-light text-brand-softblack">
               {item.title}

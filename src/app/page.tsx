@@ -108,7 +108,7 @@ export default function Home() {
   );
 
   return (
-    <main className="relative">
+    <main id="main-content" className="relative">
       {/* Overlay com blur durante o scroll */}
       {isScrolling && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 transition-opacity duration-300 pointer-events-none" />
@@ -126,7 +126,7 @@ export default function Home() {
             alt="Vios 2026 Hero"
             fill
             priority
-            quality={90}
+            quality={85}
             sizes="(max-width: 768px) 100vw, 1920px"
             className="object-cover object-center"
             placeholder="blur"
@@ -170,6 +170,7 @@ export default function Home() {
             {/* Botão CTA Minimalista de Luxo */}
             <button
               onClick={handleExploreClick}
+              aria-label="Explorar loja e ver produtos"
               className="border border-brand-offwhite/90 rounded-sm px-10 md:px-12 py-4 md:py-5 min-h-[44px] text-xs md:text-sm uppercase tracking-wider text-brand-offwhite font-light active:bg-brand-green active:text-brand-offwhite active:border-brand-green md:hover:bg-brand-green md:hover:text-brand-offwhite md:hover:border-brand-green md:transition-all md:duration-500 md:ease-out md:transform md:group-hover:-translate-y-1"
             >
               Explorar Loja
@@ -217,6 +218,11 @@ interface ReviewSummary {
   reviews: number;
 }
 
+interface InventoryItem {
+  product_id: string;
+  available_quantity: number;
+}
+
 // Componente separado para o Grid de Produtos com animação em cascata
 function ProductsGrid({ products }: { products: typeof PRODUCTS }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -225,21 +231,51 @@ function ProductsGrid({ products }: { products: typeof PRODUCTS }) {
   const [hasMounted, setHasMounted] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [reviewSummary, setReviewSummary] = useState<ReviewSummary[]>([]);
+  const [inventoryStatus, setInventoryStatus] = useState<InventoryItem[]>([]);
 
   useEffect(() => {
+    if (!isInView) return;
     fetch("/api/reviews/summary")
       .then((r) => r.json())
       .then((data) => setReviewSummary(Array.isArray(data) ? data : []))
       .catch(() => setReviewSummary([]));
-  }, []);
+  }, [isInView]);
+
+  useEffect(() => {
+    if (!isInView) return;
+    fetch("/api/inventory/status")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setInventoryStatus(
+            data
+              .filter((d: { product_id?: string }) => d?.product_id)
+              .map((d: { product_id: string; available_quantity?: number }) => ({
+                product_id: d.product_id,
+                available_quantity: Number(d.available_quantity) || 0,
+              })),
+          );
+        }
+      })
+      .catch(() => setInventoryStatus([]));
+  }, [isInView]);
 
   const productsWithReviews = useMemo(() => {
     const byId = new Map(reviewSummary.map((s) => [s.product_id, s]));
+    const invById = new Map(
+      inventoryStatus.map((i) => [i.product_id, i.available_quantity]),
+    );
     return products.map((p) => {
       const s = byId.get(p.id);
-      return s ? { ...p, rating: s.rating, reviews: s.reviews } : p;
+      const avail = invById.get(p.id);
+      return {
+        ...p,
+        rating: s?.rating,
+        reviews: s?.reviews,
+        availableQuantity: avail,
+      };
     });
-  }, [products, reviewSummary]);
+  }, [products, reviewSummary, inventoryStatus]);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
@@ -286,9 +322,9 @@ function ProductsGrid({ products }: { products: typeof PRODUCTS }) {
       animate={shouldAnimate ? "show" : "hidden"}
       className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-x-10 sm:gap-y-16 items-stretch"
     >
-      {productsWithReviews.map((product) => (
+      {productsWithReviews.map((product, index) => (
         <motion.div key={product.id} variants={cardVariants} className="h-full">
-          <ProductCard product={product} />
+          <ProductCard product={product} priority={index < 4} />
         </motion.div>
       ))}
       <motion.div variants={cardVariants} className="h-full">

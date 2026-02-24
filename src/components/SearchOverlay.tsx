@@ -151,10 +151,11 @@ export default function SearchOverlay() {
           <div className="flex items-center gap-4">
             <input
               ref={inputRef}
-              type="text"
+              type="search"
               placeholder="O QUE ESTÁ À PROCURA?"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Buscar produtos"
               className="w-full bg-transparent text-xl md:text-3xl font-light uppercase tracking-widest outline-none text-brand-softblack placeholder:text-gray-300"
               autoFocus={isSearchOpen}
             />
@@ -173,7 +174,7 @@ export default function SearchOverlay() {
           <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-20 pb-6">
             {searchResults.length > 0 ? (
               <div className="space-y-3">
-                <p className="text-xs uppercase tracking-widest text-brand-softblack/50 mb-4">
+                <p className="text-xs uppercase tracking-widest text-brand-softblack/65 mb-4">
                   {searchResults.length}{" "}
                   {searchResults.length === 1
                     ? "resultado encontrado"
@@ -216,7 +217,7 @@ export default function SearchOverlay() {
                 <p className="text-sm text-brand-softblack/60 mb-2">
                   Nenhum produto encontrado para &quot;{searchQuery}&quot;
                 </p>
-                <p className="text-xs text-brand-softblack/40">
+                <p className="text-xs text-brand-softblack/55">
                   Tente buscar por: pele, sono, magnésio, energia, mobilidade
                 </p>
               </div>
@@ -227,7 +228,7 @@ export default function SearchOverlay() {
         {/* Sugestões quando não há busca */}
         {!searchQuery.trim() && (
           <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-20 pb-6">
-            <p className="text-xs uppercase tracking-widest text-brand-softblack/50 mb-4">
+            <p className="text-xs uppercase tracking-widest text-brand-softblack/65 mb-4">
               Sugestões de busca
             </p>
             <div className="flex flex-wrap gap-2">

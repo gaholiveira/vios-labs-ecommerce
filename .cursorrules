@@ -48,13 +48,13 @@ src/
 │   ├── lote-zero/     # Landing Lote Zero
 │   └── ...
 ├── components/
-│   ├── ui/            # Componentes reutilizáveis (Skeleton, Avatar, DropdownMenu, CustomCursor...)
+│   ├── ui/            # Skeleton, Avatar, DropdownMenu, CustomCursor, ErrorBoundary...
 │   ├── auth/          # ResendConfirmationEmail
 │   ├── cart/          # CartDrawer, ShippingMeter
 │   ├── checkout/      # CheckoutForm, CheckoutPaymentStep, ShippingQuoteSelector...
 │   ├── shop/          # ProductCardSkeleton, ShareButton
 │   └── ...            # Navbar, Footer, MobileMenu, ProductPageContent, KitPageContent...
-├── context/           # CartContext (cart, addToCart, isCartDrawerOpen...)
+├── context/           # CartContext (cart com localStorage, addToCart, isCartDrawerOpen...)
 ├── hooks/             # useAuth, useMobileViewportHeight
 ├── lib/               # bling, pagarme, payments, email, checkout-config
 ├── types/             # checkout, database
@@ -68,7 +68,7 @@ src/
 
 ## Checkout
 - **One-page checkout:** formulário único (dados, endereço, frete, pagamento).
-- **PIX:** 5% desconto; **Cartão:** 3x sem juros.
+- **PIX:** 10% desconto; **Cartão:** 3x sem juros. Valores em `@/lib/checkout-config.ts`.
 - Fluxo: CheckoutForm → API `/api/checkout/pagarme` → Pagar.me (PIX ou Cartão tokenizado).
 - Webhook: `/api/webhooks/pagarme` (order.paid) cria pedido no Supabase, envia e-mail, cria venda no Bling.
 
@@ -112,7 +112,7 @@ src/
 
 # Regras específicas VIOS Labs
 - **Tom:** Técnico e preciso. Textos de UI elegantes ("Pharmaceutical Luxury").
-- **Erros:** Tratar com grace. Usuário nunca deve ver dump de erro bruto.
+- **Erros:** Tratar com grace. Usuário nunca deve ver dump de erro bruto. Error Boundaries em `app/error.tsx`, `app/global-error.tsx`, `app/checkout/error.tsx`; componente `@/components/ui/ErrorBoundary` para seções.
 - **SEO:** `metadata` em toda página (Title, Description, OpenGraph).
 
 # Processos complexos (padrões validados)
@@ -135,6 +135,16 @@ src/
 
 ## Logs em produção
 - `next.config` remove `console.log`; manter apenas `error` e `warn`. Para diagnósticos críticos (webhook, Bling): usar `console.warn`.
+
+## PWA
+- Manifest em `app/manifest.ts`; ícones em `app/icon.tsx` e `app/apple-icon.tsx`.
+- Service worker: `pnpm build:pwa` (webpack). Build padrão usa Turbopack (sem SW).
+- Metadata PWA no layout: `manifest`, `appleWebApp`, `themeColor`.
+
+## Testes E2E (Playwright)
+- `e2e/home.spec.ts` e `e2e/checkout.spec.ts`.
+- Rodar: `pnpm dev` + `pnpm test`. Ver `TESTES.md`.
+- Carrinho persiste em localStorage; testes podem usar `page.goto("/checkout")` após addToCart.
 
 # Final Check
 Antes de gerar código:

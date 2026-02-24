@@ -36,7 +36,7 @@ function formatBRL(value: number): string {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cart, totalPrice } = useCart();
+  const { cart, totalPrice, showToast } = useCart();
   const { user } = useAuth();
   const viewRef = useRef<CheckoutView>("form");
 
@@ -68,18 +68,18 @@ export default function CheckoutPage() {
   const handleFormSubmit = useCallback(
     async (data: CheckoutFormData) => {
       if (!paymentMethod) {
-        alert("Selecione uma forma de pagamento.");
+        showToast("Selecione uma forma de pagamento (PIX ou cartão).");
         return;
       }
       if (paymentMethod === "card" && !installmentOption) {
-        alert("Selecione o número de parcelas.");
+        showToast("Selecione o número de parcelas para continuar.");
         return;
       }
       const hasValidShipping =
         isFreeShipping ||
         (selectedShippingQuote && (shippingReais > 0 || selectedShippingQuote.type === "local"));
       if (!hasValidShipping) {
-        alert("Aguarde o cálculo do frete ou informe um CEP válido para continuar.");
+        showToast("Informe seu CEP e aguarde o cálculo do frete para continuar.");
         return;
       }
 
@@ -118,15 +118,15 @@ export default function CheckoutPage() {
         const addr = data.address;
         const fullName = data.fullName?.trim();
         if (!fullName || fullName.length < 3) {
-          alert("Nome completo é obrigatório.");
+          showToast("Preencha seu nome completo (mínimo 3 caracteres).");
           return;
         }
         if (!emailVal) {
-          alert("E-mail é obrigatório para o checkout.");
+          showToast("Informe seu e-mail para receber a confirmação do pedido.");
           return;
         }
         if (!addr || !addr.cep?.trim() || !addr.street?.trim() || !addr.number?.trim() || !addr.neighborhood?.trim() || !addr.city?.trim() || !addr.state?.trim()) {
-          alert("Preencha o endereço completo: CEP, logradouro, número, bairro, cidade e estado.");
+          showToast("Preencha o endereço completo: CEP, rua, número, bairro, cidade e estado.");
           return;
         }
         setIsSubmitting(true);
@@ -162,7 +162,10 @@ export default function CheckoutPage() {
           });
           const json = await res.json().catch(() => ({}));
           if (!res.ok) {
-            alert(json.error || "Erro ao criar pedido PIX.");
+            showToast(
+              json.error || "Não foi possível gerar o PIX. Tente novamente.",
+              "error",
+            );
             return;
           }
           setPaymentPayload({
@@ -179,7 +182,10 @@ export default function CheckoutPage() {
           setPixModalOpen(true);
         } catch (e) {
           console.error(e);
-          alert("Erro ao processar. Tente novamente.");
+          showToast(
+            "Ocorreu um erro ao processar. Verifique sua conexão e tente novamente.",
+            "error",
+          );
         } finally {
           setIsSubmitting(false);
         }
@@ -191,15 +197,15 @@ export default function CheckoutPage() {
         const addr = data.address;
         const fullName = data.fullName?.trim();
         if (!fullName || fullName.length < 3) {
-          alert("Nome completo é obrigatório.");
+          showToast("Preencha seu nome completo (mínimo 3 caracteres).");
           return;
         }
         if (!emailVal) {
-          alert("E-mail é obrigatório para o checkout.");
+          showToast("Informe seu e-mail para receber a confirmação do pedido.");
           return;
         }
         if (!addr || !addr.cep?.trim() || !addr.street?.trim() || !addr.number?.trim() || !addr.neighborhood?.trim() || !addr.city?.trim() || !addr.state?.trim()) {
-          alert("Preencha o endereço completo: CEP, logradouro, número, bairro, cidade e estado.");
+          showToast("Preencha o endereço completo: CEP, rua, número, bairro, cidade e estado.");
           return;
         }
         setPaymentPayload({
@@ -275,12 +281,19 @@ export default function CheckoutPage() {
       shippingReais,
       paymentMethod,
       couponCode,
+      showToast,
+      selectedShippingQuote,
+      installmentOption,
+      user,
     ],
   );
 
-  const handlePaymentError = useCallback((message: string) => {
-    alert(message);
-  }, []);
+  const handlePaymentError = useCallback(
+    (message: string) => {
+      showToast(message, "error");
+    },
+    [showToast],
+  );
 
   if (cart.length === 0 && view === "form") {
     return (
@@ -308,6 +321,10 @@ export default function CheckoutPage() {
       style={{ backgroundColor: CHECKOUT_BG, color: CHECKOUT_INK }}
     >
       <div className="max-w-6xl mx-auto">
+        {/* Selos de confiança — visível no topo */}
+        <div className="mb-8">
+          <SecurityBadges variant="checkout-full" theme="light" />
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14">
           {/* Coluna esquerda: Formulário (Dados Pessoais > Endereço > Frete > Pagamento) */}
           <div className="lg:col-span-7 order-2 lg:order-1">
@@ -345,7 +362,7 @@ export default function CheckoutPage() {
                     <button
                       type="button"
                       onClick={() => setCouponExpanded((p) => !p)}
-                      className="text-[10px] uppercase tracking-[0.2em] opacity-60 hover:opacity-90 transition-opacity"
+                      className="text-[10px] uppercase tracking-[0.2em] opacity-75 hover:opacity-90 transition-opacity"
                       aria-expanded={couponExpanded}
                     >
                       {couponExpanded ? "Ocultar cupom" : "Tem cupom?"}
@@ -373,7 +390,7 @@ export default function CheckoutPage() {
                     className="py-6 border-t border-[0.5px] px-6 md:px-8"
                     style={{ borderColor: "rgba(27,43,34,0.1)" }}
                   >
-                    <p className="text-[10px] uppercase tracking-[0.2em] opacity-60 mb-4">
+                    <p className="text-[10px] uppercase tracking-[0.2em] opacity-75 mb-4">
                       Pagamento
                     </p>
                     <div className="flex gap-3">
@@ -421,7 +438,7 @@ export default function CheckoutPage() {
                     </div>
                     {paymentMethod === "card" && (
                       <div className="mt-4">
-                        <p className="text-[10px] uppercase tracking-wider opacity-60 mb-2">
+                        <p className="text-[10px] uppercase tracking-wider opacity-75 mb-2">
                           Parcelas
                         </p>
                         <div className="flex gap-2">
@@ -514,16 +531,6 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {/* Selos de Segurança */}
-        <div
-          className="mt-8 py-6 px-4 rounded-sm border-[0.5px]"
-          style={{
-            borderColor: "rgba(27,43,34,0.12)",
-            backgroundColor: "rgba(255,255,255,0.5)",
-          }}
-        >
-          <SecurityBadges variant="compact" theme="light" />
-        </div>
       </div>
 
       {/* Modal PIX minimalista: QR Code e código copia-e-cola */}

@@ -384,7 +384,9 @@ function PagarmeCardStep({
       const cardNumber = cardNumberDigits.replace(/\D/g, "");
       const expiry = expDateDigits.replace(/\D/g, "").slice(0, 4);
       if (!cardNumber || !expiry || !holderName || !cvv) {
-        alert("Preencha todos os campos do cartão: nome, número, validade (MM/AA) e CVV.");
+        onErrorRef.current(
+          "Preencha todos os campos do cartão: nome, número, validade (MM/AA) e CVV.",
+        );
         return;
       }
       setLoading(true);
@@ -420,9 +422,9 @@ function PagarmeCardStep({
             data.message ??
             (data.errors && typeof data.errors === "object"
               ? Object.values(data.errors).flat().join(", ")
-              : "Não foi possível gerar o token do cartão.");
+              : "Não foi possível validar o cartão. Verifique os dados e tente novamente.");
           console.error("[Pagar.me tokens] API error:", data);
-          alert(msg);
+          onErrorRef.current(msg);
           return;
         }
         const tokenId = data.id?.trim();
@@ -430,7 +432,9 @@ function PagarmeCardStep({
           await submitWithToken(tokenId);
         } else {
           setLoading(false);
-          alert("Resposta inválida da tokenização. Tente novamente.");
+          onErrorRef.current(
+            "Não foi possível processar o cartão. Tente novamente.",
+          );
         }
       } catch (err) {
         setLoading(false);
@@ -444,7 +448,7 @@ function PagarmeCardStep({
                 ? String((err as { message: unknown }).message)
                 : "Não foi possível validar o cartão. Verifique os dados e tente novamente.";
         console.error("[Pagar.me tokens] Erro ao tokenizar:", err);
-        alert(message);
+        onErrorRef.current(message);
       }
     },
     [loading, cardNumberDigits, expDateDigits, submitWithToken],

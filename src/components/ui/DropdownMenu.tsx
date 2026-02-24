@@ -15,12 +15,15 @@ interface DropdownMenuProps {
   children: React.ReactNode;
   items: DropdownMenuItem[];
   align?: 'left' | 'right';
+  /** Rótulo para leitores de tela (obrigatório quando o trigger é apenas ícone) */
+  ariaLabel?: string;
 }
 
-function DropdownMenu({ 
-  children, 
-  items, 
-  align = 'right' 
+function DropdownMenu({
+  children,
+  items,
+  align = 'right',
+  ariaLabel = 'Abrir menu',
 }: DropdownMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -89,6 +92,7 @@ function DropdownMenu({
         className="focus:outline-none focus:ring-2 focus:ring-brand-green/20 rounded-full transition-opacity hover:opacity-80"
         aria-expanded={isOpen}
         aria-haspopup="true"
+        aria-label={ariaLabel}
       >
         {children}
       </button>

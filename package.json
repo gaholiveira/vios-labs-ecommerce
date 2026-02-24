@@ -5,10 +5,19 @@
   "scripts": {
     "dev": "pnpm exec next dev",
     "build": "pnpm exec next build",
+    "build:pwa": "pnpm exec next build --webpack",
     "start": "pnpm exec next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "pnpm exec playwright test",
+    "test:ui": "pnpm exec playwright test --ui",
+    "test:headed": "pnpm exec playwright test --headed",
+    "lighthouse": "lighthouse http://localhost:3000 --output=html --output-path=./lighthouse-report.html --view --only-categories=performance",
+    "lighthouse:ci": "lighthouse http://localhost:3000 --output=json --output=html --output-path=./lighthouse-report --chrome-flags=\"--headless --no-sandbox --disable-dev-shm-usage\" --only-categories=performance",
+    "lighthouse:a11y": "lighthouse http://localhost:3000 --output=html --output-path=./lighthouse-a11y-report.html --view --only-categories=accessibility",
+    "test:a11y": "SKIP_WEBSERVER=1 pnpm exec playwright test e2e/accessibility.spec.ts"
   },
   "dependencies": {
+    "@ducanh2912/next-pwa": "^10.2.9",
     "@supabase/auth-helpers-nextjs": "^0.15.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.89.0",
@@ -24,12 +33,15 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.1",
+    "@playwright/test": "^1.49.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
+    "lighthouse": "^13.0.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

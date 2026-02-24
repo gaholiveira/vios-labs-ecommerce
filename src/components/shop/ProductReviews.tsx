@@ -172,7 +172,7 @@ function ProductReviews({
 
   return (
     <section className="w-full max-w-7xl mx-auto px-6 py-16 md:py-20 border-t border-gray-200">
-      <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-brand-softblack/50 mb-2">
+      <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-brand-softblack/65 mb-2">
         VIOS LABS
       </p>
       <h2 className="text-xl md:text-2xl font-light uppercase tracking-widest text-brand-softblack mb-10">

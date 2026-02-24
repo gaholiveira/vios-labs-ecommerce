@@ -29,6 +29,29 @@
 
 html {
   overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+/* Skip link — visível apenas ao focar (teclado) */
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  padding: 0.75rem 1.25rem;
+  background: var(--color-brand-green);
+  color: var(--color-brand-offwhite);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transform: translateY(-100%);
+  transition: transform 0.2s ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+  outline: 2px solid var(--color-brand-gold);
+  outline-offset: 2px;
 }
 
 body {
@@ -94,4 +117,32 @@ section[class*="h-screen"] {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none; /* Chrome, Safari e Opera */
+}
+
+/* ============================================================================
+   ACESSIBILIDADE — Foco visível (WCAG 2.4.7)
+   ============================================================================ */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand-green);
+  outline-offset: 2px;
+}
+
+/* Botões e links com estilos próprios mantêm contraste */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--color-brand-green);
+  outline-offset: 2px;
+}
+
+/* Inputs — foco mais suave */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-brand-green);
+  outline-offset: 0;
 }

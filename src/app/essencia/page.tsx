@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
+
+/** Imagem do hero — substitua por /images/essencia-hero.jpg quando tiver a imagem */
+const ESSENCIA_HERO_IMAGE = "/images/hero-essencia.jpeg";
 
 export const metadata: Metadata = {
   title: "A Essência | VIOS LABS",
@@ -9,17 +13,32 @@ export const metadata: Metadata = {
 
 export default function EssenciaPage() {
   return (
-    <main className="bg-brand-offwhite">
-      {/* Hero */}
-      <section className="relative py-24 md:py-32 px-6 bg-brand-softblack">
-        <div className="max-w-4xl mx-auto text-center">
+    <main id="main-content" className="bg-brand-offwhite">
+      {/* Hero — preparado para imagem de fundo */}
+      <section className="relative min-h-[50vh] md:min-h-[60vh] flex items-center justify-center overflow-hidden bg-brand-softblack">
+        {/* Imagem de fundo */}
+        <div className="absolute inset-0">
+          <Image
+            src={ESSENCIA_HERO_IMAGE}
+            alt=""
+            fill
+            priority
+            quality={90}
+            sizes="100vw"
+            className="object-cover object-center"
+          />
+        </div>
+        {/* Overlay para legibilidade do texto */}
+        <div className="absolute inset-0 bg-black/50" />
+        {/* Conteúdo */}
+        <div className="relative z-10 max-w-4xl mx-auto text-center px-6 py-24 md:py-32">
           <span className="block uppercase tracking-[0.5em] text-[10px] mb-4 text-brand-gold opacity-90">
             Nossa filosofia
           </span>
           <h1 className="text-4xl md:text-6xl font-extralight uppercase tracking-tighter text-brand-offwhite mb-6">
             A Essência
           </h1>
-          <p className="text-brand-offwhite/70 text-sm md:text-base font-light tracking-wide max-w-2xl mx-auto">
+          <p className="text-brand-offwhite/80 text-sm md:text-base font-light tracking-wide max-w-2xl mx-auto">
             O que está por trás de cada produto VIOS
           </p>
         </div>
