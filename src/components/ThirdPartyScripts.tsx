@@ -9,7 +9,7 @@ const GA_ID =
 /**
  * Google Analytics 4 — usa o snippet padrão do Google
  * Variáveis: NEXT_PUBLIC_GA_MEASUREMENT_ID ou NEXT_PUBLIC_GA_ID (ex: G-XXXXXXXXXX)
- * beforeInteractive = carrega no head antes da página, igual à tag padrão
+ * lazyOnload = carrega em idle, fora do caminho crítico (evita bloquear LCP)
  */
 export default function ThirdPartyScripts() {
   return (
@@ -18,9 +18,9 @@ export default function ThirdPartyScripts() {
         <>
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
-            strategy="beforeInteractive"
+            strategy="lazyOnload"
           />
-          <Script id="google-analytics" strategy="beforeInteractive">
+          <Script id="google-analytics" strategy="lazyOnload">
             {`
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
