@@ -2,6 +2,7 @@
 /node_modules
 /.pnp
 .pnp.js
+.pnpm-store
 
 # testing
 /coverage
@@ -16,6 +17,9 @@
 
 # production
 /build
+
+# docs de sessão (notas de desenvolvimento, summaries)
+/docs/archive/
 
 # misc
 .DS_Store
