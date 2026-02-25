@@ -41,3 +41,6 @@ pnpm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# docs de sessão (notas de desenvolvimento, summaries)
+/docs/archive/
