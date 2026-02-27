@@ -22,6 +22,14 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import CheckoutBenefitsBar from "@/components/CheckoutBenefitsBar";
 import ProductTrustSeals from "@/components/ProductTrustSeals";
+import ProductValueProposition from "@/components/ProductValueProposition";
+import NutritionalTable, {
+  GLOW_NUTRITIONAL_DATA,
+  MAG3_NUTRITIONAL_DATA,
+  MOVE_NUTRITIONAL_DATA,
+  PULSE_NUTRITIONAL_DATA,
+  SLEEP_NUTRITIONAL_DATA,
+} from "@/components/NutritionalTable";
 import { trackViewItem } from "@/lib/analytics";
 import type { InventoryStatus } from "@/types/database";
 
@@ -128,6 +136,14 @@ function ProductPageContent({ product }: ProductPageContentProps) {
       return {
         accordionItems: [
           {
+            title: "Informação Nutricional",
+            content: (
+              <div className="max-w-sm">
+                <NutritionalTable {...GLOW_NUTRITIONAL_DATA} />
+              </div>
+            ),
+          },
+          {
             title: "Ingredientes",
             content: (
               <div className="space-y-4">
@@ -210,6 +226,14 @@ function ProductPageContent({ product }: ProductPageContentProps) {
       // VIOS Sleep
       return {
         accordionItems: [
+          {
+            title: "Informação Nutricional",
+            content: (
+              <div className="max-w-sm">
+                <NutritionalTable {...SLEEP_NUTRITIONAL_DATA} />
+              </div>
+            ),
+          },
           {
             title: "Ingredientes",
             content: (
@@ -317,6 +341,14 @@ function ProductPageContent({ product }: ProductPageContentProps) {
       return {
         accordionItems: [
           {
+            title: "Informação Nutricional",
+            content: (
+              <div className="max-w-sm">
+                <NutritionalTable {...MAG3_NUTRITIONAL_DATA} />
+              </div>
+            ),
+          },
+          {
             title: "Ingredientes",
             content: (
               <div className="space-y-4">
@@ -412,6 +444,14 @@ function ProductPageContent({ product }: ProductPageContentProps) {
       return {
         accordionItems: [
           {
+            title: "Informação Nutricional",
+            content: (
+              <div className="max-w-sm">
+                <NutritionalTable {...PULSE_NUTRITIONAL_DATA} />
+              </div>
+            ),
+          },
+          {
             title: "Ingredientes",
             content: (
               <div className="space-y-4">
@@ -503,6 +543,14 @@ function ProductPageContent({ product }: ProductPageContentProps) {
       // VIOS Move
       return {
         accordionItems: [
+          {
+            title: "Informação Nutricional",
+            content: (
+              <div className="max-w-sm">
+                <NutritionalTable {...MOVE_NUTRITIONAL_DATA} />
+              </div>
+            ),
+          },
           {
             title: "Ingredientes",
             content: (
@@ -687,6 +735,9 @@ function ProductPageContent({ product }: ProductPageContentProps) {
             </motion.div>
           </div>
 
+          {/* Proposta de valor — características factuais (conforme ANVISA) */}
+          <ProductValueProposition product={product} />
+
           {/* Descrição Curta com TextReveal */}
           <div className="border-t border-b py-6 mb-8 text-gray-600 font-light leading-relaxed">
             <TextReveal
@@ -746,6 +797,11 @@ function ProductPageContent({ product }: ProductPageContentProps) {
                 ? "Esgotado"
                 : "Colocar na sacola"}
           </motion.button>
+
+          <p className="mt-3 text-center text-[10px] uppercase tracking-wider text-brand-softblack/70">
+            Primeira compra? Use o cupom{" "}
+            <span className="font-medium text-brand-green">SOUVIOS</span> para 10% de desconto no checkout.
+          </p>
 
           <motion.div
             initial={{ opacity: 0 }}

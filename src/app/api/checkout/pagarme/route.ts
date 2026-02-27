@@ -15,6 +15,8 @@ import {
   PIX_DISCOUNT_PERCENT,
   COUPON_CODE_TESTE90,
   COUPON_TESTE90_DISCOUNT_PERCENT,
+  COUPON_CODE_SOUVIOS,
+  COUPON_SOUVIOS_DISCOUNT_PERCENT,
 } from "@/lib/checkout-config";
 import type { ReserveInventoryResponse } from "@/types/database";
 
@@ -235,6 +237,7 @@ export async function POST(req: Request) {
 
     const cartValidation = validateCartItems(items);
     if (!cartValidation.valid) {
+      console.warn("[CHECKOUT] Validation failed: cart", { error: cartValidation.error });
       return NextResponse.json(
         { error: cartValidation.error || "Sacola inválida" },
         { status: 400 }
@@ -288,6 +291,7 @@ export async function POST(req: Request) {
     }
 
     if (!checkoutData?.cpf || onlyDigits(checkoutData.cpf).length !== 11) {
+      console.warn("[CHECKOUT] Validation failed: CPF invalid");
       return NextResponse.json(
         { error: "CPF válido (11 dígitos) é obrigatório." },
         { status: 400 }
@@ -336,10 +340,32 @@ export async function POST(req: Request) {
     }
     const pixDiscount =
       paymentMethod === "pix" ? subtotal * PIX_DISCOUNT_PERCENT : 0;
-    const couponDiscount =
-      body.couponCode?.trim() === COUPON_CODE_TESTE90
-        ? subtotal * COUPON_TESTE90_DISCOUNT_PERCENT
-        : 0;
+
+    const couponCodeTrimmed = body.couponCode?.trim().toUpperCase() ?? "";
+    let couponDiscount = 0;
+
+    if (couponCodeTrimmed === COUPON_CODE_TESTE90) {
+      couponDiscount = subtotal * COUPON_TESTE90_DISCOUNT_PERCENT;
+    } else if (couponCodeTrimmed === COUPON_CODE_SOUVIOS) {
+      const supabaseForCoupon = getSupabaseAdmin();
+      const { data: existingOrders } = await supabaseForCoupon
+        .from("orders")
+        .select("id")
+        .eq("status", "paid")
+        .eq("customer_email", email)
+        .limit(1);
+      if (existingOrders && existingOrders.length > 0) {
+        return NextResponse.json(
+          {
+            error:
+              "O cupom SOUVIOS é válido apenas na primeira compra. Você já realizou um pedido conosco.",
+          },
+          { status: 400 }
+        );
+      }
+      couponDiscount = subtotal * COUPON_SOUVIOS_DISCOUNT_PERCENT;
+    }
+
     const totalReais = subtotal + shippingReais - pixDiscount - couponDiscount;
     const totalCents = Math.round(totalReais * 100);
 
@@ -404,6 +430,7 @@ export async function POST(req: Request) {
       const firstError = results.find((r) => r.error);
       if (firstError) {
         await releaseAllReservations(supabase, reservationIds);
+        console.warn("[CHECKOUT] Inventory reserve error", { item: firstError.itemName });
         return NextResponse.json(
           {
             error: `Erro ao reservar estoque para ${firstError.itemName}. Tente novamente.`,
@@ -419,6 +446,7 @@ export async function POST(req: Request) {
           firstFailed.data?.error === "Product not found in inventory"
             ? "Produto do kit não encontrado no estoque."
             : `Estoque insuficiente para ${firstFailed.itemName}.`;
+        console.warn("[CHECKOUT] Inventory insufficient", { item: firstFailed.itemName, error: firstFailed.data?.error });
         return NextResponse.json({ error: msg }, { status: 409 });
       }
 
@@ -586,6 +614,11 @@ export async function POST(req: Request) {
             )
           );
         }
+        console.warn("[CHECKOUT] PIX order created", {
+          orderId: pagarmeOrder.id,
+          email: email.slice(0, 3) + "***",
+          hasQr: !!(pixData.qr_code || pixData.qr_code_url || pixData.pix_copy_paste),
+        });
         return NextResponse.json({
           orderId: pagarmeOrder.id,
           paymentMethod: "pix",
@@ -597,6 +630,11 @@ export async function POST(req: Request) {
         });
       }
 
+      console.warn("[CHECKOUT] Card order created", {
+        orderId: pagarmeOrder.id,
+        email: email.slice(0, 3) + "***",
+        status: pagarmeOrder.status,
+      });
       return NextResponse.json({
         orderId: pagarmeOrder.id,
         paymentMethod: "card",

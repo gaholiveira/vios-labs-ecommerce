@@ -35,6 +35,10 @@ export const FEW_UNITS_THRESHOLD = 15;
 export const COUPON_CODE_TESTE90 = "TESTE90";
 export const COUPON_TESTE90_DISCOUNT_PERCENT = 1;
 
+/** Cupom primeira compra: 10% no subtotal. Soma com desconto PIX. Uso único por cliente. */
+export const COUPON_CODE_SOUVIOS = "SOUVIOS";
+export const COUPON_SOUVIOS_DISCOUNT_PERCENT = 0.1;
+
 /** Fuso horário para expiração e exibição do PIX (Brasil) */
 export const PIX_TIMEZONE = "America/Sao_Paulo";
 

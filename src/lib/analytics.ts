@@ -92,6 +92,21 @@ export function trackAddToCart(params: {
   });
 }
 
+/** Informações de pagamento adicionadas (ex.: usuário viu QR PIX) — funil add_payment_info */
+export function trackAddPaymentInfo(params: {
+  value: number;
+  paymentMethod: "pix" | "card";
+  items: Array<{ id: string; name: string; price: number; quantity: number; category?: string }>;
+}): void {
+  if (!isAvailable()) return;
+  window.gtag!("event", "add_payment_info", {
+    currency: "BRL",
+    value: params.value,
+    payment_type: params.paymentMethod,
+    items: toGA4Items(params.items),
+  });
+}
+
 /** Início do checkout */
 export function trackBeginCheckout(params: {
   value: number;

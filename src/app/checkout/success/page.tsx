@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Check, Mail, ArrowRight, Package, Loader2 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { createClient } from "@/utils/supabase/client";
+import { trackPurchase } from "@/lib/analytics";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
@@ -21,6 +22,7 @@ function SuccessContent() {
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const attemptsRef = useRef(0);
+  const purchaseTrackedRef = useRef(false);
 
   // Limpar carrinho
   useEffect(() => {
@@ -69,6 +71,20 @@ function SuccessContent() {
           if (pollingRef.current) {
             clearTimeout(pollingRef.current);
             pollingRef.current = null;
+          }
+          // Fallback: disparar purchase na página de sucesso (evita perda do evento no redirect)
+          if (!purchaseTrackedRef.current && data.orderId && data.totalAmount != null && Array.isArray(data.items)) {
+            purchaseTrackedRef.current = true;
+            trackPurchase({
+              transactionId: data.orderId,
+              value: data.totalAmount,
+              items: data.items.map((i: { id: string; name: string; price: number; quantity: number }) => ({
+                id: i.id,
+                name: i.name,
+                price: i.price,
+                quantity: i.quantity,
+              })),
+            });
           }
         } else if (attemptsRef.current < maxAttempts) {
           // Tentar novamente após 2 segundos
@@ -223,14 +239,14 @@ function SuccessContent() {
 
           {/* Link para Concierge (Opcional) */}
           <div className="pt-2">
-            <Link
-              href="https://wa.me/5511999999999"
+            <a
+              href="https://wa.me/5511952136713"
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-stone-500 hover:text-[#082f1e] transition-colors underline underline-offset-4"
             >
               Precisa de ajuda? Fale com o Concierge
-            </Link>
+            </a>
           </div>
         </div>
 

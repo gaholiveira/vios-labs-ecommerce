@@ -69,7 +69,7 @@ export const PRODUCTS: Product[] = [
     image: '/images/products/pulsenew.jpeg',
     additionalImages: [
       '/images/products/pulsecaps.jpeg',
-      '/images/products/pulseup.jpeg',
+      '/images/products/pulsedown.jpeg',
     ],
     description: 'O VIOS Pulse é uma joia da bioengenharia, desenvolvida para quem busca o ápice da performance física e mental. Este suplemento de alta performance combina ativos de precisão para proporcionar um estado de foco inabalável e energia contínua, elevando a termogênese e a resistência sistêmica. Projetado como um estimulante de elite, o Pulse é o aliado definitivo para transformar rituais de atividade física em experiências de máximo rendimento e clareza cognitiva.',
     shortDescription: 'Foco e energia para performance física e mental.',

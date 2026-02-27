@@ -355,6 +355,11 @@ function KitPageContent({ kit }: KitPageContentProps) {
             {isActive ? "Colocar na sacola" : "Em Breve"}
           </motion.button>
 
+          <p className="mt-3 text-center text-[10px] uppercase tracking-wider text-brand-softblack/70">
+            Primeira compra? Use o cupom{" "}
+            <span className="font-medium text-brand-green">SOUVIOS</span> para 10% de desconto no checkout.
+          </p>
+
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

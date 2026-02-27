@@ -445,6 +445,9 @@ export default function CartDrawer() {
                 <p className="text-[10px] uppercase tracking-wider text-brand-green pt-1">
                   10% off no PIX — {formatPrice(totalWithPix)}
                 </p>
+                <p className="text-[10px] uppercase tracking-wider text-brand-softblack/70 pt-0.5">
+                  Cupom <span className="font-medium text-brand-green">SOUVIOS</span>: +10% na primeira compra
+                </p>
               </div>
 
               {/* Badge de segurança — discreto */}

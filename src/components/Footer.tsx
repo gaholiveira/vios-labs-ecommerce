@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import TextReveal from "@/components/ui/text-reveal";
 import SecurityBadges from "@/components/SecurityBadges";
+import SupplementDisclaimer from "@/components/SupplementDisclaimer";
 
 interface FooterProps {
   className?: string;
@@ -57,6 +58,11 @@ function Footer({ className = "" }: FooterProps) {
             <li>
               <Link href="/contato" className="hover:opacity-100 transition">
                 Central de Atendimento
+              </Link>
+            </li>
+            <li>
+              <Link href="/checkout" className="hover:opacity-100 transition">
+                Cupom SOUVIOS — 10% na 1ª compra
               </Link>
             </li>
           </ul>
@@ -213,6 +219,7 @@ function Footer({ className = "" }: FooterProps) {
             Selos de Segurança
           </h4>
           <SecurityBadges variant="horizontal" theme="dark" />
+          <SupplementDisclaimer variant="compact" theme="dark" className="mt-4 text-center" />
         </div>
       </motion.div>
 

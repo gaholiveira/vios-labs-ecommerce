@@ -6,6 +6,8 @@ import {
   FREE_SHIPPING_THRESHOLD,
   PIX_DISCOUNT_PERCENT,
   MAX_INSTALLMENTS,
+  COUPON_CODE_SOUVIOS,
+  COUPON_SOUVIOS_DISCOUNT_PERCENT,
 } from "@/lib/checkout-config";
 import type { PaymentMethod, InstallmentOption } from "@/types/checkout";
 
@@ -31,6 +33,8 @@ export interface CheckoutOrderSummaryProps {
   shippingReais?: number;
   /** Se true, exibe "Grátis" no frete */
   isFreeShipping?: boolean;
+  /** Código do cupom (ex: SOUVIOS). Desconto exibido otimisticamente. */
+  couponCode?: string;
   className?: string;
 }
 
@@ -42,6 +46,7 @@ export default function CheckoutOrderSummary({
   showPaymentSelector = true,
   shippingReais: shippingProp,
   isFreeShipping: isFreeShippingProp,
+  couponCode,
   className = "",
 }: CheckoutOrderSummaryProps) {
   const { cart, totalPrice } = useCart();
@@ -52,7 +57,11 @@ export default function CheckoutOrderSummary({
   const subtotalWithShipping = totalPrice + shippingReais;
   const pixDiscount =
     paymentMethod === "pix" ? totalPrice * PIX_DISCOUNT_PERCENT : 0;
-  const totalReais = subtotalWithShipping - pixDiscount;
+  const couponDiscount =
+    couponCode?.trim().toUpperCase() === COUPON_CODE_SOUVIOS
+      ? totalPrice * COUPON_SOUVIOS_DISCOUNT_PERCENT
+      : 0;
+  const totalReais = subtotalWithShipping - pixDiscount - couponDiscount;
 
   const installment1x = totalReais;
   const installment2x = calculateInstallmentAmount(totalReais, 2);
@@ -119,10 +128,16 @@ export default function CheckoutOrderSummary({
             <span>- R$ {formatBRL(pixDiscount)}</span>
           </div>
         )}
+        {couponDiscount > 0 && (
+          <div className="flex justify-between text-sm text-brand-green font-light">
+            <span>Cupom SOUVIOS (10%)</span>
+            <span>- R$ {formatBRL(couponDiscount)}</span>
+          </div>
+        )}
         <div className="flex justify-between pt-3 border-t border-gray-200 font-medium text-brand-softblack">
           <span>Total</span>
           <span className="text-lg">
-            {paymentMethod === "pix" && pixDiscount > 0 ? (
+            {(pixDiscount > 0 || couponDiscount > 0) ? (
               <>
                 <span className="line-through text-brand-softblack/50 text-sm font-normal mr-2">
                   R$ {formatBRL(subtotalWithShipping)}

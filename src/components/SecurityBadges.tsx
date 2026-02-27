@@ -1,6 +1,8 @@
 "use client";
 
-import { Shield, Lock, CreditCard, BadgeCheck } from "lucide-react";
+import Link from "next/link";
+import { Shield, Lock, CreditCard, BadgeCheck, RotateCcw } from "lucide-react";
+import SupplementDisclaimer from "@/components/SupplementDisclaimer";
 
 interface SecurityBadgesProps {
   /** Layout: horizontal (footer), compact (checkout) ou checkout-full (com ANVISA e garantia) */
@@ -73,9 +75,9 @@ export default function SecurityBadges({
         <p className="text-[10px] uppercase tracking-[0.25em] font-medium text-brand-softblack/70 text-center mb-5">
           Sua compra é 100% segura
         </p>
-        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-5">
+        <div className="grid grid-cols-2 md:flex md:flex-wrap md:justify-center gap-x-4 gap-y-5 md:gap-x-8 md:gap-y-5 items-start md:items-center">
           {/* ANVISA */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-start gap-3 min-w-0">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-green/15">
               <BadgeCheck
                 className="w-5 h-5 text-brand-green"
@@ -93,7 +95,7 @@ export default function SecurityBadges({
             </div>
           </div>
           {BADGES.map(({ icon: Icon, label, sublabel }) => (
-            <div key={label} className="flex items-center gap-3">
+            <div key={label} className="flex items-start gap-3 min-w-0">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-green/15">
                 <Icon
                   className="w-5 h-5 text-brand-green"
@@ -111,7 +113,30 @@ export default function SecurityBadges({
               </div>
             </div>
           ))}
+          {/* Garantia de devolução — conforme política em /trocas */}
+          <Link
+            href="/trocas"
+            className="flex items-start gap-3 min-w-0 group"
+            aria-label="Política de devoluções: 7 dias para desistir da compra"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-green/15 group-hover:bg-brand-green/25 transition-colors">
+              <RotateCcw
+                className="w-5 h-5 text-brand-green"
+                strokeWidth={1.5}
+                aria-hidden
+              />
+            </span>
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.2em] font-medium text-brand-softblack group-hover:text-brand-green transition-colors">
+                7 dias para devolver
+              </p>
+              <p className="text-[9px] uppercase tracking-wider text-brand-softblack/70">
+                Lacre intacto (CDC Art. 49)
+              </p>
+            </div>
+          </Link>
         </div>
+        <SupplementDisclaimer variant="compact" className="mt-5 pt-5 border-t border-brand-softblack/5 text-center" />
       </div>
     );
   }

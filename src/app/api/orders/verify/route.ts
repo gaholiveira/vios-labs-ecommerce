@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     // Buscar pedido por stripe_session_id (Pagar.me order id, Stripe session id ou MP preference_id)
     const { data: order, error } = await supabase
       .from("orders")
-      .select("id, status, created_at")
+      .select("id, status, created_at, total_amount")
       .eq("stripe_session_id", sessionId)
       .maybeSingle();
 
@@ -47,11 +47,25 @@ export async function GET(req: NextRequest) {
     }
 
     if (order) {
+      // Buscar itens para analytics (purchase event)
+      const { data: items } = await supabase
+        .from("order_items")
+        .select("product_id, product_name, quantity, price")
+        .eq("order_id", order.id);
+
       return NextResponse.json({
         exists: true,
         orderId: order.id,
         status: order.status,
         createdAt: order.created_at,
+        totalAmount: order.total_amount,
+        items:
+          items?.map((i) => ({
+            id: i.product_id,
+            name: i.product_name,
+            price: i.price,
+            quantity: i.quantity,
+          })) ?? [],
       });
     }
 

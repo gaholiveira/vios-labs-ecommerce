@@ -4,6 +4,7 @@ import Link from "next/link";
 import { memo } from "react";
 import { PRODUCTS } from "@/constants/products";
 import KitProductsPreview from "./KitProductsPreview";
+import { MAX_INSTALLMENTS } from "@/lib/checkout-config";
 
 function KitsPreviewCard() {
   return (
@@ -48,9 +49,15 @@ function KitsPreviewCard() {
         <p className="text-base font-light text-brand-softblack">
           Economia garantida
         </p>
-        <p className="text-[10px] uppercase tracking-wider text-brand-green/90 font-light">
-          10% off no PIX
-        </p>
+        {/* Benefícios: PIX e parcelamento — padrão dos ProductCards */}
+        <div className="space-y-0.5">
+          <p className="text-[10px] uppercase tracking-wider text-brand-green/90 font-light">
+            10% off no PIX
+          </p>
+          <p className="text-[10px] uppercase tracking-wider text-brand-softblack/65 font-light">
+            ou {MAX_INSTALLMENTS}x sem juros
+          </p>
+        </div>
         <Link
           href="/kits"
           className="w-full border rounded-sm px-6 py-3 min-h-[44px] uppercase tracking-wider text-xs font-light transition-all duration-500 ease-out mt-2 flex items-center justify-center border-brand-green bg-brand-green text-brand-offwhite hover:bg-brand-softblack hover:border-brand-softblack"

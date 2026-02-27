@@ -15,8 +15,10 @@ import SecurityBadges from "@/components/SecurityBadges";
 import {
   FREE_SHIPPING_THRESHOLD,
   PIX_DISCOUNT_PERCENT,
+  COUPON_CODE_SOUVIOS,
+  COUPON_SOUVIOS_DISCOUNT_PERCENT,
 } from "@/lib/checkout-config";
-import { trackBeginCheckout, trackPurchase } from "@/lib/analytics";
+import { trackBeginCheckout, trackAddPaymentInfo, trackPurchase } from "@/lib/analytics";
 import type {
   PaymentMethod,
   InstallmentOption,
@@ -93,10 +95,14 @@ export default function CheckoutPage() {
         isKit: item.isKit,
       }));
 
-      const checkoutValue = totalPrice + shippingReais;
+      const couponDiscount =
+        couponCode.trim().toUpperCase() === COUPON_CODE_SOUVIOS
+          ? totalPrice * COUPON_SOUVIOS_DISCOUNT_PERCENT
+          : 0;
       const pixDiscount =
         paymentMethod === "pix" ? totalPrice * PIX_DISCOUNT_PERCENT : 0;
-      const finalValue = checkoutValue - pixDiscount;
+      const finalValue =
+        totalPrice + shippingReais - pixDiscount - couponDiscount;
 
       trackBeginCheckout({
         value: finalValue,
@@ -180,6 +186,17 @@ export default function CheckoutPage() {
           });
           setView("pix");
           setPixModalOpen(true);
+          trackAddPaymentInfo({
+            value: finalValue,
+            paymentMethod: "pix",
+            items: items.map((i) => ({
+              id: i.id,
+              name: i.name,
+              price: i.price,
+              quantity: i.quantity,
+              category: i.isKit ? "Kit" : "Produto",
+            })),
+          });
         } catch (e) {
           console.error(e);
           showToast(
@@ -236,16 +253,36 @@ export default function CheckoutPage() {
           couponCode: couponCode.trim() || null,
         });
         setView("card_form");
+        const cardCouponDiscount =
+          couponCode.trim().toUpperCase() === COUPON_CODE_SOUVIOS
+            ? totalPrice * COUPON_SOUVIOS_DISCOUNT_PERCENT
+            : 0;
+        trackAddPaymentInfo({
+          value: totalPrice + shippingReais - cardCouponDiscount,
+          paymentMethod: "card",
+          items: items.map((i) => ({
+            id: i.id,
+            name: i.name,
+            price: i.price,
+            quantity: i.quantity,
+            category: i.isKit ? "Kit" : "Produto",
+          })),
+        });
       }
     },
-    [cart, paymentMethod, installmentOption, user?.id, couponCode, shippingReais, selectedShippingQuote],
+    [cart, paymentMethod, installmentOption, user?.id, couponCode, shippingReais, selectedShippingQuote, totalPrice],
   );
 
   const handlePaymentSuccess = useCallback(
     (orderId: string) => {
+      const couponDiscount =
+        couponCode.trim().toUpperCase() === COUPON_CODE_SOUVIOS
+          ? totalPrice * COUPON_SOUVIOS_DISCOUNT_PERCENT
+          : 0;
       const pixDiscount =
         paymentMethod === "pix" ? totalPrice * PIX_DISCOUNT_PERCENT : 0;
-      const purchaseValue = totalPrice + shippingReais - pixDiscount;
+      const purchaseValue =
+        totalPrice + shippingReais - pixDiscount - couponDiscount;
 
       trackPurchase({
         transactionId: orderId,
@@ -368,11 +405,11 @@ export default function CheckoutPage() {
                       {couponExpanded ? "Ocultar cupom" : "Tem cupom?"}
                     </button>
                     {couponExpanded && (
-                      <div className="mt-3">
+                      <div className="mt-3 space-y-1.5">
                         <input
                           id="checkout-coupon"
                           type="text"
-                          placeholder="Código do cupom"
+                          placeholder="SOUVIOS — 10% na primeira compra"
                           value={couponCode}
                           onChange={(e) =>
                             setCouponCode(e.target.value.trim().toUpperCase())
@@ -381,6 +418,9 @@ export default function CheckoutPage() {
                           style={{ color: CHECKOUT_INK }}
                           aria-label="Cupom de desconto"
                         />
+                        <p className="text-[10px] opacity-70" style={{ color: CHECKOUT_INK }}>
+                          10% de desconto na primeira compra. Soma com o desconto do PIX.
+                        </p>
                       </div>
                     )}
                   </div>
@@ -443,8 +483,12 @@ export default function CheckoutPage() {
                         </p>
                         <div className="flex gap-2">
                           {(["1x", "2x", "3x"] as const).map((opt) => {
+                            const couponDiscount =
+                              couponCode.trim().toUpperCase() === COUPON_CODE_SOUVIOS
+                                ? totalPrice * COUPON_SOUVIOS_DISCOUNT_PERCENT
+                                : 0;
                             const totalReais =
-                              totalPrice + shippingReais;
+                              totalPrice + shippingReais - couponDiscount;
                             const amount =
                               opt === "1x"
                                 ? totalReais
@@ -525,6 +569,7 @@ export default function CheckoutPage() {
                 showPaymentSelector={false}
                 shippingReais={shippingReais}
                 isFreeShipping={isFreeShipping}
+                couponCode={couponCode}
                 className="rounded-sm shadow-sm border-[0.5px] border-[#1B2B22]/10"
               />
             </div>

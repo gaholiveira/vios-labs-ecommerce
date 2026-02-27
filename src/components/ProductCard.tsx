@@ -5,7 +5,7 @@ import { memo } from "react";
 import { Product } from "@/constants/products";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/utils/format";
-import { LAST_UNITS_THRESHOLD, FEW_UNITS_THRESHOLD } from "@/lib/checkout-config";
+import { LAST_UNITS_THRESHOLD, FEW_UNITS_THRESHOLD, MAX_INSTALLMENTS } from "@/lib/checkout-config";
 
 const BADGE_CONFIG = {
   bestseller: { text: "Bestseller", color: "bg-brand-green" },
@@ -183,10 +183,15 @@ function ProductCard({ product, priority }: { product: Product; priority?: boole
           )}
         </div>
 
-        {/* Benefício PIX */}
-        <p className="text-[10px] uppercase tracking-wider text-brand-green/90 font-light">
-          10% off no PIX
-        </p>
+        {/* Benefícios: PIX e parcelamento */}
+        <div className="space-y-0.5">
+          <p className="text-[10px] uppercase tracking-wider text-brand-green/90 font-light">
+            10% off no PIX
+          </p>
+          <p className="text-[10px] uppercase tracking-wider text-brand-softblack/65 font-light">
+            ou {MAX_INSTALLMENTS}x de {formatPrice(product.price / MAX_INSTALLMENTS)} sem juros
+          </p>
+        </div>
 
         {/* Botão Colocar na sacola — conversão high-end */}
         <button

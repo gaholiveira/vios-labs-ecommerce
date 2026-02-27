@@ -1,6 +1,7 @@
 "use client";
 
 import { Shield, Lock, CreditCard, BadgeCheck } from "lucide-react";
+import SupplementDisclaimer from "@/components/SupplementDisclaimer";
 
 interface ProductTrustSealsProps {
   /** Número do processo ANVISA (quando registrado) */
@@ -24,9 +25,9 @@ export default function ProductTrustSeals({
       role="group"
       aria-label="Selos de confiança e garantias"
     >
-      <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-4">
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-center gap-x-4 gap-y-5 sm:gap-x-6 sm:gap-y-4 items-start sm:items-center">
         {/* ANVISA — Destaque principal */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-start gap-2.5 min-w-0">
           <span
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-green/15"
             aria-hidden
@@ -50,7 +51,7 @@ export default function ProductTrustSeals({
         </div>
 
         {/* Pagamento Seguro */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-start gap-2.5 min-w-0">
           <span
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-green/15"
             aria-hidden
@@ -72,7 +73,7 @@ export default function ProductTrustSeals({
         </div>
 
         {/* Compra Protegida */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-start gap-2.5 min-w-0">
           <span
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-green/15"
             aria-hidden
@@ -94,7 +95,7 @@ export default function ProductTrustSeals({
         </div>
 
         {/* Site Seguro */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-start gap-2.5 min-w-0">
           <span
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-green/15"
             aria-hidden
@@ -115,6 +116,7 @@ export default function ProductTrustSeals({
           </div>
         </div>
       </div>
+      <SupplementDisclaimer variant="compact" className="mt-4 pt-4 border-t border-brand-softblack/5 text-center" />
     </div>
   );
 }
