@@ -8,6 +8,8 @@ import ClientToastContainer from "@/components/ui/ClientToastContainer";
 import ConditionalSiteChrome from "@/components/ConditionalSiteChrome";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/react";
 
 // Permite zoom por pinch no mobile; evita sensação de zoom instável ao não restringir o usuário
 export const viewport: Viewport = {
@@ -108,6 +110,8 @@ export default function RootLayout({
         </SmoothScrolling>
         {/* Scripts de terceiros carregados de forma otimizada */}
         <ThirdPartyScripts />
+        <SpeedInsights />
+        <Analytics />
         {/* CustomCursor deve ser o ÚLTIMO elemento antes de fechar o body */}
         {/* Client Component wrapper que faz dynamic import com ssr: false */}
         <ClientCustomCursor />
