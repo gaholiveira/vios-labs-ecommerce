@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
@@ -63,6 +63,25 @@ export default function CheckoutPage() {
   viewRef.current = view;
 
   const isFreeShipping = totalPrice >= FREE_SHIPPING_THRESHOLD;
+
+  // begin_checkout: dispara ao visitar a página de checkout (padrão GA4 e-commerce)
+  const hasFiredBeginCheckout = useRef(false);
+  useEffect(() => {
+    if (cart.length === 0 || hasFiredBeginCheckout.current) return;
+    hasFiredBeginCheckout.current = true;
+    trackBeginCheckout({
+      value: totalPrice,
+      items: cart.map((i) => ({
+        id: i.id,
+        name: i.name,
+        price: i.price,
+        quantity: i.quantity,
+        category: i.isKit ? "Kit" : "Produto",
+      })),
+      coupon: null,
+    });
+  }, [cart, totalPrice]);
+
   const shippingReais = isFreeShipping
     ? 0
     : selectedShippingQuote?.price ?? 0;
@@ -103,18 +122,6 @@ export default function CheckoutPage() {
         paymentMethod === "pix" ? totalPrice * PIX_DISCOUNT_PERCENT : 0;
       const finalValue =
         totalPrice + shippingReais - pixDiscount - couponDiscount;
-
-      trackBeginCheckout({
-        value: finalValue,
-        items: items.map((i) => ({
-          id: i.id,
-          name: i.name,
-          price: i.price,
-          quantity: i.quantity,
-          category: i.isKit ? "Kit" : "Produto",
-        })),
-        coupon: couponCode.trim() || null,
-      });
 
       const userId = user?.id ?? null;
       const opt = installmentOption ?? "1x";
