@@ -18,7 +18,7 @@ import {
   COUPON_CODE_SOUVIOS,
   COUPON_SOUVIOS_DISCOUNT_PERCENT,
 } from "@/lib/checkout-config";
-import { trackBeginCheckout, trackAddPaymentInfo, trackPurchase } from "@/lib/analytics";
+import { trackBeginCheckout, trackAddPaymentInfo } from "@/lib/analytics";
 import type {
   PaymentMethod,
   InstallmentOption,
@@ -282,28 +282,7 @@ export default function CheckoutPage() {
 
   const handlePaymentSuccess = useCallback(
     (orderId: string) => {
-      const couponDiscount =
-        couponCode.trim().toUpperCase() === COUPON_CODE_SOUVIOS
-          ? totalPrice * COUPON_SOUVIOS_DISCOUNT_PERCENT
-          : 0;
-      const pixDiscount =
-        paymentMethod === "pix" ? totalPrice * PIX_DISCOUNT_PERCENT : 0;
-      const purchaseValue =
-        totalPrice + shippingReais - pixDiscount - couponDiscount;
-
-      trackPurchase({
-        transactionId: orderId,
-        value: purchaseValue,
-        items: cart.map((i) => ({
-          id: i.id,
-          name: i.name,
-          price: i.price,
-          quantity: i.quantity,
-          category: i.isKit ? "Kit" : i.category,
-        })),
-        coupon: couponCode.trim() || null,
-      });
-
+      // purchase é disparado na página de sucesso (dados validados via API)
       if (viewRef.current === "card_form") {
         setShowPreparingMessage(true);
         setTimeout(() => {
@@ -318,18 +297,7 @@ export default function CheckoutPage() {
         );
       }
     },
-    [
-      router,
-      cart,
-      totalPrice,
-      shippingReais,
-      paymentMethod,
-      couponCode,
-      showToast,
-      selectedShippingQuote,
-      installmentOption,
-      user,
-    ],
+    [router],
   );
 
   const handlePaymentError = useCallback(

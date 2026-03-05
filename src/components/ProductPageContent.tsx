@@ -30,6 +30,8 @@ import NutritionalTable, {
   PULSE_NUTRITIONAL_DATA,
   SLEEP_NUTRITIONAL_DATA,
 } from "@/components/NutritionalTable";
+import ProductComparisonTable from "@/components/ProductComparisonTable";
+import { getProductComparison } from "@/constants/product-comparisons";
 import { trackViewItem } from "@/lib/analytics";
 import type { InventoryStatus } from "@/types/database";
 
@@ -129,19 +131,78 @@ function ProductPageContent({ product }: ProductPageContentProps) {
     [product.id]
   );
 
+  const productComparison = useMemo(
+    () => getProductComparison(product.id),
+    [product.id]
+  );
+
   // Conteúdo específico para cada produto
   const getProductSpecificContent = (productId: string) => {
     if (productId === "prod_1") {
       // VIOS Glow — Hair, Skin & Nails (cápsulas)
+      const keyIngredients = [
+        { name: "Complexo B + Biotina", benefit: "Suporte estrutural para cabelos, pele e unhas" },
+        { name: "Vitamina C (90 mg)", benefit: "Poderoso antioxidante e cofator essencial para o colágeno" },
+        { name: "Vitamina A (250 µg)", benefit: "Integridade e renovação da pele" },
+        { name: "Zinco (11 mg)", benefit: "Síntese proteica e renovação celular" },
+        { name: "Selênio (45 µg)", benefit: "Proteção antioxidante e saúde capilar" },
+      ];
       return {
         accordionItems: [
           {
-            title: "Informação Nutricional",
+            title: "Benefícios da fórmula",
             content: (
-              <div className="max-w-sm">
-                <NutritionalTable {...GLOW_NUTRITIONAL_DATA} />
-              </div>
+              <ul className="space-y-3 list-none">
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Contribui para a manutenção da saúde da pele, cabelos e unhas</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Vitaminas antioxidantes que participam da proteção celular</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Contém biotina e zinco, nutrientes associados à saúde capilar</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Complexo de vitaminas que auxiliam no metabolismo energético</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Suporte nutricional para rotina de autocuidado</span>
+                </li>
+              </ul>
             ),
+          },
+          {
+            title: "Para quem foi desenvolvido",
+            content: (
+              <ul className="space-y-3 list-none">
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Pessoas que desejam complementar cuidados com pele, cabelo e unhas</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Quem busca suporte nutricional para beleza e bem-estar</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Quem valoriza uma abordagem de autocuidado de dentro para fora</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Pessoas que desejam complementar a ingestão de micronutrientes</span>
+                </li>
+              </ul>
+            ),
+          },
+          {
+            title: "Como Usar",
+            content:
+              "Recomendamos o consumo de 2 (duas) cápsulas por dia, preferencialmente acompanhadas de uma refeição. Para melhores resultados, mantenha uma rotina consistente, permitindo que os nutrientes atuem na arquitetura celular de cabelos, pele e unhas a longo prazo.",
           },
           {
             title: "Ingredientes",
@@ -186,9 +247,12 @@ function ProductPageContent({ product }: ProductPageContentProps) {
             ),
           },
           {
-            title: "Como Usar",
-            content:
-              "Recomendamos o consumo de 2 (duas) cápsulas por dia, preferencialmente acompanhadas de uma refeição. Para melhores resultados, mantenha uma rotina consistente, permitindo que os nutrientes atuem na arquitetura celular de cabelos, pele e unhas a longo prazo.",
+            title: "Informação Nutricional",
+            content: (
+              <div className="max-w-sm">
+                <NutritionalTable {...GLOW_NUTRITIONAL_DATA} />
+              </div>
+            ),
           },
           {
             title: "Ciência",
@@ -196,43 +260,74 @@ function ProductPageContent({ product }: ProductPageContentProps) {
               "O diferencial do VIOS Glow reside na sua fórmula completa de vitaminas e minerais essenciais para a saúde estrutural. O complexo B potencializado, associado ao antioxidante Vitamina C e ao Zinco, atua na síntese de colágeno e na renovação celular. A Biotina e o Selênio contribuem para o suporte de cabelos e unhas. Esta forma de entrega em cápsulas otimiza a biodisponibilidade, permitindo que os nutrientes essenciais sejam absorvidos durante a digestão e alcancem as camadas estruturais da derme de dentro para fora.",
           },
         ],
-        keyIngredients: [
-          {
-            name: "Complexo B + Biotina",
-            benefit: "Suporte estrutural para cabelos, pele e unhas",
-          },
-          {
-            name: "Vitamina C (90 mg)",
-            benefit:
-              "Poderoso antioxidante e cofator essencial para o colágeno",
-          },
-          {
-            name: "Vitamina A (250 µg)",
-            benefit: "Integridade e renovação da pele",
-          },
-          {
-            name: "Zinco (11 mg)",
-            benefit: "Síntese proteica e renovação celular",
-          },
-          {
-            name: "Selênio (45 µg)",
-            benefit: "Proteção antioxidante e saúde capilar",
-          },
-        ],
+        keyIngredients,
       };
     }
 
     if (productId === "prod_2") {
       // VIOS Sleep
+      const keyIngredients = [
+        { name: "Melatonina", benefit: "Ativo central para a regulação do ciclo do sono" },
+        { name: "Base de Alta Absorção", benefit: "Água Purificada e Glicerina para entrega precisa dos ativos" },
+        { name: "Experiência Sensorial", benefit: "Aroma Natural de Maracujá, refinado e relaxante" },
+        { name: "Zero Açúcar", benefit: "Edulcorante Sucralose com doçura equilibrada e zero índice glicêmico" },
+      ];
       return {
         accordionItems: [
           {
-            title: "Informação Nutricional",
+            title: "Benefícios da fórmula",
             content: (
-              <div className="max-w-sm">
-                <NutritionalTable {...SLEEP_NUTRITIONAL_DATA} />
-              </div>
+              <ul className="space-y-3 list-none">
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">A melatonina auxilia na regulação do ciclo do sono</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Contribui para preparação do organismo para o descanso</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Auxilia na adaptação a mudanças de ritmo biológico</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Desenvolvido para complementar rotinas de sono saudáveis</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Fórmula pensada para suporte ao descanso noturno</span>
+                </li>
+              </ul>
             ),
+          },
+          {
+            title: "Para quem foi desenvolvido",
+            content: (
+              <ul className="space-y-3 list-none">
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Pessoas que buscam melhorar a rotina de sono</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Quem possui rotina intensa e deseja suporte para descanso adequado</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Pessoas que valorizam recuperação e qualidade do sono</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Quem deseja complementar hábitos voltados ao descanso noturno</span>
+                </li>
+              </ul>
+            ),
+          },
+          {
+            title: "Como Usar",
+            content:
+              "Para uma transição suave ao sono reparador, ingira 1 (uma) gota ao dia, preferencialmente 30 minutos antes do repouso. Mantenha o frasco ao abrigo de luz e calor para preservar a integridade da fórmula.",
           },
           {
             title: "Ingredientes",
@@ -292,9 +387,12 @@ function ProductPageContent({ product }: ProductPageContentProps) {
             ),
           },
           {
-            title: "Como Usar",
-            content:
-              "Para uma transição suave ao sono reparador, ingira 1 (uma) gota ao dia, preferencialmente 30 minutos antes do repouso. Mantenha o frasco ao abrigo de luz e calor para preservar a integridade da fórmula.",
+            title: "Informação Nutricional",
+            content: (
+              <div className="max-w-sm">
+                <NutritionalTable {...SLEEP_NUTRITIONAL_DATA} />
+              </div>
+            ),
           },
           {
             title: "Ciência",
@@ -313,40 +411,74 @@ function ProductPageContent({ product }: ProductPageContentProps) {
             ),
           },
         ],
-        keyIngredients: [
-          {
-            name: "Melatonina",
-            benefit: "Ativo central para a regulação do ciclo do sono",
-          },
-          {
-            name: "Base de Alta Absorção",
-            benefit:
-              "Água Purificada e Glicerina para entrega precisa dos ativos",
-          },
-          {
-            name: "Experiência Sensorial",
-            benefit: "Aroma Natural de Maracujá, refinado e relaxante",
-          },
-          {
-            name: "Zero Açúcar",
-            benefit:
-              "Edulcorante Sucralose com doçura equilibrada e zero índice glicêmico",
-          },
-        ],
+        keyIngredients,
       };
     }
 
     if (productId === "prod_3") {
       // VIOS MAG3
+      const keyIngredients = [
+        { name: "Bisglicinato de Magnésio", benefit: "Forma quelatada para máxima absorção e conforto digestivo" },
+        { name: "Magnésio Dimalato", benefit: "Reconhecido por seu suporte prolongado à vitalidade e função muscular" },
+        { name: "Óxido de Magnésio", benefit: "Concentração estratégica para complementar o pool mineral" },
+        { name: "Pureza Farmacêutica", benefit: "Antiumectantes estearato de magnésio e dióxido de silício para estabilidade" },
+      ];
       return {
         accordionItems: [
           {
-            title: "Informação Nutricional",
+            title: "Benefícios da fórmula",
             content: (
-              <div className="max-w-sm">
-                <NutritionalTable {...MAG3_NUTRITIONAL_DATA} />
-              </div>
+              <ul className="space-y-3 list-none">
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Contribui para o funcionamento adequado do metabolismo energético</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Auxilia no funcionamento muscular e neuromuscular</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Participa de processos importantes do sistema nervoso</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Ajuda a complementar a ingestão diária de magnésio</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Combinação de diferentes formas de magnésio para suporte nutricional amplo</span>
+                </li>
+              </ul>
             ),
+          },
+          {
+            title: "Para quem foi desenvolvido",
+            content: (
+              <ul className="space-y-3 list-none">
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Pessoas com rotina intensa que desejam complementar a ingestão de magnésio</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Quem busca suporte nutricional para função muscular e nervosa</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Praticantes de atividade física</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Quem deseja fortalecer o equilíbrio mineral da rotina diária</span>
+                </li>
+              </ul>
+            ),
+          },
+          {
+            title: "Como Usar",
+            content:
+              "Para integrar esta tecnologia mineral à sua rotina de performance, ingira 1 (uma) cápsula ao dia. Recomendamos o consumo preferencialmente com uma refeição para otimizar a assimilação dos componentes. A apresentação em frasco de 60 cápsulas garante um ciclo de 60 rituais de bem-estar e manutenção celular.",
           },
           {
             title: "Ingredientes",
@@ -404,9 +536,12 @@ function ProductPageContent({ product }: ProductPageContentProps) {
             ),
           },
           {
-            title: "Como Usar",
-            content:
-              "Para integrar esta tecnologia mineral à sua rotina de performance, ingira 1 (uma) cápsula ao dia. Recomendamos o consumo preferencialmente com uma refeição para otimizar a assimilação dos componentes. A apresentação em frasco de 60 cápsulas garante um ciclo de 60 rituais de bem-estar e manutenção celular.",
+            title: "Informação Nutricional",
+            content: (
+              <div className="max-w-sm">
+                <NutritionalTable {...MAG3_NUTRITIONAL_DATA} />
+              </div>
+            ),
           },
           {
             title: "Ciência",
@@ -414,42 +549,74 @@ function ProductPageContent({ product }: ProductPageContentProps) {
               "A inteligência do VIOS MAG3 reside na entrega de 250 mg de magnésio elementar por dose, cobrindo 60% das necessidades diárias recomendadas com precisão. A tríplice combinação atua de forma orquestrada: enquanto auxilia no funcionamento muscular e no metabolismo energético, promove o equilíbrio dos eletrólitos e o suporte estrutural dos tecidos ósseos. Esta abordagem multiforme garante que o mineral atue em diversas rotinas metabólicas, elevando a disposição diária e a longevidade funcional.",
           },
         ],
-        keyIngredients: [
-          {
-            name: "Bisglicinato de Magnésio",
-            benefit:
-              "Forma quelatada para máxima absorção e conforto digestivo",
-          },
-          {
-            name: "Magnésio Dimalato",
-            benefit:
-              "Reconhecido por seu suporte prolongado à vitalidade e função muscular",
-          },
-          {
-            name: "Óxido de Magnésio",
-            benefit:
-              "Concentração estratégica para complementar o pool mineral",
-          },
-          {
-            name: "Pureza Farmacêutica",
-            benefit:
-              "Antiumectantes estearato de magnésio e dióxido de silício para estabilidade",
-          },
-        ],
+        keyIngredients,
       };
     }
 
     if (productId === "prod_4") {
       // VIOS Pulse
+      const keyIngredients = [
+        { name: "L-Arginina e Cafeína Anidra", benefit: "Ativos estratégicos para otimizar a resistência física e o foco mental" },
+        { name: "Complexo B Completo", benefit: "Vitaminas B1, B2, B3, B5, B6, B9 e B12 para suporte ao metabolismo energético" },
+        { name: "Matriz Mineral de Alta Absorção", benefit: "Carbonato de Cálcio, Óxido de Magnésio e Zinco Bisglicinato" },
+        { name: "Vitamina D3 e Biotina", benefit: "Nutrientes de suporte sistêmico para vitalidade e saúde celular" },
+      ];
       return {
         accordionItems: [
           {
-            title: "Informação Nutricional",
+            title: "Benefícios da fórmula",
             content: (
-              <div className="max-w-sm">
-                <NutritionalTable {...PULSE_NUTRITIONAL_DATA} />
-              </div>
+              <ul className="space-y-3 list-none">
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Contém cafeína, que auxilia no aumento do estado de alerta</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Contribui para suporte ao metabolismo energético</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Vitaminas do complexo B participam da produção de energia celular</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Fórmula desenvolvida para complementar rotinas de alta performance</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Combinação de nutrientes voltada para suporte físico e mental</span>
+                </li>
+              </ul>
             ),
+          },
+          {
+            title: "Para quem foi desenvolvido",
+            content: (
+              <ul className="space-y-3 list-none">
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Pessoas com rotina intensa e alta demanda de energia</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Quem busca suporte nutricional para foco e produtividade</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Praticantes de atividade física ou treinos intensos</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Profissionais e estudantes que desejam manter desempenho mental</span>
+                </li>
+              </ul>
+            ),
+          },
+          {
+            title: "Como Usar",
+            content:
+              "Para integrar esta tecnologia de performance à sua rotina, ingira 02 (duas) cápsulas ao dia. Recomendamos o uso preferencialmente antes de atividades que exijam alto desempenho físico ou mental. A apresentação em frasco de 60 cápsulas oferece um ciclo de 30 rituais de energia absoluta.",
           },
           {
             title: "Ingredientes",
@@ -504,9 +671,12 @@ function ProductPageContent({ product }: ProductPageContentProps) {
             ),
           },
           {
-            title: "Como Usar",
-            content:
-              "Para integrar esta tecnologia de performance à sua rotina, ingira 02 (duas) cápsulas ao dia. Recomendamos o uso preferencialmente antes de atividades que exijam alto desempenho físico ou mental. A apresentação em frasco de 60 cápsulas oferece um ciclo de 30 rituais de energia absoluta.",
+            title: "Informação Nutricional",
+            content: (
+              <div className="max-w-sm">
+                <NutritionalTable {...PULSE_NUTRITIONAL_DATA} />
+              </div>
+            ),
           },
           {
             title: "Ciência",
@@ -514,42 +684,74 @@ function ProductPageContent({ product }: ProductPageContentProps) {
               "A inteligência do VIOS Pulse reside na entrega equilibrada de micronutrientes que atingem até 100% do Valor Diário recomendado. A combinação de Arginina com o complexo vitamínico atua diretamente na redução do cansaço e na otimização do foco, enquanto a cafeína estimula a performance física e o desempenho mental. Esta abordagem multifacetada favorece a termogênese natural do organismo, auxiliando não apenas na disposição imediata, mas também no suporte metabólico ao emagrecimento saudável.",
           },
         ],
-        keyIngredients: [
-          {
-            name: "L-Arginina e Cafeína Anidra",
-            benefit:
-              "Ativos estratégicos para otimizar a resistência física e o foco mental",
-          },
-          {
-            name: "Complexo B Completo",
-            benefit:
-              "Vitaminas B1, B2, B3, B5, B6, B9 e B12 para suporte ao metabolismo energético",
-          },
-          {
-            name: "Matriz Mineral de Alta Absorção",
-            benefit:
-              "Carbonato de Cálcio, Óxido de Magnésio e Zinco Bisglicinato",
-          },
-          {
-            name: "Vitamina D3 e Biotina",
-            benefit:
-              "Nutrientes de suporte sistêmico para vitalidade e saúde celular",
-          },
-        ],
+        keyIngredients,
       };
     }
 
     if (productId === "prod_5") {
       // VIOS Move
+      const keyIngredients = [
+        { name: "Colágeno Tipo II não Desnaturado", benefit: "Ativo especializado na manutenção da cartilagem e elasticidade das juntas" },
+        { name: "Complexo Anti-inflamatório", benefit: "Cúrcuma e MSM para conforto articular e recuperação" },
+        { name: "Sinergia Óssea Avançada", benefit: "Vitaminas D3 e K2 para mineralização e absorção de fósforo" },
+        { name: "Pool Mineral de Alta Performance", benefit: "Cálcio, Magnésio e Zinco Bisglicinato para suporte muscular" },
+      ];
       return {
         accordionItems: [
           {
-            title: "Informação Nutricional",
+            title: "Benefícios da fórmula",
             content: (
-              <div className="max-w-sm">
-                <NutritionalTable {...MOVE_NUTRITIONAL_DATA} />
-              </div>
+              <ul className="space-y-3 list-none">
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Contribui para suporte nutricional das articulações</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Auxilia na manutenção da mobilidade e flexibilidade</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Contém colágeno tipo II, componente importante das cartilagens</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Combinação de minerais e vitaminas que participam do metabolismo ósseo</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Desenvolvido para complementar rotinas ativas</span>
+                </li>
+              </ul>
             ),
+          },
+          {
+            title: "Para quem foi desenvolvido",
+            content: (
+              <ul className="space-y-3 list-none">
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Pessoas que buscam suporte nutricional para articulações</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Quem pratica atividade física regularmente</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Quem deseja manter mobilidade e conforto nos movimentos</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#082f1e]">•</span>
+                  <span className="text-brand-softblack/80">Pessoas que valorizam saúde articular e qualidade de vida</span>
+                </li>
+              </ul>
+            ),
+          },
+          {
+            title: "Como Usar",
+            content:
+              "Para integrar esta tecnologia de regeneração à sua rotina, ingira 02 (duas) cápsulas ao dia. Recomendamos o uso preferencialmente acompanhado de uma refeição para otimizar a assimilação dos ativos lipossolúveis (D3 e K2). A apresentação em frasco de 60 cápsulas oferece um ciclo de 30 rituais de cuidado articular.",
           },
           {
             title: "Ingredientes",
@@ -603,9 +805,12 @@ function ProductPageContent({ product }: ProductPageContentProps) {
             ),
           },
           {
-            title: "Como Usar",
-            content:
-              "Para integrar esta tecnologia de regeneração à sua rotina, ingira 02 (duas) cápsulas ao dia. Recomendamos o uso preferencialmente acompanhado de uma refeição para otimizar a assimilação dos ativos lipossolúveis (D3 e K2). A apresentação em frasco de 60 cápsulas oferece um ciclo de 30 rituais de cuidado articular.",
+            title: "Informação Nutricional",
+            content: (
+              <div className="max-w-sm">
+                <NutritionalTable {...MOVE_NUTRITIONAL_DATA} />
+              </div>
+            ),
           },
           {
             title: "Ciência",
@@ -625,37 +830,30 @@ function ProductPageContent({ product }: ProductPageContentProps) {
             ),
           },
         ],
-        keyIngredients: [
-          {
-            name: "Colágeno Tipo II não Desnaturado",
-            benefit:
-              "Ativo especializado na manutenção da cartilagem e elasticidade das juntas",
-          },
-          {
-            name: "Complexo Anti-inflamatório",
-            benefit: "Cúrcuma e MSM para conforto articular e recuperação",
-          },
-          {
-            name: "Sinergia Óssea Avançada",
-            benefit:
-              "Vitaminas D3 e K2 para mineralização e absorção de fósforo",
-          },
-          {
-            name: "Pool Mineral de Alta Performance",
-            benefit:
-              "Cálcio, Magnésio e Zinco Bisglicinato para suporte muscular",
-          },
-        ],
+        keyIngredients,
       };
     }
 
     // Conteúdo padrão para outros produtos
+    const keyIngredients = [
+      { name: "Bisglicinato de Magnésio", benefit: "Absorção superior e biodisponibilidade otimizada" },
+      { name: "Vitamina D3", benefit: "Suporte à saúde óssea e sistema imunológico" },
+      { name: "Zinco Quelado", benefit: "Melhor absorção e menor irritação gástrica" },
+    ];
     return {
       accordionItems: [
         {
-          title: "Ingredientes",
-          content:
-            "Ingredientes selecionados cuidadosamente para garantir a máxima qualidade e eficácia. Cada componente foi escolhido com base em pesquisas científicas e padrões rigorosos de pureza.",
+          title: "Benefícios",
+          content: (
+            <div className="space-y-4">
+              {keyIngredients.map((ing) => (
+                <div key={ing.name}>
+                  <strong className="text-[#082f1e] font-medium">{ing.name}:</strong>{" "}
+                  <span className="text-brand-softblack/70">{ing.benefit}</span>
+                </div>
+              ))}
+            </div>
+          ),
         },
         {
           title: "Como Usar",
@@ -663,25 +861,17 @@ function ProductPageContent({ product }: ProductPageContentProps) {
             "Recomendamos tomar uma cápsula por dia, preferencialmente com uma refeição. Para melhores resultados, mantenha uma alimentação balanceada e pratique exercícios físicos regularmente.",
         },
         {
+          title: "Ingredientes",
+          content:
+            "Ingredientes selecionados cuidadosamente para garantir a máxima qualidade e eficácia. Cada componente foi escolhido com base em pesquisas científicas e padrões rigorosos de pureza.",
+        },
+        {
           title: "Ciência",
           content:
             "Nosso produto foi desenvolvido com base em estudos científicos publicados em revistas especializadas. Cada ingrediente foi selecionado considerando sua biodisponibilidade e sinergia com os demais componentes da fórmula.",
         },
       ],
-      keyIngredients: [
-        {
-          name: "Bisglicinato de Magnésio",
-          benefit: "Absorção superior e biodisponibilidade otimizada",
-        },
-        {
-          name: "Vitamina D3",
-          benefit: "Suporte à saúde óssea e sistema imunológico",
-        },
-        {
-          name: "Zinco Quelado",
-          benefit: "Melhor absorção e menor irritação gástrica",
-        },
-      ],
+      keyIngredients,
     };
   };
 
@@ -708,7 +898,7 @@ function ProductPageContent({ product }: ProductPageContentProps) {
         <div className="flex flex-col md:min-h-[calc(100vh-8rem)]">
           {/* Título do Produto com TextReveal */}
           <TextReveal
-            text={product.name}
+            text={product.tagline ? `${product.name} | ${product.tagline}` : product.name}
             el="h1"
             className="text-3xl font-light uppercase tracking-widest mb-4"
             delay={0.1}
@@ -834,6 +1024,16 @@ function ProductPageContent({ product }: ProductPageContentProps) {
       <div className="w-full max-w-7xl mx-auto px-6">
         <KeyIngredients ingredients={productContent.keyIngredients} />
       </div>
+
+      {/* Comparativo VIOS vs produto comum de farmácia */}
+      {productComparison && (
+        <div className="w-full max-w-7xl mx-auto px-6">
+          <ProductComparisonTable
+            comparison={productComparison}
+            productName={product.name}
+          />
+        </div>
+      )}
 
       {/* Avaliações */}
       <ProductReviews productId={product.id} />

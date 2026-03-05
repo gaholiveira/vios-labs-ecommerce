@@ -21,7 +21,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://vioslabs.com.br";
   const productImageUrl = `${baseUrl}${product.image}`;
 
-  const title = `VIOS | ${product.name}`;
+  const title = product.tagline
+    ? `${product.name} | ${product.tagline}`
+    : `VIOS | ${product.name}`;
   const description = `Compre ${product.name}. ${product.description}`;
 
   return {
