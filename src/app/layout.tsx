@@ -6,6 +6,7 @@ import ThirdPartyScripts from "@/components/ThirdPartyScripts";
 import ClientCustomCursor from "@/components/ui/ClientCustomCursor";
 import ClientToastContainer from "@/components/ui/ClientToastContainer";
 import ConditionalSiteChrome from "@/components/ConditionalSiteChrome";
+import ExitIntentModal from "@/components/ExitIntentModal";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -105,6 +106,7 @@ export default function RootLayout({
         <SmoothScrolling>
           <CartProvider>
             <ConditionalSiteChrome>{children}</ConditionalSiteChrome>
+            <ExitIntentModal />
             <ClientToastContainer />
           </CartProvider>
         </SmoothScrolling>
