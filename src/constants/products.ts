@@ -41,7 +41,7 @@ export const PRODUCTS: Product[] = [
     description: 'Nutrição estratégica para pele, cabelos e vitalidade. Vitaminas e minerais selecionados para oferecer suporte nutricional à saúde da pele e contribuir para o equilíbrio antioxidante do organismo.',
     shortDescription: 'Vitaminas e minerais selecionados para suporte nutricional da pele, cabelos e unhas.',
     category: 'Suplemento',
-    unitsSold: 127,
+    unitsSold: 32,
   },
   {
     id: 'prod_2',
@@ -52,8 +52,9 @@ export const PRODUCTS: Product[] = [
     description: 'Suporte nutricional avançado para um sono profundo e restaurador. Melatonina em solução líquida de alta absorção desenvolvida para auxiliar na regulação do ciclo circadiano e favorecer o início do sono, contribuindo para uma rotina noturna equilibrada.',
     shortDescription: 'Melatonina líquida para suporte ao ciclo natural do sono e ao descanso noturno.',
     category: 'Suplemento',
+    badge: 'bestseller',
     anvisaRecord: '25351.088701/2025-70',
-    unitsSold: 89,
+    unitsSold: 40,
   },
   {
     id: 'prod_3',
@@ -69,7 +70,7 @@ export const PRODUCTS: Product[] = [
     shortDescription: 'Magnésio em três formas para suporte energético, muscular e neurometabólico.',
     category: 'Suplemento',
     anvisaRecord: '25351.066423/2025-08',
-    unitsSold: 64,
+    unitsSold: 28,
   },
   {
     id: 'prod_4',
@@ -84,7 +85,7 @@ export const PRODUCTS: Product[] = [
     description: 'Suporte nutricional para energia, foco e desempenho. Uma formulação pensada para auxiliar na disposição física e mental, contribuindo para maior clareza, vitalidade e desempenho em momentos de alta exigência.',
     shortDescription: 'Fórmula com cafeína e complexo B para suporte à energia, foco e desempenho mental.',
     category: 'Suplemento',
-    unitsSold: 48,
+    unitsSold: 24,
   },
   {
     id: 'prod_5',
@@ -100,6 +101,6 @@ export const PRODUCTS: Product[] = [
     shortDescription: 'Fórmula com colágeno tipo II, cúrcuma e minerais para suporte nutricional das articulações.',
     category: 'Suplemento',
     anvisaRecord: '25351.215933/2025-15',
-    unitsSold: 36,
+    unitsSold: 20,
   },
 ];
