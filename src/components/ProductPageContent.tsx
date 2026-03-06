@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo, memo } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { useCart } from "@/context/CartContext";
-import { formatPrice } from "@/utils/format";
+import { formatPrice, formatUnitsSold } from "@/utils/format";
 import ProductAccordion from "@/components/ProductAccordion";
 import ProductImageGallery from "@/components/ProductImageGallery";
 import KeyIngredients from "@/components/KeyIngredients";
@@ -31,6 +32,7 @@ import NutritionalTable, {
   SLEEP_NUTRITIONAL_DATA,
 } from "@/components/NutritionalTable";
 import ProductComparisonTable from "@/components/ProductComparisonTable";
+import StickyBar from "@/components/StickyBar";
 import { getProductComparison } from "@/constants/product-comparisons";
 import { trackViewItem } from "@/lib/analytics";
 import type { InventoryStatus } from "@/types/database";
@@ -94,6 +96,10 @@ function ProductPageContent({ product }: ProductPageContentProps) {
     addToCart(product);
   }, [addToCart, product]);
 
+  const handleBuyNow = useCallback(() => {
+    addToCart(product, false);
+  }, [addToCart, product]);
+
   const handleWaitlistClick = useCallback(() => {
     setShowWaitlistModal(true);
   }, []);
@@ -152,26 +158,41 @@ function ProductPageContent({ product }: ProductPageContentProps) {
           {
             title: "Benefícios da fórmula",
             content: (
-              <ul className="space-y-3 list-none">
+              <ul className="space-y-4 list-none">
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Contribui para a manutenção da saúde da pele, cabelos e unhas</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Suporte à saúde da pele</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">Nutrientes que contribuem para a manutenção da estrutura cutânea.</span>
+                  </div>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Vitaminas antioxidantes que participam da proteção celular</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Contribui para cabelos e unhas</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">Vitaminas e minerais importantes para tecidos queratinizados.</span>
+                  </div>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Contém biotina e zinco, nutrientes associados à saúde capilar</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Ação antioxidante</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">Auxilia na proteção contra o estresse oxidativo.</span>
+                  </div>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Complexo de vitaminas que auxiliam no metabolismo energético</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Nutrição celular</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">Participa de processos metabólicos relacionados à renovação celular.</span>
+                  </div>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Suporte nutricional para rotina de autocuidado</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Beleza de dentro para fora</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">Suporte nutricional para quem busca cuidar da aparência de forma integrada.</span>
+                  </div>
                 </li>
               </ul>
             ),
@@ -277,26 +298,41 @@ function ProductPageContent({ product }: ProductPageContentProps) {
           {
             title: "Benefícios da fórmula",
             content: (
-              <ul className="space-y-3 list-none">
+              <ul className="space-y-4 list-none">
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">A melatonina auxilia na regulação do ciclo do sono</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Auxilia no início do sono</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">A melatonina auxilia o organismo a reconhecer o momento natural de repouso, favorecendo o adormecer.</span>
+                  </div>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Contribui para preparação do organismo para o descanso</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Contribui para um sono mais profundo e restaurador</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">O suporte ao ciclo circadiano ajuda a melhorar a qualidade do descanso noturno.</span>
+                  </div>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Auxilia na adaptação a mudanças de ritmo biológico</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Regulação do ritmo biológico</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">Auxilia na harmonização do ciclo natural de sono e vigília, especialmente em rotinas intensas ou com exposição à luz artificial.</span>
+                  </div>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Desenvolvido para complementar rotinas de sono saudáveis</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Solução líquida de alta absorção</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">A apresentação líquida facilita o uso e permite absorção eficiente pelo organismo.</span>
+                  </div>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Fórmula pensada para suporte ao descanso noturno</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Experiência sensorial suave</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">Delicado sabor de maracujá pensado para integrar-se naturalmente ao ritual noturno.</span>
+                  </div>
                 </li>
               </ul>
             ),
@@ -428,26 +464,41 @@ function ProductPageContent({ product }: ProductPageContentProps) {
           {
             title: "Benefícios da fórmula",
             content: (
-              <ul className="space-y-3 list-none">
+              <ul className="space-y-4 list-none">
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Contribui para o funcionamento adequado do metabolismo energético</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Auxilia na função muscular</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">O magnésio contribui para o funcionamento adequado dos músculos.</span>
+                  </div>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Auxilia no funcionamento muscular e neuromuscular</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Suporte ao sistema nervoso</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">Participa de processos importantes relacionados à transmissão neuromuscular.</span>
+                  </div>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Participa de processos importantes do sistema nervoso</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Contribui para o metabolismo energético</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">O magnésio participa de reações metabólicas essenciais para a produção de energia.</span>
+                  </div>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Ajuda a complementar a ingestão diária de magnésio</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Equilíbrio eletrolítico</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">Importante para o funcionamento adequado do organismo.</span>
+                  </div>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Combinação de diferentes formas de magnésio para suporte nutricional amplo</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Suporte para rotinas intensas</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">Especialmente indicado para quem busca suporte nutricional em rotinas físicas ou mentais exigentes.</span>
+                  </div>
                 </li>
               </ul>
             ),
@@ -566,26 +617,41 @@ function ProductPageContent({ product }: ProductPageContentProps) {
           {
             title: "Benefícios da fórmula",
             content: (
-              <ul className="space-y-3 list-none">
+              <ul className="space-y-4 list-none">
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Contém cafeína, que auxilia no aumento do estado de alerta</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Auxilia na disposição diária</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">Contribui para rotinas que exigem energia e concentração.</span>
+                  </div>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Contribui para suporte ao metabolismo energético</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Suporte ao desempenho físico</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">Pensado para acompanhar momentos de esforço físico e mental.</span>
+                  </div>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Vitaminas do complexo B participam da produção de energia celular</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Clareza e foco</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">Auxilia na manutenção da atenção e produtividade.</span>
+                  </div>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Fórmula desenvolvida para complementar rotinas de alta performance</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Equilíbrio metabólico</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">Apoia processos energéticos do organismo.</span>
+                  </div>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Combinação de nutrientes voltada para suporte físico e mental</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Ideal para rotinas intensas</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">Desenvolvido para quem busca suporte nutricional em dias de alta demanda.</span>
+                  </div>
                 </li>
               </ul>
             ),
@@ -701,26 +767,41 @@ function ProductPageContent({ product }: ProductPageContentProps) {
           {
             title: "Benefícios da fórmula",
             content: (
-              <ul className="space-y-3 list-none">
+              <ul className="space-y-4 list-none">
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Contribui para suporte nutricional das articulações</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Auxilia na saúde articular</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">Contribui para o suporte nutricional das articulações.</span>
+                  </div>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Auxilia na manutenção da mobilidade e flexibilidade</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Mobilidade e flexibilidade</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">Pensado para quem busca movimentos mais livres no dia a dia.</span>
+                  </div>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Contém colágeno tipo II, componente importante das cartilagens</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Suporte ao sistema musculoesquelético</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">Participa da manutenção estrutural do organismo.</span>
+                  </div>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Combinação de minerais e vitaminas que participam do metabolismo ósseo</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Conforto nas atividades diárias</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">Auxilia quem mantém rotinas ativas.</span>
+                  </div>
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-[#082f1e]">•</span>
-                  <span className="text-brand-softblack/80">Desenvolvido para complementar rotinas ativas</span>
+                  <span className="text-[#082f1e] shrink-0">•</span>
+                  <div>
+                    <span className="text-brand-softblack/80 font-medium block">Suporte para movimento contínuo</span>
+                    <span className="text-brand-softblack/60 text-sm block mt-0.5">Ideal para quem busca manter qualidade de vida e mobilidade.</span>
+                  </div>
                 </li>
               </ul>
             ),
@@ -882,6 +963,7 @@ function ProductPageContent({ product }: ProductPageContentProps) {
 
   return (
     <>
+      <div className="pb-24">
       <div className="max-w-7xl mx-auto px-6 pt-20 md:pt-24 pb-12 grid grid-cols-1 md:grid-cols-2 gap-12">
         {/* Galeria de Imagens — Sticky no Desktop */}
         <div className="md:sticky md:top-8 md:self-start">
@@ -905,16 +987,28 @@ function ProductPageContent({ product }: ProductPageContentProps) {
             duration={0.6}
           />
 
-          {/* Preço + faixa de benefícios */}
+          {/* Preço + unidades vendidas + faixa de benefícios */}
           <div className="space-y-4 mb-6">
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-              className="text-xl"
-            >
-              {formatPrice(product.price)}
-            </motion.p>
+            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                className="text-xl"
+              >
+                {formatPrice(product.price)}
+              </motion.p>
+              {product.unitsSold !== undefined && product.unitsSold > 0 && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, delay: 0.05 }}
+                  className="text-xs font-light uppercase tracking-wider text-brand-softblack/70"
+                >
+                  {formatUnitsSold(product.unitsSold)} unidades vendidas
+                </motion.p>
+              )}
+            </div>
 
             <motion.div
               initial={{ opacity: 0, y: 6 }}
@@ -968,30 +1062,52 @@ function ProductPageContent({ product }: ProductPageContentProps) {
             </div>
           )}
 
-          {/* Botão de Compra */}
-          <motion.button
-            onClick={handleAddToCart}
-            disabled={isOutOfStock || isLoadingInventory}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-            className={`w-full border rounded-sm px-6 py-3 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium transition-all duration-500 ease-out ${
-              isOutOfStock || isLoadingInventory
-                ? "border-stone-300 bg-stone-200 text-stone-500 cursor-not-allowed"
-                : "border-brand-green bg-brand-green text-brand-offwhite hover:bg-brand-softblack hover:border-brand-softblack"
-            }`}
-          >
-            {isLoadingInventory
-              ? "Carregando..."
-              : isOutOfStock
-                ? "Esgotado"
-                : "Colocar na sacola"}
-          </motion.button>
+          {/* Botões de Compra — Comprar agora (principal) + Colocar na sacola (secundário) */}
+          <div className="flex flex-col gap-3">
+            {isOutOfStock || isLoadingInventory ? (
+              <motion.button
+                disabled
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+                className="w-full border rounded-sm px-6 py-3.5 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium border-stone-300 bg-stone-200 text-stone-500 cursor-not-allowed"
+              >
+                {isLoadingInventory ? "Carregando..." : "Esgotado"}
+              </motion.button>
+            ) : (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.1 }}>
+                <Link
+                  href="/checkout"
+                  onClick={handleBuyNow}
+                  className="flex w-full items-center justify-center border rounded-sm px-6 py-3.5 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium border-brand-green bg-brand-green text-brand-offwhite transition-all duration-500 ease-out hover:bg-brand-softblack hover:border-brand-softblack"
+                >
+                  Comprar agora
+                </Link>
+              </motion.div>
+            )}
+            <motion.button
+              onClick={handleAddToCart}
+              disabled={isOutOfStock || isLoadingInventory}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: 0.12 }}
+              className={`w-full border rounded-sm px-6 py-2.5 min-h-[40px] uppercase tracking-[0.2em] text-[11px] font-light transition-all duration-500 ease-out ${
+                isOutOfStock || isLoadingInventory
+                  ? "border-stone-200 bg-transparent text-stone-400 cursor-not-allowed"
+                  : "border-stone-300 bg-transparent text-brand-softblack hover:border-brand-green hover:text-brand-green"
+              }`}
+            >
+              Colocar na sacola
+            </motion.button>
+          </div>
 
           <p className="mt-3 text-center text-[10px] uppercase tracking-wider text-brand-softblack/70">
             Primeira compra? Use o cupom{" "}
             <span className="font-medium text-brand-green">SOUVIOS</span> para 10% de desconto no checkout.
           </p>
+
+          {/* Sentinel para StickyBar — quando sai da viewport, a barra aparece */}
+          <div data-sticky-bar-trigger className="h-px w-full" aria-hidden />
 
           <motion.div
             initial={{ opacity: 0 }}
@@ -1040,6 +1156,17 @@ function ProductPageContent({ product }: ProductPageContentProps) {
 
       {/* Quem comprou também comprou */}
       <FrequentlyBoughtTogether products={recommendedProducts} />
+      </div>
+
+      {/* Barra fixa — aparece quando o botão principal sai da viewport */}
+      <StickyBar
+        productName={product.name}
+        productId={product.id}
+        onAddToCart={handleAddToCart}
+        onBuyNow={handleBuyNow}
+        isOutOfStock={isOutOfStock}
+        isLoading={isLoadingInventory}
+      />
 
       {/* Modal de Waitlist */}
       <WaitlistModal

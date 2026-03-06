@@ -42,6 +42,8 @@ export interface OrderSummary {
   discount?: number;
 }
 
+export type CheckoutFormStep = "dados" | "frete" | "pagamento";
+
 interface CheckoutFormProps {
   onSubmit: (data: CheckoutFormData) => void;
   onCancel: () => void;
@@ -59,6 +61,15 @@ interface CheckoutFormProps {
   children?: React.ReactNode;
   /** Chamado quando o CEP possui 8 dígitos (para cotação de frete) */
   onCEPChange?: (cep: string) => void;
+  /** Modo step: exibe uma etapa por vez. Quando definido, usa freightSection e paymentSection em vez de children */
+  step?: CheckoutFormStep;
+  onStepChange?: (step: CheckoutFormStep) => void;
+  /** Conteúdo da etapa Frete (CEP já preenchido na etapa Dados) */
+  freightSection?: React.ReactNode;
+  /** Conteúdo da etapa Pagamento */
+  paymentSection?: React.ReactNode;
+  /** Chamado ao clicar "Continuar" na etapa Frete — validar e chamar onStepChange("pagamento") se ok */
+  onContinueFromFreight?: () => void;
 }
 
 /**
@@ -82,7 +93,13 @@ export default function CheckoutForm({
   submitLabel,
   children,
   onCEPChange,
+  step: stepProp,
+  onStepChange,
+  freightSection,
+  paymentSection,
+  onContinueFromFreight,
 }: CheckoutFormProps) {
+  const isStepMode = stepProp != null;
   // Estados do formulário (email: inicial do usuário logado ou vazio para guest)
   const [email, setEmail] = useState(initialEmail ?? "");
   const [fullName, setFullName] = useState("");
@@ -348,10 +365,120 @@ export default function CheckoutForm({
   };
 
   /**
+   * Valida etapa Dados e retorna true se ok.
+   * Define todos os erros em um único setState (evita race condition).
+   */
+  const validateStepDados = useCallback(() => {
+    setTouched({
+      fullName: true,
+      email: true,
+      cpf: true,
+      phone: true,
+      cep: true,
+      street: true,
+      number: true,
+      neighborhood: true,
+      city: true,
+      state: true,
+    });
+    const emailValue = (initialEmail ?? email).trim().toLowerCase();
+    const fullNameValid = fullName.trim().length >= 3;
+    const emailValid = validateEmail(emailValue);
+    const cpfValid = validateCPF(cpf);
+    const phoneValid = validatePhone(phone);
+    const addressValidation = validateAddress(address);
+
+    const newErrors: Record<string, string> = {};
+    if (!fullNameValid) {
+      newErrors.fullName =
+        fullName.trim().length === 0
+          ? "Nome completo é obrigatório"
+          : "Nome completo deve ter pelo menos 3 caracteres";
+    }
+    if (!emailValid) {
+      newErrors.email =
+        !emailValue ? "E-mail é obrigatório" : "E-mail inválido";
+    }
+    if (!cpfValid) {
+      newErrors.cpf = !cpf.trim() ? "CPF é obrigatório" : "CPF inválido";
+    }
+    if (!phoneValid) {
+      newErrors.phone =
+        !phone.trim() ? "Telefone é obrigatório" : "Telefone inválido (use DDD + número)";
+    }
+    if (!addressValidation.valid) {
+      addressValidation.errors.forEach((error) => {
+        if (error.includes("CEP")) newErrors.cep = error;
+        else if (error.includes("Rua")) newErrors.street = error;
+        else if (error.includes("Número")) newErrors.number = error;
+        else if (error.includes("Bairro")) newErrors.neighborhood = error;
+        else if (error.includes("Cidade")) newErrors.city = error;
+        else if (error.includes("Estado")) newErrors.state = error;
+      });
+    }
+    const keysToReset = [
+      "fullName",
+      "email",
+      "cpf",
+      "phone",
+      "cep",
+      "street",
+      "number",
+      "neighborhood",
+      "city",
+      "state",
+    ] as const;
+    setErrors((prev) => {
+      const next = { ...prev };
+      keysToReset.forEach((k) => delete next[k]);
+      return { ...next, ...newErrors };
+    });
+
+    return (
+      fullNameValid &&
+      emailValid &&
+      cpfValid &&
+      phoneValid &&
+      addressValidation.valid
+    );
+  }, [fullName, email, cpf, phone, address, initialEmail]);
+
+  /**
    * Handler de submit do formulário
    */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Modo step: na etapa Dados, validar e avançar
+    if (isStepMode && stepProp === "dados") {
+      if (validateStepDados()) {
+        const cleanedCEP = address.cep.replace(/\D/g, "");
+        try {
+          localStorage.setItem(
+            CHECKOUT_ADDRESS_STORAGE_KEY,
+            JSON.stringify({
+              cep: cleanedCEP,
+              street: address.street.trim(),
+              number: address.number.trim(),
+              complement: address.complement?.trim() ?? "",
+              neighborhood: address.neighborhood.trim(),
+              city: address.city.trim(),
+              state: address.state.trim(),
+            })
+          );
+        } catch {
+          /* ignore */
+        }
+        onStepChange?.("frete");
+      }
+      return;
+    }
+
+    // Modo step: na etapa Frete, o botão Continuar chama onContinueFromFreight (não submit)
+    if (isStepMode && stepProp === "frete") {
+      onContinueFromFreight?.();
+      return;
+    }
 
     // Marcar todos os campos como tocados
     setTouched({
@@ -490,9 +617,133 @@ export default function CheckoutForm({
           "border-gray-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green/20";
         const err =
           "border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-200/40";
+        const showStepDados = !isStepMode || stepProp === "dados";
+        const showStepFrete = isStepMode && stepProp === "frete";
+        const showStepPagamento = isStepMode && stepProp === "pagamento";
+
         return (
           <div className="space-y-10">
-            {/* Endereço (primeiro: CEP desbloqueia preenchimento automático) */}
+            {/* Etapa Dados: Contato primeiro (conversão) → Endereço */}
+            {showStepDados && (
+            <>
+            {/* Contato & Fiscal — primeiro (email = baixa fricção, cart recovery) */}
+            <div className="p-5 md:p-6 border border-gray-100 bg-white rounded-sm">
+              <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-brand-softblack/70 mb-6">
+                Contato & Fiscal
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Email — primeiro campo (best practice: menor fricção) */}
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
+                    E-mail <span className="text-red-500">*</span>
+                  </label>
+                  {initialEmail ? (
+                    <input
+                      type="email"
+                      value={initialEmail}
+                      disabled
+                      className={`${base} border-gray-200 text-brand-softblack/60 cursor-not-allowed`}
+                    />
+                  ) : (
+                    <>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        onBlur={() => {
+                          setTouched((prev) => ({
+                            ...prev,
+                            email: true,
+                          }));
+                          validateField("email", email);
+                        }}
+                        placeholder="seu@email.com"
+                        className={`${base} ${errors.email ? err : ok}`}
+                      />
+                      {errors.email && (
+                        <p className="text-[10px] text-red-500 mt-2">
+                          {errors.email}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* Nome completo */}
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
+                    Nome completo <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    onBlur={() => {
+                      setTouched((prev) => ({ ...prev, fullName: true }));
+                      validateField("fullName", fullName);
+                    }}
+                    placeholder="Nome e sobrenome"
+                    className={`${base} ${errors.fullName ? err : ok}`}
+                  />
+                  {errors.fullName && (
+                    <p className="text-[10px] text-red-500 mt-2">
+                      {errors.fullName}
+                    </p>
+                  )}
+                </div>
+
+                {/* CPF */}
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
+                    CPF <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={cpf}
+                    onChange={(e) => handleCPFChange(e.target.value)}
+                    onBlur={() => {
+                      setTouched((prev) => ({ ...prev, cpf: true }));
+                      validateField("cpf", cpf);
+                    }}
+                    placeholder="000.000.000-00"
+                    maxLength={14}
+                    className={`${base} ${errors.cpf ? err : ok}`}
+                  />
+                  {errors.cpf && (
+                    <p className="text-[10px] text-red-500 mt-2">
+                      {errors.cpf}
+                    </p>
+                  )}
+                </div>
+
+                {/* Telefone */}
+                <div className="md:col-span-2">
+                  <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
+                    Telefone (com DDD) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={phone}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    onBlur={() => {
+                      setTouched((prev) => ({ ...prev, phone: true }));
+                      validateField("phone", phone);
+                    }}
+                    placeholder="(00) 00000-0000"
+                    maxLength={15}
+                    className={`${base} ${errors.phone ? err : ok}`}
+                  />
+                  {errors.phone && (
+                    <p className="text-[10px] text-red-500 mt-2">
+                      {errors.phone}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Endereço de entrega — CEP desbloqueia preenchimento automático */}
             <div className="p-5 md:p-6 border border-gray-100 bg-white rounded-sm">
               <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-brand-softblack/70 mb-6">
                 Endereço de entrega
@@ -736,130 +987,29 @@ export default function CheckoutForm({
               </div>
             </div>
 
-            {/* Contato & Fiscal */}
-            <div className="p-5 md:p-6 border border-gray-100 bg-white rounded-sm">
-              <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-brand-softblack/70 mb-6">
-                Contato & Fiscal
-              </p>
+            </>
+            )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Nome completo */}
-                <div>
-                  <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
-                    Nome completo <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    onBlur={() => {
-                      setTouched((prev) => ({ ...prev, fullName: true }));
-                      validateField("fullName", fullName);
-                    }}
-                    placeholder="Nome e sobrenome"
-                    className={`${base} ${errors.fullName ? err : ok}`}
-                  />
-                  {errors.fullName && (
-                    <p className="text-[10px] text-red-500 mt-2">
-                      {errors.fullName}
-                    </p>
-                  )}
-                </div>
+            {/* Etapa Frete */}
+            {showStepFrete && freightSection}
 
-                {/* Email */}
-                <div>
-                  <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
-                    E-mail <span className="text-red-500">*</span>
-                  </label>
-                  {initialEmail ? (
-                    <input
-                      type="email"
-                      value={initialEmail}
-                      disabled
-                      className={`${base} border-gray-200 text-brand-softblack/60 cursor-not-allowed`}
-                    />
-                  ) : (
-                    <>
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        onBlur={() => {
-                          setTouched((prev) => ({
-                            ...prev,
-                            email: true,
-                          }));
-                          validateField("email", email);
-                        }}
-                        placeholder="seu@email.com"
-                        className={`${base} ${errors.email ? err : ok}`}
-                      />
-                      {errors.email && (
-                        <p className="text-[10px] text-red-500 mt-2">
-                          {errors.email}
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
+            {/* Etapa Pagamento */}
+            {showStepPagamento && paymentSection}
 
-                {/* CPF */}
-                <div>
-                  <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
-                    CPF <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={cpf}
-                    onChange={(e) => handleCPFChange(e.target.value)}
-                    onBlur={() => {
-                      setTouched((prev) => ({ ...prev, cpf: true }));
-                      validateField("cpf", cpf);
-                    }}
-                    placeholder="000.000.000-00"
-                    maxLength={14}
-                    className={`${base} ${errors.cpf ? err : ok}`}
-                  />
-                  {errors.cpf && (
-                    <p className="text-[10px] text-red-500 mt-2">
-                      {errors.cpf}
-                    </p>
-                  )}
-                </div>
-
-                {/* Telefone */}
-                <div className="md:col-span-2">
-                  <label className="text-[10px] uppercase tracking-widest block mb-3 opacity-70 font-medium text-brand-softblack">
-                    Telefone (com DDD) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={phone}
-                    onChange={(e) => handlePhoneChange(e.target.value)}
-                    onBlur={() => {
-                      setTouched((prev) => ({ ...prev, phone: true }));
-                      validateField("phone", phone);
-                    }}
-                    placeholder="(00) 00000-0000"
-                    maxLength={15}
-                    className={`${base} ${errors.phone ? err : ok}`}
-                  />
-                  {errors.phone && (
-                    <p className="text-[10px] text-red-500 mt-2">
-                      {errors.phone}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {children}
+            {/* Modo lista única: children (Frete + Cupom + Pagamento) */}
+            {!isStepMode && children}
 
             {/* Ações */}
             <div className="flex flex-col-reverse md:flex-row md:items-center gap-3 md:justify-between pt-2">
               <button
                 type="button"
-                onClick={onCancel}
+                onClick={
+                  isStepMode && stepProp === "frete"
+                    ? () => onStepChange?.("dados")
+                    : isStepMode && stepProp === "pagamento"
+                      ? () => onStepChange?.("frete")
+                      : onCancel
+                }
                 className="w-full md:w-auto px-5 py-3 border border-gray-200 rounded-sm text-brand-softblack/80 text-[11px] uppercase tracking-widest hover:border-brand-green/40 hover:text-brand-softblack transition-colors"
               >
                 Voltar
@@ -869,7 +1019,13 @@ export default function CheckoutForm({
                 disabled={isLoading}
                 className="w-full md:w-auto px-6 py-3 bg-brand-green text-white rounded-sm text-[11px] uppercase tracking-widest hover:bg-brand-green/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {isLoading ? "Processando…" : (submitLabel ?? "Continuar")}
+                {isLoading
+                  ? "Processando…"
+                  : isStepMode && stepProp === "dados"
+                    ? "Continuar para Frete"
+                    : isStepMode && stepProp === "frete"
+                      ? "Continuar para Pagamento"
+                      : (submitLabel ?? "Continuar")}
               </button>
             </div>
           </div>

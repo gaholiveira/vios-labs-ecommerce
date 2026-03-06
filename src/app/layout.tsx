@@ -1,4 +1,5 @@
 import { CartProvider } from "@/context/CartContext";
+import { StickyBarProvider } from "@/context/StickyBarContext";
 import SkipLink from "@/components/SkipLink";
 import "./globals.css";
 import SmoothScrolling from "@/components/SmoothScrolling";
@@ -105,9 +106,11 @@ export default function RootLayout({
         <SkipLink />
         <SmoothScrolling>
           <CartProvider>
-            <ConditionalSiteChrome>{children}</ConditionalSiteChrome>
-            <ExitIntentModal />
-            <ClientToastContainer />
+            <StickyBarProvider>
+              <ConditionalSiteChrome>{children}</ConditionalSiteChrome>
+              <ExitIntentModal />
+              <ClientToastContainer />
+            </StickyBarProvider>
           </CartProvider>
         </SmoothScrolling>
         {/* Scripts de terceiros carregados de forma otimizada */}

@@ -68,6 +68,47 @@ export function trackViewItem(params: {
   });
 }
 
+/** Visualização do carrinho (ao abrir o drawer) */
+export function trackViewCart(params: {
+  value: number;
+  items: Array<{ id: string; name: string; price: number; quantity: number; category?: string }>;
+}): void {
+  if (!isAvailable()) return;
+  window.gtag!("event", "view_cart", {
+    currency: "BRL",
+    value: params.value,
+    items: toGA4Items(params.items),
+  });
+}
+
+/** Seleção de item em lista (clique para ver produto/kit) — atribuição */
+export function trackSelectItem(params: {
+  itemId: string;
+  itemName: string;
+  price: number;
+  category?: string;
+  isKit?: boolean;
+  itemListId?: string;
+  itemListName?: string;
+}): void {
+  if (!isAvailable()) return;
+  window.gtag!("event", "select_item", {
+    currency: "BRL",
+    value: params.price,
+    items: [
+      {
+        item_id: params.itemId,
+        item_name: params.itemName,
+        price: params.price,
+        quantity: 1,
+        item_category: params.category ?? (params.isKit ? "Kit" : "Produto"),
+        ...(params.itemListId && { item_list_id: params.itemListId }),
+        ...(params.itemListName && { item_list_name: params.itemListName }),
+      },
+    ],
+  });
+}
+
 /** Adição ao carrinho (produto) */
 export function trackAddToCart(params: {
   itemId: string;
@@ -78,6 +119,30 @@ export function trackAddToCart(params: {
 }): void {
   if (!isAvailable()) return;
   window.gtag!("event", "add_to_cart", {
+    currency: "BRL",
+    value: params.price * params.quantity,
+    items: toGA4Items([
+      {
+        id: params.itemId,
+        name: params.itemName,
+        price: params.price,
+        quantity: params.quantity,
+        category: params.category,
+      },
+    ]),
+  });
+}
+
+/** Remoção do carrinho (para funil completo) */
+export function trackRemoveFromCart(params: {
+  itemId: string;
+  itemName: string;
+  price: number;
+  quantity: number;
+  category?: string;
+}): void {
+  if (!isAvailable()) return;
+  window.gtag!("event", "remove_from_cart", {
     currency: "BRL",
     value: params.price * params.quantity,
     items: toGA4Items([

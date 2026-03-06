@@ -4,7 +4,8 @@ import Image from "next/image";
 import { memo } from "react";
 import { Product } from "@/constants/products";
 import { useCart } from "@/context/CartContext";
-import { formatPrice } from "@/utils/format";
+import { trackSelectItem } from "@/lib/analytics";
+import { formatPrice, formatUnitsSold } from "@/utils/format";
 import { LAST_UNITS_THRESHOLD, FEW_UNITS_THRESHOLD, MAX_INSTALLMENTS } from "@/lib/checkout-config";
 
 const BADGE_CONFIG = {
@@ -84,6 +85,16 @@ function ProductCard({ product, priority }: { product: Product; priority?: boole
       <Link
         href={`/produto/${product.id}`}
         className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden mb-6"
+        onClick={() =>
+          trackSelectItem({
+            itemId: product.id,
+            itemName: product.name,
+            price: product.price,
+            category: product.category,
+            itemListId: "homepage",
+            itemListName: "Produtos em destaque",
+          })
+        }
       >
         <Image
           src={product.image}
@@ -142,7 +153,20 @@ function ProductCard({ product, priority }: { product: Product; priority?: boole
         </div>
 
         {/* Nome do Produto */}
-        <Link href={`/produto/${product.id}`} className="min-h-10 flex items-start">
+        <Link
+          href={`/produto/${product.id}`}
+          className="min-h-10 flex items-start"
+          onClick={() =>
+            trackSelectItem({
+              itemId: product.id,
+              itemName: product.name,
+              price: product.price,
+              category: product.category,
+              itemListId: "homepage",
+              itemListName: "Produtos em destaque",
+            })
+          }
+        >
           <h3 className="text-xs sm:text-sm uppercase tracking-wider font-light text-brand-softblack group-hover:text-brand-green transition-colors duration-500 ease-out leading-tight line-clamp-2">
             {product.name}
           </h3>
@@ -157,10 +181,15 @@ function ProductCard({ product, priority }: { product: Product; priority?: boole
           )}
         </div>
 
-        {/* Rating e Reviews — prova social sutil */}
-        <div className="min-h-5 flex items-center">
+        {/* Unidades vendidas + Rating — prova social */}
+        <div className="min-h-5 flex flex-wrap items-center gap-x-3 gap-y-1">
+          {product.unitsSold !== undefined && product.unitsSold > 0 && (
+            <span className="text-[10px] font-light uppercase tracking-wider text-brand-softblack/70">
+              {formatUnitsSold(product.unitsSold)} vendidas
+            </span>
+          )}
           {product.rating !== undefined && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {renderStars(product.rating)}
               {product.reviews !== undefined && product.reviews > 0 && (
                 <span className="text-[10px] text-brand-softblack/65 font-light uppercase tracking-wider">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
@@ -9,6 +9,7 @@ import CheckoutForm, {
   type CheckoutFormData,
 } from "@/components/checkout/CheckoutForm";
 import CheckoutOrderSummary from "@/components/checkout/CheckoutOrderSummary";
+import CheckoutSteps from "@/components/checkout/CheckoutSteps";
 import CheckoutPaymentStep from "@/components/checkout/CheckoutPaymentStep";
 import ShippingQuoteSelector from "@/components/checkout/ShippingQuoteSelector";
 import SecurityBadges from "@/components/SecurityBadges";
@@ -31,6 +32,7 @@ const CHECKOUT_BG = "#F9F7F2";
 const CHECKOUT_INK = "#1B2B22";
 
 type CheckoutView = "form" | "pix" | "card_form";
+type CheckoutStepId = "dados" | "frete" | "pagamento";
 
 function formatBRL(value: number): string {
   return value.toFixed(2).replace(".", ",");
@@ -59,6 +61,7 @@ export default function CheckoutPage() {
   const [checkoutCep, setCheckoutCep] = useState("");
   const [selectedShippingQuote, setSelectedShippingQuote] =
     useState<ShippingQuoteOption | null>(null);
+  const [activeStep, setActiveStep] = useState<CheckoutStepId>("dados");
 
   viewRef.current = view;
 
@@ -85,6 +88,181 @@ export default function CheckoutPage() {
   const shippingReais = isFreeShipping
     ? 0
     : selectedShippingQuote?.price ?? 0;
+
+  const handleContinueFromFreight = useCallback(() => {
+    const hasValidShipping =
+      isFreeShipping ||
+      (selectedShippingQuote &&
+        (shippingReais > 0 || selectedShippingQuote.type === "local"));
+    if (!hasValidShipping) {
+      showToast(
+        "Informe seu CEP e aguarde o cálculo do frete para continuar.",
+      );
+      return;
+    }
+    setActiveStep("pagamento");
+  }, [isFreeShipping, selectedShippingQuote, shippingReais, showToast]);
+
+  const freightSectionMemo = useMemo(
+    () => (
+      <div className="space-y-6">
+        <div
+          className="py-6 border-t border-[0.5px] px-6 md:px-8"
+          style={{ borderColor: "rgba(27,43,34,0.1)" }}
+        >
+          <ShippingQuoteSelector
+            postalCode={checkoutCep}
+            selectedQuote={selectedShippingQuote}
+            onSelect={setSelectedShippingQuote}
+          />
+        </div>
+        <div
+          className="py-4 border-t border-[0.5px] px-6 md:px-8"
+          style={{ borderColor: "rgba(27,43,34,0.1)" }}
+        >
+          <button
+            type="button"
+            onClick={() => setCouponExpanded((p) => !p)}
+            className="text-[10px] uppercase tracking-[0.2em] opacity-75 hover:opacity-90 transition-opacity"
+            aria-expanded={couponExpanded}
+          >
+            {couponExpanded ? "Ocultar cupom" : "Tem cupom?"}
+          </button>
+          {couponExpanded && (
+            <div className="mt-3 space-y-1.5">
+              <input
+                id="checkout-coupon"
+                type="text"
+                placeholder="SOUVIOS — 10% na primeira compra"
+                value={couponCode}
+                onChange={(e) =>
+                  setCouponCode(e.target.value.trim().toUpperCase())
+                }
+                className="w-full bg-white/70 border border-gray-200 rounded-sm px-3 py-2.5 text-sm font-light text-brand-softblack placeholder:text-gray-400 focus:outline-none focus:border-brand-green"
+                style={{ color: CHECKOUT_INK }}
+                aria-label="Cupom de desconto"
+              />
+              <p
+                className="text-[10px] opacity-70"
+                style={{ color: CHECKOUT_INK }}
+              >
+                10% de desconto na primeira compra. Soma com o desconto do PIX.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    ),
+    [
+      checkoutCep,
+      selectedShippingQuote,
+      couponExpanded,
+      couponCode,
+    ],
+  );
+
+  const paymentSectionMemo = useMemo(
+    () => (
+      <div
+        className="py-6 border-t border-[0.5px] px-6 md:px-8"
+        style={{ borderColor: "rgba(27,43,34,0.1)" }}
+      >
+        <p className="text-[10px] uppercase tracking-[0.2em] opacity-75 mb-4">
+          Pagamento
+        </p>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => setPaymentMethod("pix")}
+            className={`flex-1 py-4 px-5 rounded-sm border-[0.5px] text-left transition-all duration-200 ${
+              paymentMethod === "pix"
+                ? "border-[#1B2B22] bg-[#1B2B22]/6"
+                : "border-[rgba(27,43,34,0.2)] hover:border-[#1B2B22]/40 bg-white"
+            }`}
+            style={{ color: CHECKOUT_INK }}
+            aria-pressed={paymentMethod === "pix"}
+            aria-label="PIX com 10% de desconto"
+          >
+            <span className="block text-xs font-medium uppercase tracking-wider mb-0.5">
+              PIX
+            </span>
+            <span className="text-[11px] opacity-80">10% OFF</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPaymentMethod("card");
+              setInstallmentOption((prev) => prev ?? "3x");
+            }}
+            className={`flex-1 py-4 px-5 rounded-sm border-[0.5px] text-left transition-all duration-200 ${
+              paymentMethod === "card"
+                ? "border-[#1B2B22] bg-[#1B2B22]/6"
+                : "border-[rgba(27,43,34,0.2)] hover:border-[#1B2B22]/40 bg-white"
+            }`}
+            style={{ color: CHECKOUT_INK }}
+            aria-pressed={paymentMethod === "card"}
+            aria-label="Cartão de crédito em até 3x sem juros"
+          >
+            <span className="block text-xs font-medium uppercase tracking-wider mb-0.5">
+              Cartão de Crédito
+            </span>
+            <span className="text-[11px] opacity-80">3x sem juros</span>
+          </button>
+        </div>
+        {paymentMethod === "card" && (
+          <div className="mt-4">
+            <p className="text-[10px] uppercase tracking-wider opacity-75 mb-2">
+              Parcelas
+            </p>
+            <div className="flex gap-2">
+              {(["1x", "2x", "3x"] as const).map((opt) => {
+                const couponDiscount =
+                  couponCode.trim().toUpperCase() === COUPON_CODE_SOUVIOS
+                    ? totalPrice * COUPON_SOUVIOS_DISCOUNT_PERCENT
+                    : 0;
+                const totalReais =
+                  totalPrice + shippingReais - couponDiscount;
+                const amount =
+                  opt === "1x"
+                    ? totalReais
+                    : Math.round(
+                        (totalReais / (opt === "2x" ? 2 : 3)) * 100,
+                      ) / 100;
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setInstallmentOption(opt)}
+                    className={`flex-1 py-3 rounded-sm border-[0.5px] text-xs font-light transition-all ${
+                      installmentOption === opt
+                        ? "border-[#1B2B22] bg-[#1B2B22]/6"
+                        : "border-[rgba(27,43,34,0.2)] hover:border-[#1B2B22]/40"
+                    }`}
+                    style={{ color: CHECKOUT_INK }}
+                    aria-pressed={installmentOption === opt}
+                  >
+                    {opt === "1x" ? "À vista" : opt}
+                    {opt !== "1x" && (
+                      <span className="block text-[10px] opacity-70 mt-0.5">
+                        R$ {formatBRL(amount)}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    ),
+    [
+      paymentMethod,
+      installmentOption,
+      totalPrice,
+      shippingReais,
+      couponCode,
+    ],
+  );
 
   const handleFormSubmit = useCallback(
     async (data: CheckoutFormData) => {
@@ -327,6 +505,10 @@ export default function CheckoutPage() {
     );
   }
 
+  // Step atual: controlado por activeStep (navegação por etapas)
+  const currentStep: CheckoutStepId =
+    view === "pix" || view === "card_form" ? "pagamento" : activeStep;
+
   return (
     <div
       className="min-h-screen py-10 md:py-14 px-4 sm:px-6"
@@ -334,12 +516,36 @@ export default function CheckoutPage() {
     >
       <div className="max-w-6xl mx-auto">
         {/* Selos de confiança — visível no topo */}
-        <div className="mb-8">
+        <div className="mb-6">
           <SecurityBadges variant="checkout-full" theme="light" />
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14">
-          {/* Coluna esquerda: Formulário (Dados Pessoais > Endereço > Frete > Pagamento) */}
-          <div className="lg:col-span-7 order-2 lg:order-1">
+
+        {/* Layout: Resumo primeiro (conversão) → Steps → Formulário */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
+          {/* Resumo do pedido — primeira coluna no desktop (visível antes do form) */}
+          <div className="lg:col-span-4 lg:order-1 order-1">
+            <div className="lg:sticky lg:top-8">
+              <CheckoutOrderSummary
+                paymentMethod={paymentMethod}
+                installmentOption={installmentOption}
+                onPaymentMethodChange={setPaymentMethod}
+                onInstallmentChange={setInstallmentOption}
+                showPaymentSelector={false}
+                shippingReais={shippingReais}
+                isFreeShipping={isFreeShipping}
+                couponCode={couponCode}
+                className="rounded-sm shadow-sm border-[0.5px] border-[#1B2B22]/10"
+              />
+            </div>
+          </div>
+
+          {/* Steps + Formulário */}
+          <div className="lg:col-span-8 lg:order-2 order-2">
+            <CheckoutSteps
+              currentStep={currentStep}
+              theme="light"
+              onStepClick={setActiveStep}
+            />
             {view === "form" && (
               <div
                 className="rounded-sm overflow-hidden border-[0.5px] bg-white/90 shadow-sm"
@@ -353,148 +559,12 @@ export default function CheckoutPage() {
                   isLoading={isSubmitting}
                   submitLabel="Finalizar compra"
                   onCEPChange={setCheckoutCep}
-                >
-                  {/* Frete — Melhor Envio */}
-                  <div
-                    className="py-6 border-t border-[0.5px] px-6 md:px-8"
-                    style={{ borderColor: "rgba(27,43,34,0.1)" }}
-                  >
-                    <ShippingQuoteSelector
-                      postalCode={checkoutCep}
-                      selectedQuote={selectedShippingQuote}
-                      onSelect={setSelectedShippingQuote}
-                    />
-                  </div>
-
-                  {/* Cupom — colapsável (menos fricção; só quem tem cupom abre) */}
-                  <div
-                    className="py-4 border-t border-[0.5px] px-6 md:px-8"
-                    style={{ borderColor: "rgba(27,43,34,0.1)" }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setCouponExpanded((p) => !p)}
-                      className="text-[10px] uppercase tracking-[0.2em] opacity-75 hover:opacity-90 transition-opacity"
-                      aria-expanded={couponExpanded}
-                    >
-                      {couponExpanded ? "Ocultar cupom" : "Tem cupom?"}
-                    </button>
-                    {couponExpanded && (
-                      <div className="mt-3 space-y-1.5">
-                        <input
-                          id="checkout-coupon"
-                          type="text"
-                          placeholder="SOUVIOS — 10% na primeira compra"
-                          value={couponCode}
-                          onChange={(e) =>
-                            setCouponCode(e.target.value.trim().toUpperCase())
-                          }
-                          className="w-full bg-white/70 border border-gray-200 rounded-sm px-3 py-2.5 text-sm font-light text-brand-softblack placeholder:text-gray-400 focus:outline-none focus:border-brand-green"
-                          style={{ color: CHECKOUT_INK }}
-                          aria-label="Cupom de desconto"
-                        />
-                        <p className="text-[10px] opacity-70" style={{ color: CHECKOUT_INK }}>
-                          10% de desconto na primeira compra. Soma com o desconto do PIX.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Pagamento: toggle elegante PIX (10% OFF) | Cartão (3x sem juros) */}
-                  <div
-                    className="py-6 border-t border-[0.5px] px-6 md:px-8"
-                    style={{ borderColor: "rgba(27,43,34,0.1)" }}
-                  >
-                    <p className="text-[10px] uppercase tracking-[0.2em] opacity-75 mb-4">
-                      Pagamento
-                    </p>
-                    <div className="flex gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setPaymentMethod("pix")}
-                        className={`flex-1 py-4 px-5 rounded-sm border-[0.5px] text-left transition-all duration-200 ${
-                          paymentMethod === "pix"
-                            ? "border-[#1B2B22] bg-[#1B2B22]/6"
-                            : "border-[rgba(27,43,34,0.2)] hover:border-[#1B2B22]/40 bg-white"
-                        }`}
-                        style={{ color: CHECKOUT_INK }}
-                        aria-pressed={paymentMethod === "pix"}
-                        aria-label="PIX com 10% de desconto"
-                      >
-                        <span className="block text-xs font-medium uppercase tracking-wider mb-0.5">
-                          PIX
-                        </span>
-                        <span className="text-[11px] opacity-80">
-                          10% OFF
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPaymentMethod("card");
-                          setInstallmentOption((prev) => prev ?? "3x");
-                        }}
-                        className={`flex-1 py-4 px-5 rounded-sm border-[0.5px] text-left transition-all duration-200 ${
-                          paymentMethod === "card"
-                            ? "border-[#1B2B22] bg-[#1B2B22]/6"
-                            : "border-[rgba(27,43,34,0.2)] hover:border-[#1B2B22]/40 bg-white"
-                        }`}
-                        style={{ color: CHECKOUT_INK }}
-                        aria-pressed={paymentMethod === "card"}
-                        aria-label="Cartão de crédito em até 3x sem juros"
-                      >
-                        <span className="block text-xs font-medium uppercase tracking-wider mb-0.5">
-                          Cartão de Crédito
-                        </span>
-                        <span className="text-[11px] opacity-80">
-                          3x sem juros
-                        </span>
-                      </button>
-                    </div>
-                    {paymentMethod === "card" && (
-                      <div className="mt-4">
-                        <p className="text-[10px] uppercase tracking-wider opacity-75 mb-2">
-                          Parcelas
-                        </p>
-                        <div className="flex gap-2">
-                          {(["1x", "2x", "3x"] as const).map((opt) => {
-                            const couponDiscount =
-                              couponCode.trim().toUpperCase() === COUPON_CODE_SOUVIOS
-                                ? totalPrice * COUPON_SOUVIOS_DISCOUNT_PERCENT
-                                : 0;
-                            const totalReais =
-                              totalPrice + shippingReais - couponDiscount;
-                            const amount =
-                              opt === "1x"
-                                ? totalReais
-                                : Math.round((totalReais / (opt === "2x" ? 2 : 3)) * 100) / 100;
-                            return (
-                              <button
-                                key={opt}
-                                type="button"
-                                onClick={() => setInstallmentOption(opt)}
-                                className={`flex-1 py-3 rounded-sm border-[0.5px] text-xs font-light transition-all ${
-                                  installmentOption === opt
-                                    ? "border-[#1B2B22] bg-[#1B2B22]/6"
-                                    : "border-[rgba(27,43,34,0.2)] hover:border-[#1B2B22]/40"
-                                }`}
-                                style={{ color: CHECKOUT_INK }}
-                                aria-pressed={installmentOption === opt}
-                              >
-                                {opt === "1x" ? "À vista" : opt}
-                                {opt !== "1x" && (
-                                  <span className="block text-[10px] opacity-70 mt-0.5">
-                                    R$ {formatBRL(amount)}
-                                  </span>
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CheckoutForm>
+                  step={activeStep}
+                  onStepChange={setActiveStep}
+                  onContinueFromFreight={handleContinueFromFreight}
+                  freightSection={freightSectionMemo}
+                  paymentSection={paymentSectionMemo}
+                />
               </div>
             )}
 
@@ -531,23 +601,6 @@ export default function CheckoutPage() {
                   />
                 </div>
               )}
-          </div>
-
-          {/* Coluna direita: Resumo do Pedido (imagem, subtotal, frete, total) */}
-          <div className="lg:col-span-5 order-1 lg:order-2">
-            <div className="lg:sticky lg:top-8">
-              <CheckoutOrderSummary
-                paymentMethod={paymentMethod}
-                installmentOption={installmentOption}
-                onPaymentMethodChange={setPaymentMethod}
-                onInstallmentChange={setInstallmentOption}
-                showPaymentSelector={false}
-                shippingReais={shippingReais}
-                isFreeShipping={isFreeShipping}
-                couponCode={couponCode}
-                className="rounded-sm shadow-sm border-[0.5px] border-[#1B2B22]/10"
-              />
-            </div>
           </div>
         </div>
 

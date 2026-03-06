@@ -4,6 +4,7 @@ import { memo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
+import { trackSelectItem } from "@/lib/analytics";
 import { formatPrice } from "@/utils/format";
 import type { Product } from "@/constants/products";
 import type { Kit } from "@/constants/kits";
@@ -71,6 +72,16 @@ function ProductRecommendationCard({
       <Link
         href={`/produto/${product.id}`}
         className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden mb-4 block"
+        onClick={() =>
+          trackSelectItem({
+            itemId: product.id,
+            itemName: product.name,
+            price: product.price,
+            category: product.category,
+            itemListId: "frequently_bought",
+            itemListName: "Quem comprou também comprou",
+          })
+        }
       >
         <Image
           src={product.image}
@@ -92,7 +103,19 @@ function ProductRecommendationCard({
         <p className="text-[10px] uppercase tracking-[0.2em] text-brand-gold font-light">
           {product.category}
         </p>
-        <Link href={`/produto/${product.id}`}>
+        <Link
+          href={`/produto/${product.id}`}
+          onClick={() =>
+            trackSelectItem({
+              itemId: product.id,
+              itemName: product.name,
+              price: product.price,
+              category: product.category,
+              itemListId: "frequently_bought",
+              itemListName: "Quem comprou também comprou",
+            })
+          }
+        >
           <h3 className="text-xs uppercase tracking-wider font-light text-brand-softblack group-hover:text-brand-green transition-colors leading-tight">
             {product.name}
           </h3>
@@ -138,6 +161,17 @@ function KitRecommendationCard({
       <Link
         href={`/kit/${kit.id}`}
         className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden mb-4 block"
+        onClick={() =>
+          trackSelectItem({
+            itemId: kit.id,
+            itemName: kit.name,
+            price: kit.price,
+            category: kit.badge === "kit" ? "Kit" : "Protocolo",
+            isKit: true,
+            itemListId: "frequently_bought",
+            itemListName: "Quem comprou também comprou",
+          })
+        }
       >
         {kit.image ? (
           <Image
@@ -167,7 +201,20 @@ function KitRecommendationCard({
         <p className="text-[10px] uppercase tracking-[0.2em] text-brand-gold font-light">
           {kit.badge === "kit" ? "Kit" : "Protocolo"}
         </p>
-        <Link href={`/kit/${kit.id}`}>
+        <Link
+          href={`/kit/${kit.id}`}
+          onClick={() =>
+            trackSelectItem({
+              itemId: kit.id,
+              itemName: kit.name,
+              price: kit.price,
+              category: kit.badge === "kit" ? "Kit" : "Protocolo",
+              isKit: true,
+              itemListId: "frequently_bought",
+              itemListName: "Quem comprou também comprou",
+            })
+          }
+        >
           <h3 className="text-xs uppercase tracking-wider font-light text-brand-softblack group-hover:text-brand-green transition-colors leading-tight">
             {kit.name}
           </h3>

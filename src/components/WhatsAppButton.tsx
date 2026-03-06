@@ -1,5 +1,7 @@
 "use client";
 
+import { useStickyBar } from "@/context/StickyBarContext";
+
 const WHATSAPP_NUMBER = "5511952136713";
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`;
 
@@ -18,12 +20,17 @@ function WhatsAppIcon({ className }: { className?: string }) {
 }
 
 export default function WhatsAppButton() {
+  const context = useStickyBar();
+  const stickyBarVisible = context?.stickyBarVisible ?? false;
+
   return (
     <a
       href={WHATSAPP_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className="group fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full border border-brand-gold/40 bg-brand-green text-brand-offwhite shadow-lg transition-all duration-300 hover:scale-105 hover:border-brand-gold hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 focus:ring-offset-2 focus:ring-offset-brand-offwhite md:bottom-8 md:right-8 md:h-[3.25rem] md:w-[3.25rem]"
+      className={`group fixed right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full border border-brand-gold/40 bg-brand-green text-brand-offwhite shadow-lg transition-all duration-300 hover:scale-105 hover:border-brand-gold hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 focus:ring-offset-2 focus:ring-offset-brand-offwhite md:right-8 md:h-[3.25rem] md:w-[3.25rem] ${
+        stickyBarVisible ? "bottom-24 md:bottom-28" : "bottom-6 md:bottom-8"
+      }`}
       aria-label="Falar com atendimento no WhatsApp"
     >
       <WhatsAppIcon className="h-7 w-7 md:h-8 md:w-8" />

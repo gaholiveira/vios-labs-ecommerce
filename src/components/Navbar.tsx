@@ -227,8 +227,18 @@ function Navbar() {
           VIOS
         </Link>
 
-        {/* LADO DIREITO: Sacola + Avatar/Login */}
-        <div className="flex-1 flex justify-end items-center space-x-4">
+        {/* LADO DIREITO: Pagar (quando tem itens) + Sacola + Avatar/Login */}
+        <div className="flex-1 flex justify-end items-center gap-2 sm:gap-4">
+          {/* Link direto para checkout — "Pagar" cabe no mobile */}
+          {totalItems > 0 && (
+            <Link
+              href="/checkout"
+              className="shrink-0 rounded-sm border border-brand-green bg-brand-green px-3 py-2 text-[10px] font-medium uppercase tracking-[0.2em] text-brand-offwhite transition-colors hover:bg-brand-softblack hover:border-brand-softblack md:px-5 md:py-2.5"
+              aria-label={`Pagar (${totalItems} item${totalItems !== 1 ? "s" : ""})`}
+            >
+              Pagar
+            </Link>
+          )}
           {/* Sacola — abre drawer lateral */}
           <button
             type="button"
@@ -255,9 +265,6 @@ function Navbar() {
                 {cartBadgeDisplay}
               </span>
             )}
-            <span className="ml-2 text-[10px] uppercase tracking-[0.2em] font-medium md:hidden">
-              ({totalItems})
-            </span>
           </button>
 
           {/* Avatar/Login - Apenas Desktop */}

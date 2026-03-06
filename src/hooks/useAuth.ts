@@ -1,17 +1,29 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import type { User } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo<SupabaseClient | null>(() => {
+    try {
+      return createClient()
+    } catch {
+      return null
+    }
+  }, [])
 
   useEffect(() => {
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
+
     // Verificar sessão inicial
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user)
@@ -34,7 +46,7 @@ export function useAuth() {
     return () => {
       subscription.unsubscribe()
     }
-  }, [router, supabase.auth])
+  }, [router, supabase])
 
   const signOut = async () => {
     // Usar função centralizada de logout para garantir limpeza completa

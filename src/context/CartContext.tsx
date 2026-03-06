@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import { Product, PRODUCTS } from "@/constants/products";
 import { Kit, KITS } from "@/constants/kits";
-import { trackAddToCart } from "@/lib/analytics";
+import { trackAddToCart, trackRemoveFromCart } from "@/lib/analytics";
 
 const CART_STORAGE_KEY = "vios_cart";
 
@@ -50,7 +50,7 @@ function saveCartToStorage(cart: CartItem[]) {
 
 interface CartContextType {
   cart: CartItem[];
-  addToCart: (product: Product) => void;
+  addToCart: (product: Product, openDrawer?: boolean) => void;
   addKitToCart: (kit: Kit) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -92,17 +92,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setToastMessage(null);
   }, []);
 
-  const addToCart = useCallback((product: Product) => {
+  const addToCart = useCallback((product: Product, openDrawer = true) => {
     setCart((prev) => {
       const existing = prev.find(
         (item) => item.id === product.id && !item.isKit,
       );
-      const newQty = existing ? existing.quantity + 1 : 1;
+      const quantityAdded = 1;
+      const newQty = existing ? existing.quantity + quantityAdded : quantityAdded;
       trackAddToCart({
         itemId: product.id,
         itemName: product.name,
         price: product.price,
-        quantity: newQty,
+        quantity: quantityAdded,
         category: product.category,
       });
       if (existing) {
@@ -118,19 +119,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       setToastType("default");
       return [...prev, { ...product, quantity: 1, isKit: false }];
     });
-    setIsCartDrawerOpen(true);
+    if (openDrawer) setIsCartDrawerOpen(true);
   }, []);
 
   const addKitToCart = useCallback((kit: Kit) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.id === kit.id && item.isKit);
-      const newQty = existing ? existing.quantity + 1 : 1;
+      const quantityAdded = 1;
+      const newQty = existing ? existing.quantity + quantityAdded : quantityAdded;
       const category = kit.badge === "kit" ? "Kit" : "Protocolo";
       trackAddToCart({
         itemId: kit.id,
         itemName: kit.name,
         price: kit.price,
-        quantity: newQty,
+        quantity: quantityAdded,
         category,
       });
       if (existing) {
@@ -161,12 +163,36 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const removeFromCart = useCallback((productId: string) => {
-    setCart((prev) => prev.filter((item) => item.id !== productId));
+    setCart((prev) => {
+      const item = prev.find((i) => i.id === productId);
+      if (item) {
+        trackRemoveFromCart({
+          itemId: item.id,
+          itemName: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          category: item.category,
+        });
+      }
+      return prev.filter((item) => item.id !== productId);
+    });
   }, []);
 
   const updateQuantity = useCallback((productId: string, quantity: number) => {
     if (quantity <= 0) {
-      setCart((prev) => prev.filter((item) => item.id !== productId));
+      setCart((prev) => {
+        const item = prev.find((i) => i.id === productId);
+        if (item) {
+          trackRemoveFromCart({
+            itemId: item.id,
+            itemName: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            category: item.category,
+          });
+        }
+        return prev.filter((item) => item.id !== productId);
+      });
       return;
     }
     setCart((prev) =>

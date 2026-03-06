@@ -8,6 +8,14 @@ export function formatPrice(price: number): string {
 }
 
 /**
+ * Formata quantidade de unidades vendidas (prova social)
+ * Ex.: 1247 → "1.247"
+ */
+export function formatUnitsSold(count: number): string {
+  return count.toLocaleString('pt-BR');
+}
+
+/**
  * Formata um número de telefone brasileiro
  * Aceita números com ou sem código do país (+55)
  * Formato: (XX) XXXXX-XXXX (11 dígitos) ou +55 XX XXXXX-XXXX (13 dígitos)

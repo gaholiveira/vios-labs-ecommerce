@@ -1,18 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
+import { trackViewCart } from "@/lib/analytics";
 import { formatPrice } from "@/utils/format";
-import {
-  FREE_SHIPPING_THRESHOLD,
-  PIX_DISCOUNT_PERCENT,
-} from "@/lib/checkout-config";
-import { formatCEP } from "@/utils/validation";
+import { FREE_SHIPPING_THRESHOLD } from "@/lib/checkout-config";
 import ShippingMeter from "@/components/cart/ShippingMeter";
-import type { ShippingQuoteOption } from "@/app/api/shipping/quote/route";
 import { X, Minus, Plus, Trash2, Shield } from "lucide-react";
 
 const drawerTransition = {
@@ -21,10 +17,6 @@ const drawerTransition = {
   ease: [0.32, 0.72, 0, 1] as const,
 };
 const backdropTransition = { duration: 0.4, ease: "easeOut" as const };
-
-function formatBRL(value: number): string {
-  return value.toFixed(2).replace(".", ",");
-}
 
 export default function CartDrawer() {
   const {
@@ -37,30 +29,32 @@ export default function CartDrawer() {
     setIsCartDrawerOpen,
   } = useCart();
 
-  const [drawerCep, setDrawerCep] = useState("");
-  const [shippingQuotes, setShippingQuotes] = useState<ShippingQuoteOption[]>(
-    [],
-  );
-  const [shippingQuote, setShippingQuote] = useState<ShippingQuoteOption | null>(
-    null,
-  );
-  const [shippingLoading, setShippingLoading] = useState(false);
-  const [shippingError, setShippingError] = useState<string | null>(null);
-  const [shippingOptionsExpanded, setShippingOptionsExpanded] = useState(false);
-
-  const cepDigits = drawerCep.replace(/\D/g, "");
   const isFreeShipping = totalPrice >= FREE_SHIPPING_THRESHOLD;
-  const shippingReais = isFreeShipping ? 0 : (shippingQuote?.price ?? 0);
-  const totalWithShipping = totalPrice + shippingReais;
-  const pixDiscount = totalWithShipping * PIX_DISCOUNT_PERCENT;
-  const totalWithPix = totalWithShipping - pixDiscount;
 
   const closeDrawer = useCallback(() => {
     setIsCartDrawerOpen(false);
   }, [setIsCartDrawerOpen]);
 
+  const hasFiredViewCartRef = useRef(false);
+
   useEffect(() => {
-    if (!isCartDrawerOpen) return;
+    if (!isCartDrawerOpen) {
+      hasFiredViewCartRef.current = false;
+      return;
+    }
+    if (!hasFiredViewCartRef.current) {
+      hasFiredViewCartRef.current = true;
+      trackViewCart({
+        value: totalPrice,
+        items: cart.map((i) => ({
+          id: i.id,
+          name: i.name,
+          price: i.price,
+          quantity: i.quantity,
+          category: i.category,
+        })),
+      });
+    }
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeDrawer();
     };
@@ -69,72 +63,7 @@ export default function CartDrawer() {
     return () => {
       document.removeEventListener("keydown", handleEscape);
     };
-  }, [isCartDrawerOpen, closeDrawer]);
-
-  useEffect(() => {
-    if (cepDigits.length !== 8 || cart.length === 0) {
-      setShippingQuotes([]);
-      setShippingQuote(null);
-      setShippingError(null);
-      return;
-    }
-    let cancelled = false;
-    setShippingLoading(true);
-    setShippingError(null);
-    setShippingQuotes([]);
-    setShippingQuote(null);
-
-    fetch("/api/shipping/quote", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        postalCode: cepDigits,
-        cartItems: cart.map((item) => ({
-          id: item.id,
-          quantity: item.quantity,
-          price: item.price,
-          isKit: item.isKit,
-          kitProducts: item.kitProducts,
-        })),
-      }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (cancelled) return;
-        if (!data.quotes?.length) {
-          setShippingError(data?.error ?? "Nenhuma opção para este CEP.");
-          return;
-        }
-        const options = Array.isArray(data.quotes) ? data.quotes : [];
-        setShippingQuotes(options);
-        const defaultPick =
-          options.find((q: ShippingQuoteOption) => q.type === "local") ??
-          options.find((q: ShippingQuoteOption) => q.type === "standard") ??
-          options[0];
-        setShippingQuote(defaultPick);
-        setShippingOptionsExpanded(false);
-        setShippingError(null);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setShippingError("Erro ao calcular frete.");
-          setShippingQuotes([]);
-          setShippingQuote(null);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setShippingLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [cepDigits, cart]);
-
-  const handleCepChange = (value: string) => {
-    const cleaned = value.replace(/\D/g, "").slice(0, 8);
-    setDrawerCep(cleaned.length === 8 ? formatCEP(cleaned) : cleaned);
-  };
+  }, [isCartDrawerOpen, closeDrawer, cart, totalPrice]);
 
   return (
     <AnimatePresence
@@ -305,116 +234,10 @@ export default function CartDrawer() {
               </ul>
             </div>
 
-            {/* Frete + totais — fixo no rodapé */}
+            {/* Totais + CTA — fixo no rodapé (CEP e frete só no checkout) */}
             <div className="shrink-0 border-t border-stone-200/80 bg-white/80 px-6 py-5 backdrop-blur-sm">
               <ShippingMeter currentSubtotal={totalPrice} />
 
-              {/* CEP — oculto quando frete grátis já conquistado (menos fricção) */}
-              {!isFreeShipping && (
-                <div className="mb-4">
-                  <label
-                    htmlFor="cart-drawer-cep"
-                    className="mb-1.5 block text-[10px] font-medium uppercase tracking-[0.2em] text-stone-500"
-                  >
-                    Calcular frete
-                  </label>
-                  <input
-                    id="cart-drawer-cep"
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="00000-000"
-                    value={drawerCep}
-                    onChange={(e) => handleCepChange(e.target.value)}
-                    maxLength={9}
-                    className="w-full rounded-sm border border-stone-300/80 bg-white px-3 py-2.5 text-sm font-light text-brand-softblack placeholder:text-stone-400 focus:border-brand-green focus:outline-none focus:ring-1 focus:ring-brand-green/30"
-                  />
-                  {shippingLoading && (
-                    <p className="mt-2 text-xs font-light text-stone-500">
-                      Calculando…
-                    </p>
-                  )}
-                  {shippingError && !shippingLoading && cepDigits.length === 8 && (
-                    <p className="mt-2 text-xs text-amber-700">{shippingError}</p>
-                  )}
-                  {shippingQuotes.length > 0 && !shippingLoading && (
-                    <div className="mt-3">
-                      {shippingOptionsExpanded ? (
-                        <div className="space-y-2 max-h-[160px] overflow-y-auto overscroll-contain">
-                          {shippingQuotes.map((quote) => {
-                            const isSelected = shippingQuote?.id === quote.id;
-                            const displayPrice = quote.price;
-                            return (
-                              <button
-                                key={quote.id}
-                                type="button"
-                                onClick={() => {
-                                  setShippingQuote(quote);
-                                  setShippingOptionsExpanded(false);
-                                }}
-                                className={`w-full flex items-center justify-between gap-3 py-2 px-3 rounded-sm border text-left transition-all duration-200 ${
-                                  isSelected
-                                    ? "border-brand-green bg-brand-green/5"
-                                    : "border-stone-200/80 hover:border-stone-300 bg-white"
-                                }`}
-                                aria-pressed={isSelected}
-                              >
-                                <div className="min-w-0">
-                                  <p className="text-[11px] font-medium text-brand-softblack">
-                                    {quote.type === "local"
-                                      ? "Entrega Local"
-                                      : quote.type === "express"
-                                        ? "Expressa"
-                                        : "Padrão"}
-                                  </p>
-                                  <p className="text-[9px] text-stone-500 truncate">
-                                    {quote.type === "local"
-                                      ? "Mesmo dia"
-                                      : `${quote.deliveryTime}–${quote.deliveryTime + 2} dias`}
-                                  </p>
-                                </div>
-                                <p className="text-[11px] font-medium text-brand-softblack shrink-0 tabular-nums">
-                                  {displayPrice === 0 ? (
-                                    <span className="text-brand-green">Grátis</span>
-                                  ) : (
-                                    <>R$ {formatBRL(displayPrice)}</>
-                                  )}
-                                </p>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setShippingOptionsExpanded(true)}
-                          className="w-full flex items-center justify-between gap-3 py-2 px-3 rounded-sm border border-stone-200/80 bg-white text-left hover:border-stone-300 transition-colors"
-                        >
-                          <div className="min-w-0">
-                            <p className="text-[11px] font-medium text-brand-softblack">
-                              {shippingQuote
-                                ? shippingQuote.type === "local"
-                                  ? "Entrega Local"
-                                  : shippingQuote.type === "express"
-                                    ? "Expressa"
-                                    : "Padrão"
-                                : "Selecione o frete"}
-                            </p>
-                            <p className="text-[9px] text-stone-500">
-                              {shippingQuotes.length} opção
-                              {shippingQuotes.length !== 1 ? "es" : ""}
-                            </p>
-                          </div>
-                          <span className="text-[10px] uppercase tracking-wider text-stone-500 shrink-0">
-                            Ver opções
-                          </span>
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Linhas de total */}
               <div className="space-y-2 border-t border-stone-200/80 pt-4">
                 <div className="flex justify-between text-xs font-light text-stone-600">
                   <span className="uppercase tracking-wider">Subtotal</span>
@@ -423,27 +246,15 @@ export default function CartDrawer() {
                 <div className="flex justify-between text-xs font-light text-stone-600">
                   <span className="uppercase tracking-wider">Frete</span>
                   <span className="tabular-nums">
-                    {isFreeShipping
-                      ? "Grátis"
-                      : cepDigits.length !== 8 || shippingLoading
-                        ? "—"
-                        : shippingQuote
-                          ? formatPrice(shippingReais)
-                          : "—"}
+                    {isFreeShipping ? "Grátis" : "No checkout"}
                   </span>
                 </div>
                 <div className="flex justify-between pt-2 text-sm font-medium uppercase tracking-wider text-brand-softblack">
                   <span>Total</span>
-                  <span className="tabular-nums">
-                    {isFreeShipping
-                      ? formatPrice(totalPrice)
-                      : cepDigits.length !== 8 || shippingLoading || !shippingQuote
-                        ? formatPrice(totalPrice)
-                        : formatPrice(totalWithShipping)}
-                  </span>
+                  <span className="tabular-nums">{formatPrice(totalPrice)}</span>
                 </div>
                 <p className="text-[10px] uppercase tracking-wider text-brand-green pt-1">
-                  10% off no PIX — {formatPrice(totalWithPix)}
+                  10% off no PIX no checkout
                 </p>
                 <p className="text-[10px] uppercase tracking-wider text-brand-softblack/70 pt-0.5">
                   Cupom <span className="font-medium text-brand-green">SOUVIOS</span>: +10% na primeira compra
@@ -463,18 +274,18 @@ export default function CartDrawer() {
               </div>
 
               {/* Botões — CTA principal dominante; secundário discreto */}
-              <div className="mt-4 flex flex-col gap-3">
+              <div className="mt-4 flex flex-col gap-4">
                 <Link
                   href="/checkout"
                   onClick={closeDrawer}
-                  className="flex items-center justify-center rounded-sm bg-brand-green px-6 py-3.5 text-xs font-medium uppercase tracking-[0.2em] text-brand-offwhite transition-colors hover:bg-brand-softblack"
+                  className="flex items-center justify-center rounded-sm bg-brand-green px-6 py-4 text-sm font-medium uppercase tracking-[0.2em] text-brand-offwhite shadow-md transition-all hover:bg-brand-softblack hover:shadow-lg"
                 >
                   Ir para o checkout
                 </Link>
                 <button
                   type="button"
                   onClick={closeDrawer}
-                  className="text-[10px] uppercase tracking-[0.2em] text-stone-500 hover:text-brand-softblack transition-colors py-2"
+                  className="text-[9px] uppercase tracking-[0.15em] text-stone-400 hover:text-stone-600 transition-colors py-1"
                 >
                   Continuar comprando
                 </button>

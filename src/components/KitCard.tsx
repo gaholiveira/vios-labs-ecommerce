@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Kit } from "@/constants/kits";
 import { PRODUCTS } from "@/constants/products";
 import { useCart } from "@/context/CartContext";
+import { trackSelectItem } from "@/lib/analytics";
 import { formatPrice } from "@/utils/format";
 import { MAX_INSTALLMENTS } from "@/lib/checkout-config";
 import KitProductsPreview from "./KitProductsPreview";
@@ -26,6 +27,17 @@ function KitCard({ kit }: { kit: Kit }) {
       <Link
         href={`/kit/${kit.id}`}
         className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden mb-6 block"
+        onClick={() =>
+          trackSelectItem({
+            itemId: kit.id,
+            itemName: kit.name,
+            price: kit.price,
+            category: kit.badge === "kit" ? "Kit" : "Protocolo",
+            isKit: true,
+            itemListId: "homepage",
+            itemListName: "Kits em destaque",
+          })
+        }
       >
         {kit.image ? (
           <>
