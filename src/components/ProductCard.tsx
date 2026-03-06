@@ -84,7 +84,7 @@ function ProductCard({ product, priority }: { product: Product; priority?: boole
       {/* Container da Imagem com Badge e Overlay */}
       <Link
         href={`/produto/${product.id}`}
-        className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden mb-6"
+        className="relative w-full aspect-3/4 bg-gray-100 overflow-hidden mb-6"
         onClick={() =>
           trackSelectItem({
             itemId: product.id,
@@ -143,8 +143,8 @@ function ProductCard({ product, priority }: { product: Product; priority?: boole
 
       {/* Informações do Produto — alturas fixas para cards uniformes */}
       <div className="flex flex-col gap-3 flex-1 min-h-0">
-        {/* Categoria */}
-        <div className="min-h-5">
+        {/* Categoria — altura fixa para cards uniformes */}
+        <div className="h-5 flex items-center shrink-0">
           {product.category && (
             <p className="text-[10px] uppercase tracking-[0.2em] text-brand-gold font-light">
               {product.category}
@@ -152,10 +152,10 @@ function ProductCard({ product, priority }: { product: Product; priority?: boole
           )}
         </div>
 
-        {/* Nome do Produto */}
+        {/* Nome do Produto — altura fixa para cards uniformes */}
         <Link
           href={`/produto/${product.id}`}
-          className="min-h-10 flex items-start"
+          className="h-10 sm:h-12 flex items-start shrink-0"
           onClick={() =>
             trackSelectItem({
               itemId: product.id,
@@ -172,8 +172,8 @@ function ProductCard({ product, priority }: { product: Product; priority?: boole
           </h3>
         </Link>
 
-        {/* Descrição curta para conversão */}
-        <div className="min-h-10">
+        {/* Descrição curta — altura fixa para cards uniformes */}
+        <div className="h-10 flex items-start shrink-0">
           {product.shortDescription && (
             <p className="text-[11px] sm:text-xs font-light text-brand-softblack/65 leading-snug line-clamp-2">
               {product.shortDescription}
@@ -181,8 +181,8 @@ function ProductCard({ product, priority }: { product: Product; priority?: boole
           )}
         </div>
 
-        {/* Unidades vendidas + Rating — prova social */}
-        <div className="min-h-5 flex flex-wrap items-center gap-x-3 gap-y-1">
+        {/* Unidades vendidas + Rating — altura fixa para cards uniformes (com ou sem avaliações) */}
+        <div className="h-10 flex flex-wrap items-center gap-x-3 gap-y-1 shrink-0 overflow-hidden">
           {product.unitsSold !== undefined && product.unitsSold > 0 && (
             <span className="text-[10px] font-light uppercase tracking-wider text-brand-softblack/70">
               {formatUnitsSold(product.unitsSold)} vendidas
@@ -200,8 +200,8 @@ function ProductCard({ product, priority }: { product: Product; priority?: boole
           )}
         </div>
 
-        {/* Preço */}
-        <div className="flex items-baseline gap-2">
+        {/* Preço — altura fixa para alinhar com KitsPreviewCard */}
+        <div className="h-6 flex items-baseline gap-2 shrink-0">
           <p className="text-base font-light text-brand-softblack">
             {formatPrice(product.price)}
           </p>
@@ -212,8 +212,8 @@ function ProductCard({ product, priority }: { product: Product; priority?: boole
           )}
         </div>
 
-        {/* Benefícios: PIX e parcelamento */}
-        <div className="space-y-0.5">
+        {/* Benefícios: PIX e parcelamento — altura fixa (acomoda 2 linhas + possível wrap) */}
+        <div className="space-y-0.5 h-12 shrink-0 overflow-hidden">
           <p className="text-[10px] uppercase tracking-wider text-brand-green/90 font-light">
             10% off no PIX
           </p>

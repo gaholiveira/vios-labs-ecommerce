@@ -30,27 +30,33 @@ function KitsPreviewCard() {
       </Link>
 
       <div className="flex flex-col gap-3 flex-1 min-h-0">
-        <div className="min-h-5">
+        {/* Categoria — mesma altura fixa do ProductCard */}
+        <div className="h-5 flex items-center shrink-0">
           <p className="text-[10px] uppercase tracking-[0.2em] text-brand-gold font-light">
             Protocolos & Kits
           </p>
         </div>
-        <Link href="/kits" className="min-h-10 flex items-start">
+        <Link href="/kits" className="h-10 sm:h-12 flex items-start shrink-0">
           <h3 className="text-xs sm:text-sm uppercase tracking-wider font-light text-brand-softblack group-hover:text-brand-green transition-colors duration-500 ease-out leading-tight line-clamp-2">
             Combinações científicas
           </h3>
         </Link>
-        <div className="min-h-10">
+        {/* Descrição — mesma altura fixa do ProductCard */}
+        <div className="h-10 flex items-start shrink-0">
           <p className="text-[11px] sm:text-xs font-light text-brand-softblack/65 leading-snug line-clamp-2">
             Os 5 produtos VIOS em protocolos com sinergia máxima e economia.
           </p>
         </div>
-        <div className="min-h-5" />
-        <p className="text-base font-light text-brand-softblack">
-          Economia garantida
-        </p>
-        {/* Benefícios: PIX e parcelamento — padrão dos ProductCards */}
-        <div className="space-y-0.5">
+        {/* Espaço equivalente a unidades vendidas + rating — mesma altura fixa do ProductCard */}
+        <div className="h-10 shrink-0" />
+        {/* Preço — mesma altura fixa do ProductCard */}
+        <div className="h-6 flex items-baseline shrink-0">
+          <p className="text-base font-light text-brand-softblack">
+            Economia garantida
+          </p>
+        </div>
+        {/* Benefícios: PIX e parcelamento — mesma altura fixa do ProductCard */}
+        <div className="space-y-0.5 h-12 shrink-0 overflow-hidden">
           <p className="text-[10px] uppercase tracking-wider text-brand-green/90 font-light">
             10% off no PIX
           </p>
