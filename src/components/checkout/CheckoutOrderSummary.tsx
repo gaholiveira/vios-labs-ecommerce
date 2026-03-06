@@ -124,13 +124,13 @@ export default function CheckoutOrderSummary({
         </div>
         {paymentMethod === "pix" && pixDiscount > 0 && (
           <div className="flex justify-between text-sm text-brand-green font-light">
-            <span>Desconto 10% (PIX)</span>
+            <span>5% de vantagem (PIX)</span>
             <span>- R$ {formatBRL(pixDiscount)}</span>
           </div>
         )}
         {couponDiscount > 0 && (
           <div className="flex justify-between text-sm text-brand-green font-light">
-            <span>Cupom SOUVIOS (10%)</span>
+            <span>Cupom SOUVIOS (benefício de boas-vindas)</span>
             <span>- R$ {formatBRL(couponDiscount)}</span>
           </div>
         )}
@@ -149,6 +149,17 @@ export default function CheckoutOrderSummary({
             )}
           </span>
         </div>
+        <p className="pt-3 text-[10px] uppercase tracking-wider text-brand-softblack/60 text-center">
+          Dúvidas?{" "}
+          <a
+            href="https://wa.me/5511952136713?text=Olá,%20tenho%20dúvidas%20sobre%20o%20pedido."
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-brand-green hover:text-brand-softblack transition-colors"
+          >
+            Fale com um especialista VIOS
+          </a>
+        </p>
       </div>
 
       {showPaymentSelector && (
@@ -182,7 +193,7 @@ export default function CheckoutOrderSummary({
                 PIX
               </span>
               <span className="text-[10px] text-brand-softblack/60 mt-0.5">
-                10% off
+                5% de vantagem
               </span>
             </button>
 

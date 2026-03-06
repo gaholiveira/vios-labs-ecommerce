@@ -366,7 +366,16 @@ export async function POST(req: Request) {
       couponDiscount = subtotal * COUPON_SOUVIOS_DISCOUNT_PERCENT;
     }
 
-    const totalReais = subtotal + shippingReais - pixDiscount - couponDiscount;
+    // SOUVIOS válido: frete por nossa conta na primeira compra (override)
+    let finalShippingReais = shippingReais;
+    if (
+      couponCodeTrimmed === COUPON_CODE_SOUVIOS &&
+      couponDiscount > 0
+    ) {
+      finalShippingReais = 0;
+    }
+
+    const totalReais = subtotal + finalShippingReais - pixDiscount - couponDiscount;
     const totalCents = Math.round(totalReais * 100);
 
     const supabase = getSupabaseAdmin();
@@ -476,8 +485,8 @@ export async function POST(req: Request) {
         };
       });
 
-      if (shippingReais > 0) {
-        const shippingCents = Math.round(Number(shippingReais) * 100);
+      if (finalShippingReais > 0) {
+        const shippingCents = Math.round(Number(finalShippingReais) * 100);
         pagarmeItems.push({
           amount: Math.round(shippingCents),
           description: "Frete",
@@ -525,8 +534,8 @@ export async function POST(req: Request) {
         customer,
         payments,
         shipping: {
-          amount: Math.round(shippingReais * 100),
-          description: isFreeShipping
+          amount: Math.round(finalShippingReais * 100),
+          description: finalShippingReais === 0
             ? "Frete Grátis"
             : selectedShippingOption?.name ?? "Frete",
           address,
@@ -538,7 +547,7 @@ export async function POST(req: Request) {
           customer_email: email,
           customer_name: checkoutData.fullName?.trim() || "",
           customer_phone: checkoutData.phone?.replace(/\D/g, "").slice(0, 11) || "",
-          free_shipping: String(isFreeShipping),
+          free_shipping: String(finalShippingReais === 0),
           items_count: String(items.length),
           shipping_neighborhood: addr.neighborhood?.trim() || "",
           ...(selectedShippingOption && {

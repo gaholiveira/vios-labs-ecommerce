@@ -27,7 +27,7 @@
 
 ## Visão geral
 
-VIOS Labs é um e-commerce de suplementos high-end desenvolvido com foco em performance, segurança e experiência de compra fluida. O checkout é one-page (dados, endereço, frete e pagamento em uma única tela), com suporte a **PIX** (10% de desconto) e **cartão de crédito** (até 3x sem juros).
+VIOS Labs é um e-commerce de suplementos high-end desenvolvido com foco em performance, segurança e experiência de compra fluida. O checkout é one-page (dados, endereço, frete e pagamento em uma única tela), com suporte a **PIX** (5% de vantagem) e **cartão de crédito** (até 3x sem juros).
 
 **Fluxo principal:** Carrinho → Checkout (Pagar.me) → Webhook cria pedido no Supabase, envia e-mail de confirmação e registra venda no Bling (NF-e).
 

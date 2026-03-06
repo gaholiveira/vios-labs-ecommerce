@@ -62,7 +62,7 @@ function Footer({ className = "" }: FooterProps) {
             </li>
             <li>
               <Link href="/checkout" className="hover:opacity-100 transition">
-                Cupom SOUVIOS — 10% na 1ª compra
+                Cupom SOUVIOS — benefício de boas-vindas
               </Link>
             </li>
           </ul>

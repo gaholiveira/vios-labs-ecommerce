@@ -18,6 +18,7 @@ import {
   PIX_DISCOUNT_PERCENT,
   COUPON_CODE_SOUVIOS,
   COUPON_SOUVIOS_DISCOUNT_PERCENT,
+  isSouviosRejectedError,
 } from "@/lib/checkout-config";
 import { trackBeginCheckout, trackAddPaymentInfo } from "@/lib/analytics";
 import type {
@@ -66,6 +67,16 @@ export default function CheckoutPage() {
   viewRef.current = view;
 
   const isFreeShipping = totalPrice >= FREE_SHIPPING_THRESHOLD;
+  const isSouviosApplied =
+    couponCode.trim().toUpperCase() === COUPON_CODE_SOUVIOS;
+  /** Frete para exibição: grátis quando threshold OU SOUVIOS (1ª compra) */
+  const displayShippingReais =
+    isFreeShipping || isSouviosApplied
+      ? 0
+      : selectedShippingQuote?.price ?? 0;
+  /** Frete enviado à API (valor real para validação; API zera quando SOUVIOS válido) */
+  const apiShippingReais =
+    isFreeShipping ? 0 : selectedShippingQuote?.price ?? 0;
 
   // begin_checkout: dispara ao visitar a página de checkout (padrão GA4 e-commerce)
   const hasFiredBeginCheckout = useRef(false);
@@ -85,15 +96,11 @@ export default function CheckoutPage() {
     });
   }, [cart, totalPrice]);
 
-  const shippingReais = isFreeShipping
-    ? 0
-    : selectedShippingQuote?.price ?? 0;
-
   const handleContinueFromFreight = useCallback(() => {
     const hasValidShipping =
       isFreeShipping ||
       (selectedShippingQuote &&
-        (shippingReais > 0 || selectedShippingQuote.type === "local"));
+        (apiShippingReais > 0 || selectedShippingQuote.type === "local"));
     if (!hasValidShipping) {
       showToast(
         "Informe seu CEP e aguarde o cálculo do frete para continuar.",
@@ -101,7 +108,7 @@ export default function CheckoutPage() {
       return;
     }
     setActiveStep("pagamento");
-  }, [isFreeShipping, selectedShippingQuote, shippingReais, showToast]);
+  }, [isFreeShipping, selectedShippingQuote, apiShippingReais, showToast]);
 
   const freightSectionMemo = useMemo(
     () => (
@@ -133,7 +140,7 @@ export default function CheckoutPage() {
               <input
                 id="checkout-coupon"
                 type="text"
-                placeholder="SOUVIOS — 10% na primeira compra"
+                placeholder="SOUVIOS — benefício de boas-vindas"
                 value={couponCode}
                 onChange={(e) =>
                   setCouponCode(e.target.value.trim().toUpperCase())
@@ -146,7 +153,7 @@ export default function CheckoutPage() {
                 className="text-[10px] opacity-70"
                 style={{ color: CHECKOUT_INK }}
               >
-                10% de desconto na primeira compra. Soma com o desconto do PIX.
+                10% e frete por nossa conta na primeira compra. Soma com o benefício PIX.
               </p>
             </div>
           )}
@@ -181,12 +188,12 @@ export default function CheckoutPage() {
             }`}
             style={{ color: CHECKOUT_INK }}
             aria-pressed={paymentMethod === "pix"}
-            aria-label="PIX com 10% de desconto"
+            aria-label="PIX com 5% de vantagem"
           >
             <span className="block text-xs font-medium uppercase tracking-wider mb-0.5">
               PIX
             </span>
-            <span className="text-[11px] opacity-80">10% OFF</span>
+            <span className="text-[11px] opacity-80">5% de vantagem</span>
           </button>
           <button
             type="button"
@@ -221,7 +228,7 @@ export default function CheckoutPage() {
                     ? totalPrice * COUPON_SOUVIOS_DISCOUNT_PERCENT
                     : 0;
                 const totalReais =
-                  totalPrice + shippingReais - couponDiscount;
+                  totalPrice + displayShippingReais - couponDiscount;
                 const amount =
                   opt === "1x"
                     ? totalReais
@@ -259,7 +266,7 @@ export default function CheckoutPage() {
       paymentMethod,
       installmentOption,
       totalPrice,
-      shippingReais,
+      displayShippingReais,
       couponCode,
     ],
   );
@@ -276,7 +283,7 @@ export default function CheckoutPage() {
       }
       const hasValidShipping =
         isFreeShipping ||
-        (selectedShippingQuote && (shippingReais > 0 || selectedShippingQuote.type === "local"));
+        (selectedShippingQuote && (apiShippingReais > 0 || selectedShippingQuote.type === "local"));
       if (!hasValidShipping) {
         showToast("Informe seu CEP e aguarde o cálculo do frete para continuar.");
         return;
@@ -299,7 +306,7 @@ export default function CheckoutPage() {
       const pixDiscount =
         paymentMethod === "pix" ? totalPrice * PIX_DISCOUNT_PERCENT : 0;
       const finalValue =
-        totalPrice + shippingReais - pixDiscount - couponDiscount;
+        totalPrice + displayShippingReais - pixDiscount - couponDiscount;
 
       const userId = user?.id ?? null;
       const opt = installmentOption ?? "1x";
@@ -330,7 +337,7 @@ export default function CheckoutPage() {
               userId,
               paymentMethod: "pix",
               couponCode: couponCode.trim() || null,
-              shippingReais,
+              shippingReais: apiShippingReais,
               selectedShippingOption: selectedShippingQuote
                 ? { id: selectedShippingQuote.id, name: selectedShippingQuote.name, type: selectedShippingQuote.type }
                 : null,
@@ -353,10 +360,9 @@ export default function CheckoutPage() {
           });
           const json = await res.json().catch(() => ({}));
           if (!res.ok) {
-            showToast(
-              json.error || "Não foi possível gerar o PIX. Tente novamente.",
-              "error",
-            );
+            const errMsg = json.error || "Não foi possível gerar o PIX. Tente novamente.";
+            if (isSouviosRejectedError(errMsg)) setCouponCode("");
+            showToast(errMsg, "error");
             return;
           }
           setPaymentPayload({
@@ -413,7 +419,7 @@ export default function CheckoutPage() {
         setPaymentPayload({
           provider: "pagarme",
           paymentMethod: "card",
-          shippingReais,
+          shippingReais: apiShippingReais,
           selectedShippingOption: selectedShippingQuote
             ? { id: selectedShippingQuote.id, name: selectedShippingQuote.name, type: selectedShippingQuote.type }
             : null,
@@ -443,7 +449,7 @@ export default function CheckoutPage() {
             ? totalPrice * COUPON_SOUVIOS_DISCOUNT_PERCENT
             : 0;
         trackAddPaymentInfo({
-          value: totalPrice + shippingReais - cardCouponDiscount,
+          value: totalPrice + displayShippingReais - cardCouponDiscount,
           paymentMethod: "card",
           items: items.map((i) => ({
             id: i.id,
@@ -455,7 +461,7 @@ export default function CheckoutPage() {
         });
       }
     },
-    [cart, paymentMethod, installmentOption, user?.id, couponCode, shippingReais, selectedShippingQuote, totalPrice],
+    [cart, paymentMethod, installmentOption, user?.id, couponCode, displayShippingReais, apiShippingReais, selectedShippingQuote, totalPrice],
   );
 
   const handlePaymentSuccess = useCallback(
@@ -480,6 +486,7 @@ export default function CheckoutPage() {
 
   const handlePaymentError = useCallback(
     (message: string) => {
+      if (isSouviosRejectedError(message)) setCouponCode("");
       showToast(message, "error");
     },
     [showToast],
@@ -531,8 +538,8 @@ export default function CheckoutPage() {
                 onPaymentMethodChange={setPaymentMethod}
                 onInstallmentChange={setInstallmentOption}
                 showPaymentSelector={false}
-                shippingReais={shippingReais}
-                isFreeShipping={isFreeShipping}
+                shippingReais={displayShippingReais}
+                isFreeShipping={isFreeShipping || isSouviosApplied}
                 couponCode={couponCode}
                 className="rounded-sm shadow-sm border-[0.5px] border-[#1B2B22]/10"
               />

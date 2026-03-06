@@ -109,7 +109,7 @@ function KitCard({ kit }: { kit: Kit }) {
         {/* Benefícios: PIX e parcelamento */}
         <div className="space-y-0.5">
           <p className="text-[10px] uppercase tracking-wider text-brand-green/90 font-light">
-            10% off no PIX
+            5% de vantagem no PIX
           </p>
           <p className="text-[10px] uppercase tracking-wider text-brand-softblack/65 font-light">
             ou {MAX_INSTALLMENTS}x de {formatPrice(kit.price / MAX_INSTALLMENTS)} sem juros

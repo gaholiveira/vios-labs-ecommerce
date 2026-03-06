@@ -4,7 +4,7 @@
  */
 
 export const FREE_SHIPPING_THRESHOLD = 289.9;
-export const PIX_DISCOUNT_PERCENT = 0.1; // 10% no PIX
+export const PIX_DISCOUNT_PERCENT = 0.05; // 5% de vantagem no PIX (posicionamento premium)
 
 /**
  * Frete local (entrega mesmo dia na nossa cidade).
@@ -35,9 +35,15 @@ export const FEW_UNITS_THRESHOLD = 15;
 export const COUPON_CODE_TESTE90 = "TESTE90";
 export const COUPON_TESTE90_DISCOUNT_PERCENT = 1;
 
-/** Cupom primeira compra: 10% no subtotal. Soma com desconto PIX. Uso único por cliente. */
+/** Cupom primeira compra: 10% no subtotal + frete por nossa conta. Soma com benefício PIX (5%). Uso único por cliente. */
 export const COUPON_CODE_SOUVIOS = "SOUVIOS";
 export const COUPON_SOUVIOS_DISCOUNT_PERCENT = 0.1;
+
+/** Detecta erro de SOUVIOS rejeitado (cliente recorrente) — usado para limpar o campo cupom no checkout */
+export function isSouviosRejectedError(error: string | undefined): boolean {
+  if (!error) return false;
+  return error.includes("SOUVIOS") && error.includes("primeira compra");
+}
 
 /** Fuso horário para expiração e exibição do PIX (Brasil) */
 export const PIX_TIMEZONE = "America/Sao_Paulo";

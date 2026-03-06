@@ -38,7 +38,7 @@ export interface OrderSummary {
   shipping: number;
   total: number;
   freeShipping: boolean;
-  /** Desconto em reais (ex.: 10% PIX) — quando presente, exibe linha no resumo */
+  /** Desconto em reais (ex.: 5% PIX) — quando presente, exibe linha no resumo */
   discount?: number;
 }
 
@@ -591,7 +591,7 @@ export default function CheckoutForm({
               </div>
               {orderSummary.discount != null && orderSummary.discount > 0 && (
                 <div className="flex justify-between text-brand-green">
-                  <span>Desconto 10% (PIX)</span>
+                  <span>5% de vantagem (PIX)</span>
                   <span>- R$ {formatBRL(orderSummary.discount)}</span>
                 </div>
               )}

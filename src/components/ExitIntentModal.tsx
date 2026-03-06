@@ -94,12 +94,12 @@ export default function ExitIntentModal() {
             id="exit-intent-title"
             className="text-xl font-light uppercase tracking-[0.2em] text-brand-softblack mb-2"
           >
-            10% na sua primeira compra
+            Benefício de boas-vindas na sua primeira compra
           </h2>
           <p className="text-sm text-brand-softblack/70 font-light leading-relaxed mb-6">
             Use o cupom{" "}
             <span className="font-medium text-brand-green">{COUPON_CODE_SOUVIOS}</span>{" "}
-            no checkout e ganhe 10% de desconto.
+            no checkout e ganhe 10% e frete por nossa conta.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3">

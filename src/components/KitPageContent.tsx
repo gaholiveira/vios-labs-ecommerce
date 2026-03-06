@@ -357,7 +357,19 @@ function KitPageContent({ kit }: KitPageContentProps) {
 
           <p className="mt-3 text-center text-[10px] uppercase tracking-wider text-brand-softblack/70">
             Primeira compra? Use o cupom{" "}
-            <span className="font-medium text-brand-green">SOUVIOS</span> para 10% de desconto no checkout.
+            <span className="font-medium text-brand-green">SOUVIOS</span> para benefício de boas-vindas no checkout.
+          </p>
+
+          <p className="mt-2 text-center text-[10px] uppercase tracking-wider text-brand-softblack/60">
+            Dúvidas sobre o protocolo?{" "}
+            <a
+              href={`https://wa.me/5511952136713?text=${encodeURIComponent(`Olá, tenho dúvidas sobre o ${kit.name}.`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-brand-green hover:text-brand-softblack transition-colors"
+            >
+              Fale com um especialista VIOS
+            </a>
           </p>
 
           <motion.div

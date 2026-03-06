@@ -68,7 +68,7 @@ src/
 
 ## Checkout
 - **One-page checkout:** formulário único (dados, endereço, frete, pagamento).
-- **PIX:** 10% desconto; **Cartão:** 3x sem juros. Valores em `@/lib/checkout-config.ts`.
+- **PIX:** 5% de vantagem; **Cartão:** 3x sem juros. Valores em `@/lib/checkout-config.ts`.
 - Fluxo: CheckoutForm → API `/api/checkout/pagarme` → Pagar.me (PIX ou Cartão tokenizado).
 - Webhook: `/api/webhooks/pagarme` (order.paid) cria pedido no Supabase, envia e-mail, cria venda no Bling.
 

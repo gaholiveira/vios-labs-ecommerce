@@ -254,10 +254,10 @@ export default function CartDrawer() {
                   <span className="tabular-nums">{formatPrice(totalPrice)}</span>
                 </div>
                 <p className="text-[10px] uppercase tracking-wider text-brand-green pt-1">
-                  10% off no PIX no checkout
+                  5% de vantagem no PIX no checkout
                 </p>
                 <p className="text-[10px] uppercase tracking-wider text-brand-softblack/70 pt-0.5">
-                  Cupom <span className="font-medium text-brand-green">SOUVIOS</span>: +10% na primeira compra
+                  Cupom <span className="font-medium text-brand-green">SOUVIOS</span>: 10% e frete por nossa conta na primeira compra
                 </p>
               </div>
 

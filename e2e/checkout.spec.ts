@@ -1,16 +1,26 @@
 import { test, expect } from "@playwright/test";
 
+/** Carrinho injetado no localStorage — mesma estrutura que CartContext espera (prod_2 = Vios Sleep) */
+const CART_FIXTURE = [
+  {
+    id: "prod_2",
+    name: "Vios Sleep",
+    price: 179,
+    image: "/images/products/sleepnew.jpeg",
+    description: "Suporte nutricional avançado para um sono profundo e restaurador.",
+    category: "Suplemento",
+    quantity: 1,
+    isKit: false,
+  },
+];
+
 test.describe("Checkout", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/produto/prod_2");
-    // Aguarda botão (página pode mostrar "Carregando..." durante checagem de estoque)
-    const addBtn = page.getByRole("button", { name: "Colocar na sacola" }).first();
-    await addBtn.waitFor({ state: "visible", timeout: 20000 });
-    await addBtn.click();
-    // Navega via link do drawer (preserva estado do carrinho; page.goto recarrega e perde o cart)
-    const checkoutLink = page.getByRole("link", { name: "Ir para o checkout" });
-    await checkoutLink.waitFor({ state: "visible", timeout: 5000 });
-    await checkoutLink.click();
+    await page.goto("/");
+    await page.evaluate((cart) => {
+      localStorage.setItem("vios_cart", JSON.stringify(cart));
+    }, CART_FIXTURE);
+    await page.goto("/checkout");
     await expect(page).toHaveURL(/\/checkout/);
   });
 

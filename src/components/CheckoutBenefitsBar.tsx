@@ -3,7 +3,7 @@ import { Truck, CreditCard, Percent } from "lucide-react";
 /**
  * Faixa de benefícios de checkout
  * - Frete grátis a partir de R$ 289,90
- * - 10% off no PIX + 10% cupom SOUVIOS (1ª compra)
+ * - 5% de vantagem no PIX + benefício de boas-vindas com SOUVIOS
  * - Cartão em até 3x sem juros
  *
  * Pensada para ser usada em:
@@ -28,9 +28,9 @@ const CheckoutBenefitsBar = () => {
           <Percent className="w-3.5 h-3.5" aria-hidden="true" />
         </span>
         <p className="text-[10px] md:text-[11px] uppercase tracking-[0.18em] text-brand-softblack/80 font-light">
-          <span className="font-medium text-brand-green">10% off</span> no PIX +{" "}
-          <span className="font-medium text-brand-green">10%</span> cupom{" "}
-          <span className="font-medium text-brand-green">SOUVIOS</span> na 1ª compra
+          <span className="font-medium text-brand-green">5% de vantagem</span> no PIX +{" "}
+          <span className="font-medium text-brand-green">benefício de boas-vindas</span> com{" "}
+          <span className="font-medium text-brand-green">SOUVIOS</span>
         </p>
       </div>
       <div className="flex items-center gap-2 md:justify-end">
