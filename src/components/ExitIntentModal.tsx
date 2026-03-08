@@ -99,7 +99,7 @@ export default function ExitIntentModal() {
           <p className="text-sm text-brand-softblack/70 font-light leading-relaxed mb-6">
             Use o cupom{" "}
             <span className="font-medium text-brand-green">{COUPON_CODE_SOUVIOS}</span>{" "}
-            no checkout e ganhe 10% e frete por nossa conta.
+            no checkout e ganhe frete por nossa conta na primeira compra.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3">

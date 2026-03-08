@@ -35,9 +35,9 @@ export const FEW_UNITS_THRESHOLD = 15;
 export const COUPON_CODE_TESTE90 = "TESTE90";
 export const COUPON_TESTE90_DISCOUNT_PERCENT = 1;
 
-/** Cupom primeira compra: 10% no subtotal + frete por nossa conta. Soma com benefício PIX (5%). Uso único por cliente. */
+/** Cupom primeira compra: frete por nossa conta (sem % no subtotal). Uso único por cliente. Posicionamento premium. */
 export const COUPON_CODE_SOUVIOS = "SOUVIOS";
-export const COUPON_SOUVIOS_DISCOUNT_PERCENT = 0.1;
+export const COUPON_SOUVIOS_DISCOUNT_PERCENT = 0;
 
 /** Detecta erro de SOUVIOS rejeitado (cliente recorrente) — usado para limpar o campo cupom no checkout */
 export function isSouviosRejectedError(error: string | undefined): boolean {

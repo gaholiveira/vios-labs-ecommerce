@@ -153,7 +153,7 @@ export default function CheckoutPage() {
                 className="text-[10px] opacity-70"
                 style={{ color: CHECKOUT_INK }}
               >
-                10% e frete por nossa conta na primeira compra. Soma com o benefício PIX.
+                Frete por nossa conta na primeira compra. Soma com o benefício PIX.
               </p>
             </div>
           )}

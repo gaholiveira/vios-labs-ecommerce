@@ -9,6 +9,7 @@ import { formatPrice } from "@/utils/format";
 import ProductAccordion from "@/components/ProductAccordion";
 import TextReveal from "@/components/ui/text-reveal";
 import { ShareButton } from "@/components/shop/ShareButton";
+import { ProductShippingCalculator } from "@/components/shop/ProductShippingCalculator";
 import { Kit } from "@/constants/kits";
 import { PRODUCTS } from "@/constants/products";
 import KitProductsPreview from "@/components/KitProductsPreview";
@@ -336,6 +337,16 @@ function KitPageContent({ kit }: KitPageContentProps) {
               className=""
               delay={0.4}
               duration={0.6}
+            />
+          </div>
+
+          {/* Cálculo de frete na página do kit */}
+          <div className="mb-6">
+            <ProductShippingCalculator
+              productId={kit.id}
+              productPrice={kit.price}
+              isKit={true}
+              kitProducts={kit.products}
             />
           </div>
 

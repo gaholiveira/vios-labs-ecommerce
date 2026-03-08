@@ -128,10 +128,14 @@ export default function CheckoutOrderSummary({
             <span>- R$ {formatBRL(pixDiscount)}</span>
           </div>
         )}
-        {couponDiscount > 0 && (
+        {couponCode?.trim().toUpperCase() === COUPON_CODE_SOUVIOS && (
           <div className="flex justify-between text-sm text-brand-green font-light">
-            <span>Cupom SOUVIOS (benefício de boas-vindas)</span>
-            <span>- R$ {formatBRL(couponDiscount)}</span>
+            <span>Cupom SOUVIOS (frete por nossa conta)</span>
+            {couponDiscount > 0 ? (
+              <span>- R$ {formatBRL(couponDiscount)}</span>
+            ) : (
+              <span>aplicado</span>
+            )}
           </div>
         )}
         <div className="flex justify-between pt-3 border-t border-gray-200 font-medium text-brand-softblack">

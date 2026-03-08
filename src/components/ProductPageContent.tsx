@@ -11,6 +11,7 @@ import KeyIngredients from "@/components/KeyIngredients";
 import WaitlistModal from "@/components/WaitlistModal";
 import TextReveal from "@/components/ui/text-reveal";
 import { ShareButton } from "@/components/shop/ShareButton";
+import { ProductShippingCalculator } from "@/components/shop/ProductShippingCalculator";
 import FrequentlyBoughtTogether from "@/components/shop/FrequentlyBoughtTogether";
 import ProductReviews from "@/components/shop/ProductReviews";
 import { Product } from "@/constants/products";
@@ -1061,6 +1062,14 @@ function ProductPageContent({ product }: ProductPageContentProps) {
               )}
             </div>
           )}
+
+          {/* Cálculo de frete na página do produto */}
+          <div className="mb-6">
+            <ProductShippingCalculator
+              productId={product.id}
+              productPrice={product.price}
+            />
+          </div>
 
           {/* Botões de Compra — Comprar agora (principal) + Colocar na sacola (secundário) */}
           <div className="flex flex-col gap-3">
