@@ -5,7 +5,7 @@ import { memo } from "react";
 import { Product } from "@/constants/products";
 import { useCart } from "@/context/CartContext";
 import { trackSelectItem } from "@/lib/analytics";
-import { formatPrice, formatUnitsSold } from "@/utils/format";
+import { formatPrice, formatUnitsSold, formatUnitsSoldForDisplay } from "@/utils/format";
 import { LAST_UNITS_THRESHOLD, FEW_UNITS_THRESHOLD, MAX_INSTALLMENTS } from "@/lib/checkout-config";
 
 const BADGE_CONFIG = {
@@ -181,11 +181,11 @@ function ProductCard({ product, priority }: { product: Product; priority?: boole
           )}
         </div>
 
-        {/* Unidades vendidas + Rating — altura fixa para cards uniformes (com ou sem avaliações) */}
+        {/* Prova social: unidades vendidas + Rating — altura fixa para cards uniformes */}
         <div className="h-10 flex flex-wrap items-center gap-x-3 gap-y-1 shrink-0 overflow-hidden">
           {product.unitsSold !== undefined && product.unitsSold > 0 && (
-            <span className="text-[10px] font-light uppercase tracking-wider text-brand-softblack/70">
-              {formatUnitsSold(product.unitsSold)} vendidas
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-sm bg-brand-green/10 text-brand-green text-[10px] font-medium uppercase tracking-wider">
+              {formatUnitsSoldForDisplay(product.unitsSold)} unidades vendidas
             </span>
           )}
           {product.rating !== undefined && (
@@ -222,7 +222,7 @@ function ProductCard({ product, priority }: { product: Product; priority?: boole
           </p>
         </div>
 
-        {/* Botão Colocar na sacola — conversão high-end */}
+        {/* Botão CTA — específico por produto ou genérico */}
         <button
           onClick={() => !product.soldOut && addToCart(product)}
           disabled={product.soldOut}
@@ -237,7 +237,7 @@ function ProductCard({ product, priority }: { product: Product; priority?: boole
               : "border-brand-green bg-brand-green text-brand-offwhite hover:bg-brand-softblack hover:border-brand-softblack"
           }`}
         >
-          {product.soldOut ? "Esgotado" : "Colocar na sacola"}
+          {product.soldOut ? "Esgotado" : (product.ctaPrimary ?? "Colocar na sacola")}
         </button>
       </div>
     </div>

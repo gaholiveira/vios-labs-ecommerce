@@ -19,6 +19,8 @@ interface StickyBarProps {
   isPresale?: boolean;
   /** Quando true, a barra fica sempre visível (sem depender do scroll) */
   alwaysVisible?: boolean;
+  /** CTA principal (ex.: "Quero dormir melhor") — substitui "Comprar agora" */
+  ctaPrimary?: string;
 }
 
 export default function StickyBar({
@@ -28,6 +30,7 @@ export default function StickyBar({
   isOutOfStock = false,
   isLoading = false,
   alwaysVisible = false,
+  ctaPrimary,
 }: StickyBarProps) {
   const [triggerOutOfView, setTriggerOutOfView] = useState(false);
   const { setStickyBarVisible } = useStickyBar() ?? { setStickyBarVisible: () => {} };
@@ -110,9 +113,9 @@ export default function StickyBar({
                 href="/checkout"
                 onClick={onBuyNow}
                 className="flex flex-shrink-0 items-center justify-center border rounded-sm px-4 py-2.5 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium transition-all duration-300 whitespace-nowrap border-brand-green bg-brand-green text-brand-offwhite hover:bg-brand-softblack hover:border-brand-softblack"
-                aria-label="Comprar agora"
+                aria-label={ctaPrimary ?? "Comprar agora"}
               >
-                Comprar agora
+                {ctaPrimary ?? "Comprar agora"}
               </Link>
             ) : (
               <button

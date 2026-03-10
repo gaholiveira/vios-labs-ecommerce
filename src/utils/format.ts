@@ -16,6 +16,19 @@ export function formatUnitsSold(count: number): string {
 }
 
 /**
+ * Formata unidades vendidas para destaque (prova social)
+ * Ex.: 40 → "40+", 32 → "30+", 20 → "20+", 15 → "15"
+ */
+export function formatUnitsSoldForDisplay(count: number): string {
+  if (count >= 100) return '100+';
+  if (count >= 50) return '50+';
+  if (count >= 40) return '40+';
+  if (count >= 30) return '30+';
+  if (count >= 20) return '20+';
+  return count.toLocaleString('pt-BR');
+}
+
+/**
  * Formata um número de telefone brasileiro
  * Aceita números com ou sem código do país (+55)
  * Formato: (XX) XXXXX-XXXX (11 dígitos) ou +55 XX XXXXX-XXXX (13 dígitos)

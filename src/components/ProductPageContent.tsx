@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo, memo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useCart } from "@/context/CartContext";
-import { formatPrice, formatUnitsSold } from "@/utils/format";
+import { formatPrice, formatUnitsSoldForDisplay } from "@/utils/format";
 import ProductAccordion from "@/components/ProductAccordion";
 import ProductImageGallery from "@/components/ProductImageGallery";
 import KeyIngredients from "@/components/KeyIngredients";
@@ -48,6 +48,7 @@ function ProductPageContent({ product }: ProductPageContentProps) {
   const [inventory, setInventory] = useState<InventoryStatus | null>(null);
   const [isLoadingInventory, setIsLoadingInventory] = useState(true);
   const [showWaitlistModal, setShowWaitlistModal] = useState(false);
+  const [reviewsSummary, setReviewsSummary] = useState<{ rating: number; reviews: number } | null>(null);
 
   // Garantir que a página sempre comece no topo ao carregar
   useEffect(() => {
@@ -91,6 +92,17 @@ function ProductPageContent({ product }: ProductPageContentProps) {
     };
 
     fetchInventory();
+  }, [product.id]);
+
+  // Buscar resumo de avaliações (prova social)
+  useEffect(() => {
+    fetch("/api/reviews/summary")
+      .then((r) => r.json())
+      .then((data: Array<{ product_id: string; rating: number; reviews: number }>) => {
+        const found = Array.isArray(data) ? data.find((s) => s.product_id === product.id) : null;
+        setReviewsSummary(found ? { rating: found.rating, reviews: found.reviews } : null);
+      })
+      .catch(() => setReviewsSummary(null));
   }, [product.id]);
 
   const handleAddToCart = useCallback(() => {
@@ -988,26 +1000,37 @@ function ProductPageContent({ product }: ProductPageContentProps) {
             duration={0.6}
           />
 
-          {/* Preço + unidades vendidas + faixa de benefícios */}
+          {/* Preço + prova social (unidades vendidas) + faixa de benefícios */}
           <div className="space-y-4 mb-6">
-            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
-                className="text-xl"
+                className="text-xl font-light text-brand-softblack"
               >
                 {formatPrice(product.price)}
               </motion.p>
               {product.unitsSold !== undefined && product.unitsSold > 0 && (
-                <motion.p
+                <motion.span
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.3, delay: 0.05 }}
-                  className="text-xs font-light uppercase tracking-wider text-brand-softblack/70"
+                  className="inline-flex items-center px-3 py-1 rounded-sm bg-brand-green/10 text-brand-green text-[11px] font-medium uppercase tracking-wider"
                 >
-                  {formatUnitsSold(product.unitsSold)} unidades vendidas
-                </motion.p>
+                  {formatUnitsSoldForDisplay(product.unitsSold)} unidades vendidas
+                </motion.span>
+              )}
+              {reviewsSummary && reviewsSummary.reviews > 0 && (
+                <motion.span
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, delay: 0.08 }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-sm bg-brand-gold/15 text-brand-softblack text-[11px] font-medium uppercase tracking-wider"
+                >
+                  <span className="text-brand-gold">★</span>
+                  {reviewsSummary.rating.toFixed(1)} · {reviewsSummary.reviews} {reviewsSummary.reviews === 1 ? "avaliação" : "avaliações"}
+                </motion.span>
               )}
             </div>
 
@@ -1090,7 +1113,7 @@ function ProductPageContent({ product }: ProductPageContentProps) {
                   onClick={handleBuyNow}
                   className="flex w-full items-center justify-center border rounded-sm px-6 py-3.5 min-h-[44px] uppercase tracking-[0.2em] text-xs font-medium border-brand-green bg-brand-green text-brand-offwhite transition-all duration-500 ease-out hover:bg-brand-softblack hover:border-brand-softblack"
                 >
-                  Comprar agora
+                  {product.ctaPrimary ?? "Comprar agora"}
                 </Link>
               </motion.div>
             )}
@@ -1106,11 +1129,21 @@ function ProductPageContent({ product }: ProductPageContentProps) {
                   : "border-stone-300 bg-transparent text-brand-softblack hover:border-brand-green hover:text-brand-green"
               }`}
             >
-              Colocar na sacola
+              {product.ctaSecondary ?? "Colocar na sacola"}
             </motion.button>
           </div>
 
-          <p className="mt-3 text-center text-[10px] uppercase tracking-wider text-brand-softblack/70">
+          {/* Selos de confiança — ANVISA, Pagamento Seguro (logo após os botões para reforçar decisão) */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.12 }}
+            className="mt-6"
+          >
+            <ProductTrustSeals anvisaRecord={product.anvisaRecord} />
+          </motion.div>
+
+          <p className="mt-6 text-center text-[10px] uppercase tracking-wider text-brand-softblack/70">
             Primeira compra? Use o cupom{" "}
             <span className="font-medium text-brand-green">SOUVIOS</span> para benefício de boas-vindas no checkout.
           </p>
@@ -1140,16 +1173,6 @@ function ProductPageContent({ product }: ProductPageContentProps) {
               title={product.name}
               text={`${product.name} — VIOS LABS. ${product.category}.`}
             />
-          </motion.div>
-
-          {/* Selos de confiança — ANVISA, Pagamento Seguro, Compra Protegida */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-            className="mt-6"
-          >
-            <ProductTrustSeals anvisaRecord={product.anvisaRecord} />
           </motion.div>
 
           {/* Accordion com informações do produto */}
@@ -1187,6 +1210,7 @@ function ProductPageContent({ product }: ProductPageContentProps) {
         onBuyNow={handleBuyNow}
         isOutOfStock={isOutOfStock}
         isLoading={isLoadingInventory}
+        ctaPrimary={product.ctaPrimary}
       />
 
       {/* Modal de Waitlist */}
