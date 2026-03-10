@@ -17,6 +17,10 @@ const EssenceSection = dynamic(() => import("@/components/EssenceSection"), {
   ssr: false,
   loading: () => <div className="min-h-[200px] animate-pulse bg-brand-green/50" aria-hidden />,
 });
+const ProductTestimonialsSection = dynamic(
+  () => import("@/components/ProductTestimonialsSection"),
+  { ssr: false }
+);
 import { useMobileViewportHeight } from "@/hooks/useMobileViewportHeight";
 import { useCart } from "@/context/CartContext";
 import TextReveal from "@/components/ui/text-reveal";
@@ -203,6 +207,9 @@ export default function Home() {
         {/* Container com stagger para animação em cascata dos cards */}
         <ProductsGrid products={PRODUCTS} />
       </section>
+
+      {/* Veja o que estão falando de nossos produtos */}
+      <ProductTestimonialsSection />
 
       {/* Seção A Essência */}
       <EssenceSection />
