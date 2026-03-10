@@ -84,7 +84,7 @@ export const PRODUCTS: Product[] = [
     category: 'Suplemento',
     anvisaRecord: '25351.066423/2025-08',
     unitsSold: 28,
-    ctaPrimary: 'Quero ossos fortes',
+    ctaPrimary: 'Quero equilíbrio mineral',
   },
   {
     id: 'prod_4',
