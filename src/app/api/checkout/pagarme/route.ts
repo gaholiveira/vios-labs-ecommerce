@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin } from "@/utils/supabase/admin";
 import {
   createOrder,
   getCharge,
@@ -15,6 +15,7 @@ import {
   PIX_DISCOUNT_PERCENT,
   COUPON_CODE_TESTE90,
   COUPON_TESTE90_DISCOUNT_PERCENT,
+  COUPON_TESTE90_ENABLED,
   COUPON_CODE_SOUVIOS,
   COUPON_SOUVIOS_DISCOUNT_PERCENT,
 } from "@/lib/checkout-config";
@@ -80,18 +81,6 @@ interface PagarmeCheckoutRequestBody {
   shippingReais?: number | null;
   /** Opção de frete selecionada (metadata do pedido) */
   selectedShippingOption?: { id: string; name: string; type: string } | null;
-}
-
-// ============================================================================
-// SUPABASE
-// ============================================================================
-function getSupabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("Missing Supabase configuration.");
-  return createClient(url, key, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
 }
 
 // ============================================================================
@@ -176,7 +165,7 @@ async function releaseReservations(
 ) {
   try {
     await supabase.rpc("release_reservation", {
-      p_stripe_session_id: sessionId,
+      p_payment_order_id: sessionId,
       p_reason: "Checkout Pagar.me failed - releasing reservation",
     });
   } catch (e) {
@@ -344,7 +333,7 @@ export async function POST(req: Request) {
     const couponCodeTrimmed = body.couponCode?.trim().toUpperCase() ?? "";
     let couponDiscount = 0;
 
-    if (couponCodeTrimmed === COUPON_CODE_TESTE90) {
+    if (COUPON_TESTE90_ENABLED && couponCodeTrimmed === COUPON_CODE_TESTE90) {
       couponDiscount = subtotal * COUPON_TESTE90_DISCOUNT_PERCENT;
     } else if (couponCodeTrimmed === COUPON_CODE_SOUVIOS) {
       const supabaseForCoupon = getSupabaseAdmin();
@@ -402,7 +391,7 @@ export async function POST(req: Request) {
             promise: supabase.rpc("reserve_inventory", {
               p_product_id: productId,
               p_quantity: item.quantity,
-              p_stripe_session_id: uniqueId,
+              p_payment_order_id: uniqueId,
               p_customer_email: email,
               p_user_id: userId || null,
             }),
@@ -418,7 +407,7 @@ export async function POST(req: Request) {
           promise: supabase.rpc("reserve_inventory", {
             p_product_id: item.id,
             p_quantity: item.quantity,
-            p_stripe_session_id: uniqueId,
+            p_payment_order_id: uniqueId,
             p_customer_email: email,
             p_user_id: userId || null,
           }),
@@ -520,7 +509,9 @@ export async function POST(req: Request) {
                     token: cardToken!,
                     billing_address: address,
                   },
-                  installments: 3,
+                  installments: installmentOption
+                    ? parseInt(installmentOption.replace("x", ""), 10)
+                    : 1,
                   statement_descriptor: "VIOS LABS",
                 },
               },
@@ -563,8 +554,8 @@ export async function POST(req: Request) {
       if (reservationIds.length > 0) {
         const { error: updateErr } = await supabase
           .from("inventory_reservations")
-          .update({ stripe_session_id: pagarmeOrder.id })
-          .in("stripe_session_id", reservationIds)
+          .update({ payment_order_id: pagarmeOrder.id })
+          .in("payment_order_id", reservationIds)
           .eq("status", "active");
         if (updateErr) {
           console.error("[PAGARME CHECKOUT] update reservations error:", updateErr);

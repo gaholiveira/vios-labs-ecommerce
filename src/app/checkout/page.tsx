@@ -21,6 +21,7 @@ import {
   isSouviosRejectedError,
 } from "@/lib/checkout-config";
 import { trackBeginCheckout, trackAddPaymentInfo } from "@/lib/analytics";
+import { fbTrackInitiateCheckout } from "@/lib/meta-pixel";
 import type {
   PaymentMethod,
   InstallmentOption,
@@ -93,6 +94,11 @@ export default function CheckoutPage() {
         category: i.isKit ? "Kit" : "Produto",
       })),
       coupon: null,
+    });
+    fbTrackInitiateCheckout({
+      value: totalPrice,
+      numItems: cart.reduce((acc, i) => acc + i.quantity, 0),
+      contentIds: cart.map((i) => i.id),
     });
   }, [cart, totalPrice]);
 
@@ -323,6 +329,7 @@ export default function CheckoutPage() {
           showToast("Informe seu e-mail para receber a confirmação do pedido.");
           return;
         }
+        try { localStorage.setItem("vios_checkout_email", emailVal); } catch { /* ignore */ }
         if (!addr || !addr.cep?.trim() || !addr.street?.trim() || !addr.number?.trim() || !addr.neighborhood?.trim() || !addr.city?.trim() || !addr.state?.trim()) {
           showToast("Preencha o endereço completo: CEP, rua, número, bairro, cidade e estado.");
           return;
@@ -412,6 +419,7 @@ export default function CheckoutPage() {
           showToast("Informe seu e-mail para receber a confirmação do pedido.");
           return;
         }
+        try { localStorage.setItem("vios_checkout_email", emailVal); } catch { /* ignore */ }
         if (!addr || !addr.cep?.trim() || !addr.street?.trim() || !addr.number?.trim() || !addr.neighborhood?.trim() || !addr.city?.trim() || !addr.state?.trim()) {
           showToast("Preencha o endereço completo: CEP, rua, número, bairro, cidade e estado.");
           return;

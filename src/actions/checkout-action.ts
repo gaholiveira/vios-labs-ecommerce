@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin } from "@/utils/supabase/admin";
 import { z } from "zod";
 import { sendOrderConfirmationEmail } from "@/lib/email";
 import {
@@ -120,22 +120,13 @@ export type CheckoutSuccessData =
 // SUPABASE
 // ============================================================================
 
-function getSupabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("Missing Supabase configuration.");
-  return createClient(url, key, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
-
 async function releaseReservations(
   supabase: ReturnType<typeof getSupabaseAdmin>,
   sessionId: string,
 ) {
   try {
     await supabase.rpc("release_reservation", {
-      p_stripe_session_id: sessionId,
+      p_payment_order_id: sessionId,
       p_reason: "Checkout failed - releasing reservation",
     });
   } catch (e) {
@@ -234,7 +225,7 @@ export async function checkoutAction(input: unknown): Promise<CheckoutResult> {
           const { data, error } = await supabase.rpc("reserve_inventory", {
             p_product_id: productId,
             p_quantity: item.quantity,
-            p_stripe_session_id: uniqueId,
+            p_payment_order_id: uniqueId,
             p_customer_email: email,
             p_user_id: userId ?? null,
           });
@@ -265,7 +256,7 @@ export async function checkoutAction(input: unknown): Promise<CheckoutResult> {
         const { data, error } = await supabase.rpc("reserve_inventory", {
           p_product_id: item.id,
           p_quantity: item.quantity,
-          p_stripe_session_id: uniqueId,
+          p_payment_order_id: uniqueId,
           p_customer_email: email,
           p_user_id: userId ?? null,
         });
@@ -372,8 +363,8 @@ export async function checkoutAction(input: unknown): Promise<CheckoutResult> {
     for (const resId of reservationIds) {
       await supabase
         .from("inventory_reservations")
-        .update({ stripe_session_id: pagarmeOrder.id })
-        .eq("stripe_session_id", resId)
+        .update({ payment_order_id: pagarmeOrder.id })
+        .eq("payment_order_id", resId)
         .eq("status", "active");
     }
 

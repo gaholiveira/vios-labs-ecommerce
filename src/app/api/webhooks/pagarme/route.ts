@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { PRODUCTS } from "@/constants/products";
+import { getSupabaseAdmin } from "@/utils/supabase/admin";
 import { sendOrderConfirmationEmail } from "@/lib/email";
 import { isPagarmeConfigured } from "@/lib/pagarme";
 import {
@@ -13,15 +13,6 @@ const productImageById = new Map(PRODUCTS.map((p) => [p.id, p.image]));
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
-
-function getSupabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("Missing Supabase configuration.");
-  return createClient(url, key, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
 
 /** Payload do webhook Pagar.me (order.paid) */
 interface PagarmeWebhookPayload {
@@ -111,6 +102,57 @@ export async function GET() {
   );
 }
 
+/**
+ * Verifica a assinatura HMAC-SHA256 do webhook Pagar.me.
+ * O Pagar.me envia o header x-pagarme-signature com HMAC(secret, body).
+ * Retorna true se a assinatura for válida ou se PAGARME_WEBHOOK_SECRET não estiver configurado (dev).
+ */
+async function verifyPagarmeSignature(
+  req: NextRequest,
+  rawBody: string,
+): Promise<boolean> {
+  const secret = process.env.PAGARME_WEBHOOK_SECRET;
+  if (!secret) {
+    console.warn(
+      "[PAGARME WEBHOOK] PAGARME_WEBHOOK_SECRET não configurado — validação HMAC ignorada",
+    );
+    return true;
+  }
+
+  const signature = req.headers.get("x-pagarme-signature");
+  if (!signature) {
+    console.warn("[PAGARME WEBHOOK] Header x-pagarme-signature ausente");
+    return false;
+  }
+
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(secret);
+  const msgData = encoder.encode(rawBody);
+
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    keyData,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signatureBuffer = await crypto.subtle.sign("HMAC", cryptoKey, msgData);
+  const expectedSignature = Array.from(new Uint8Array(signatureBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  // Comparação segura usando timingSafeEqual via crypto
+  const sigBuffer = encoder.encode(signature);
+  const expBuffer = encoder.encode(expectedSignature);
+  if (sigBuffer.length !== expBuffer.length) return false;
+
+  let mismatch = 0;
+  for (let i = 0; i < sigBuffer.length; i++) {
+    mismatch |= sigBuffer[i] ^ expBuffer[i];
+  }
+  return mismatch === 0;
+}
+
 export async function POST(req: NextRequest) {
   if (!isPagarmeConfigured()) {
     return NextResponse.json(
@@ -119,8 +161,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  let rawBody: string;
   try {
-    const payload = (await req.json()) as PagarmeWebhookPayload;
+    rawBody = await req.text();
+  } catch {
+    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  }
+
+  const isValid = await verifyPagarmeSignature(req, rawBody);
+  if (!isValid) {
+    console.warn("[PAGARME WEBHOOK] Assinatura HMAC inválida — requisição rejeitada");
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  }
+
+  try {
+    const payload = JSON.parse(rawBody) as PagarmeWebhookPayload;
 
     console.warn("[PAGARME WEBHOOK] Recebido:", {
       type: payload.type,
@@ -138,7 +193,7 @@ export async function POST(req: NextRequest) {
     const { data: existing } = await supabase
       .from("orders")
       .select("id")
-      .eq("stripe_session_id", orderId)
+      .eq("payment_order_id", orderId)
       .maybeSingle();
 
     if (existing) {
@@ -203,7 +258,7 @@ export async function POST(req: NextRequest) {
       customer_email: customerEmail,
       status: "paid",
       total_amount: totalAmount,
-      stripe_session_id: orderId,
+      payment_order_id: orderId,
       customer_cpf: customerCpf ?? undefined,
       customer_name: customerName ?? undefined,
       customer_phone: customerPhoneStr ?? undefined,
@@ -283,7 +338,7 @@ export async function POST(req: NextRequest) {
 
     try {
       await supabase.rpc("confirm_reservation", {
-        p_stripe_session_id: orderId,
+        p_payment_order_id: orderId,
         p_order_id: createdOrder.id,
       });
     } catch (confirmErr) {
@@ -300,6 +355,40 @@ export async function POST(req: NextRequest) {
       console.warn("[PAGARME WEBHOOK] E-mail enviado para:", customerEmail);
     } catch (emailErr) {
       console.error("[PAGARME WEBHOOK] sendOrderConfirmation error:", emailErr);
+    }
+
+    // Agendar sequence pós-compra (D+3 e D+7)
+    try {
+      const productNames = orderItems.map((i) => i.product_name).filter(Boolean);
+      const productIds = orderItems.map((i) => i.product_id).filter(Boolean);
+      const now = new Date();
+      const d3 = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+      const d7 = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      await supabase.from("email_sequences").insert([
+        {
+          order_id: createdOrder.id,
+          customer_email: customerEmail,
+          customer_name: customerName ?? null,
+          sequence_type: "d3_check_in",
+          product_names: productNames,
+          product_ids: productIds,
+          send_at: d3.toISOString(),
+          status: "pending",
+        },
+        {
+          order_id: createdOrder.id,
+          customer_email: customerEmail,
+          customer_name: customerName ?? null,
+          sequence_type: "d7_reorder",
+          product_names: productNames,
+          product_ids: productIds,
+          send_at: d7.toISOString(),
+          status: "pending",
+        },
+      ]);
+      console.warn("[PAGARME WEBHOOK] Sequence agendada para:", customerEmail);
+    } catch (seqErr) {
+      console.error("[PAGARME WEBHOOK] Erro ao agendar sequence:", seqErr);
     }
 
     // Log estruturado antes de tentar Bling (para diagnóstico)

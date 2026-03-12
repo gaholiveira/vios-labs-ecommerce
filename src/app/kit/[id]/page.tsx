@@ -7,6 +7,10 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+export function generateStaticParams() {
+  return KITS.map((k) => ({ id: k.id }));
+}
+
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {

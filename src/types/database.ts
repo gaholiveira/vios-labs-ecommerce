@@ -13,7 +13,7 @@ export interface Order {
   customer_email: string;
   status: "pending" | "paid" | "shipped" | "delivered" | "cancelled";
   total_amount: number;
-  stripe_session_id?: string; // ID do pedido Pagar.me (ou referência de outro gateway)
+  payment_order_id?: string; // ID do pedido Pagar.me (ou referência de outro gateway)
   created_at: string;
   updated_at: string;
   // Fiscal e entrega (preenchidos no checkout e no webhook Pagar.me)
@@ -133,7 +133,7 @@ export interface InventoryReservation {
   id: string;
   product_id: string;
   quantity: number;
-  stripe_session_id: string | null;
+  payment_order_id: string | null;
   status: "active" | "completed" | "cancelled" | "expired";
   expires_at: string;
   created_at: string;

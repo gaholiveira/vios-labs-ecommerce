@@ -6,6 +6,8 @@ const GA_ID =
   process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() ??
   process.env.NEXT_PUBLIC_GA_ID?.trim();
 
+const FB_PIXEL_ID = process.env.NEXT_PUBLIC_FB_PIXEL_ID?.trim();
+
 /**
  * Google Analytics 4 — usa o snippet padrão do Google
  * Variáveis: NEXT_PUBLIC_GA_MEASUREMENT_ID ou NEXT_PUBLIC_GA_ID (ex: G-XXXXXXXXXX)
@@ -31,10 +33,10 @@ export default function ThirdPartyScripts() {
         </>
       )}
 
-      {/* Facebook Pixel - Estratégia lazyOnload para carregar apenas quando necessário */}
-      {/* 
-      {process.env.NEXT_PUBLIC_FB_PIXEL_ID && (
-        <Script id="facebook-pixel" strategy="lazyOnload">
+      {/* Meta Pixel — lazyOnload para não bloquear LCP */}
+      {/* Variável: NEXT_PUBLIC_FB_PIXEL_ID (ex: 123456789012345) */}
+      {FB_PIXEL_ID && (
+        <Script id="meta-pixel" strategy="lazyOnload">
           {`
             !function(f,b,e,v,n,t,s)
             {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -44,12 +46,11 @@ export default function ThirdPartyScripts() {
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init', '${process.env.NEXT_PUBLIC_FB_PIXEL_ID}');
+            fbq('init', '${FB_PIXEL_ID}');
             fbq('track', 'PageView');
           `}
         </Script>
       )}
-      */}
     </>
   );
 }

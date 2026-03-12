@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import type { ReserveInventoryResponse } from '@/types/database';
+import { getSupabaseAdmin } from '@/utils/supabase/admin';
 
 // ============================================================================
 // API: RESERVAR ESTOQUE (PRÉ-CHECKOUT)
@@ -9,35 +9,17 @@ import type { ReserveInventoryResponse } from '@/types/database';
 // Reserva estoque temporariamente durante o checkout (expira em 1 hora)
 // ============================================================================
 
-function getSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error(
-      'Missing Supabase configuration. Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.'
-    );
-  }
-
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-}
-
 interface ReserveInventoryRequest {
   product_id: string;
   quantity: number;
-  stripe_session_id: string;
+  payment_order_id: string;
   customer_email?: string;
   user_id?: string;
 }
 
 /**
  * POST /api/inventory/reserve
- * Body: { product_id, quantity, stripe_session_id, customer_email?, user_id? }
+ * Body: { product_id, quantity, payment_order_id, customer_email?, user_id? }
  */
 export async function POST(req: Request) {
   try {
@@ -45,9 +27,9 @@ export async function POST(req: Request) {
     const body: ReserveInventoryRequest = await req.json();
 
     // Validações
-    if (!body.product_id || !body.quantity || !body.stripe_session_id) {
+    if (!body.product_id || !body.quantity || !body.payment_order_id) {
       return NextResponse.json(
-        { error: 'Missing required fields: product_id, quantity, stripe_session_id' },
+        { error: 'Missing required fields: product_id, quantity, payment_order_id' },
         { status: 400 }
       );
     }
@@ -63,7 +45,7 @@ export async function POST(req: Request) {
     const { data, error } = await supabaseAdmin.rpc('reserve_inventory', {
       p_product_id: body.product_id,
       p_quantity: body.quantity,
-      p_stripe_session_id: body.stripe_session_id,
+      p_payment_order_id: body.payment_order_id,
       p_customer_email: body.customer_email || null,
       p_user_id: body.user_id || null,
     });

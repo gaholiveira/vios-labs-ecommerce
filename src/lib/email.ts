@@ -11,6 +11,7 @@ const FROM_NAME = "VIOS Labs";
 const BACKGROUND = "#F9F7F2";
 const TEXT = "#1B2B22";
 const BORDER = "rgba(27,43,34,0.12)";
+const GOLD = "#C9A961";
 
 function getResendClient(): Resend {
   const key = process.env.RESEND_API_KEY?.trim();
@@ -230,6 +231,242 @@ export async function sendOrderConfirmationEmail(
 
 export function isEmailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY?.trim());
+}
+
+// ============================================================================
+// SEQUENCE PÓS-COMPRA
+// ============================================================================
+
+export interface SendSequenceEmailParams {
+  customerEmail: string;
+  customerName: string | null;
+  productNames: string[];
+  /** IDs dos produtos (ex.: prod_1) para montar link de avaliação. */
+  productIds?: string[];
+  orderId: string;
+  siteUrl?: string;
+}
+
+// ─── D+3: Check-in ───────────────────────────────────────────────────────────
+
+function generateD3Html(params: SendSequenceEmailParams): string {
+  const siteUrl = params.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://vioslabs.com.br";
+  const firstName = params.customerName?.split(" ")[0] ?? "cliente";
+  const productList = params.productNames.length > 0
+    ? params.productNames.map((n) => escapeHtml(n)).join(", ")
+    : "seu produto VIOS";
+  // Link direto para o primeiro produto comprado, seção de avaliações
+  const firstProductId = params.productIds?.[0];
+  const reviewUrl = firstProductId
+    ? `${siteUrl}/produto/${encodeURIComponent(firstProductId)}#avaliacoes`
+    : siteUrl;
+
+  return `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seus resultados estão começando — VIOS Labs</title>
+</head>
+<body style="margin:0;padding:0;font-family:sans-serif;background-color:${BACKGROUND};color:${TEXT};">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:${BACKGROUND};padding:40px 20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background-color:${BACKGROUND};border-radius:4px;border:1px solid ${BORDER};overflow:hidden;">
+        <!-- Header -->
+        <tr>
+          <td style="padding:32px 40px;text-align:center;border-bottom:1px solid ${BORDER};">
+            <h1 style="margin:0;font-size:22px;font-weight:300;letter-spacing:0.1em;text-transform:uppercase;color:${TEXT};">VIOS LABS</h1>
+            <div style="width:28px;height:1px;background:${GOLD};margin:10px auto;"></div>
+            <p style="margin:0;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:${TEXT};opacity:0.7;">Dia 3 da sua jornada</p>
+          </td>
+        </tr>
+        <!-- Body -->
+        <tr>
+          <td style="padding:36px 40px;">
+            <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:${TEXT};">Olá, ${escapeHtml(firstName)}.</p>
+            <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:${TEXT};">
+              Já se passaram 3 dias desde que você começou com <strong>${productList}</strong>.
+              Os primeiros resultados costumam ser sutis, mas o processo interno já está em andamento.
+            </p>
+            <p style="margin:0 0 28px 0;font-size:15px;line-height:1.6;color:${TEXT};">
+              Como estão sendo esses primeiros dias? Sua experiência importa — e pode ajudar outras pessoas a fazerem escolhas mais conscientes.
+            </p>
+            <!-- CTA principal -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+              <tr><td align="center">
+                <a href="${escapeHtml(reviewUrl)}" style="display:inline-block;padding:14px 32px;background-color:${TEXT};color:${BACKGROUND};text-decoration:none;font-size:12px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;border-radius:4px;">
+                  Deixar minha avaliação
+                </a>
+              </td></tr>
+            </table>
+            <!-- Separador -->
+            <div style="border-top:1px solid ${BORDER};margin:28px 0;"></div>
+            <p style="margin:0;font-size:13px;line-height:1.6;color:${TEXT};opacity:0.75;">
+              Dúvidas? Nossa equipe está disponível pelo
+              <a href="https://wa.me/5511952136713" style="color:${TEXT};text-decoration:underline;">WhatsApp</a>
+              ou pelo e-mail <a href="mailto:atendimento@vioslabs.com.br" style="color:${TEXT};text-decoration:underline;">atendimento@vioslabs.com.br</a>.
+            </p>
+          </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+          <td style="padding:24px 40px;text-align:center;border-top:1px solid ${BORDER};">
+            <p style="margin:0 0 8px 0;font-size:11px;color:${TEXT};opacity:0.7;">VIOS LABS · A Ciência da Longevidade</p>
+            <p style="margin:0;font-size:11px;color:${TEXT};opacity:0.6;">
+              <a href="${escapeHtml(siteUrl)}/privacidade" style="color:${TEXT};text-decoration:underline;">Privacidade</a>
+              &nbsp;·&nbsp;
+              <a href="${escapeHtml(siteUrl)}" style="color:${TEXT};text-decoration:underline;">${escapeHtml(siteUrl)}</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`.trim();
+}
+
+/**
+ * E-mail D+3: check-in pós-compra + convite para avaliação.
+ */
+export async function sendD3CheckInEmail(
+  params: SendSequenceEmailParams,
+): Promise<{ success: boolean; error?: string; messageId?: string }> {
+  const key = process.env.RESEND_API_KEY?.trim();
+  if (!key) {
+    console.warn("[EMAIL] RESEND_API_KEY não configurada. D+3 não enviado.");
+    return { success: false, error: "RESEND_API_KEY não configurada." };
+  }
+  try {
+    const html = generateD3Html(params);
+    const resend = getResendClient();
+    const { data, error } = await resend.emails.send({
+      from: `${FROM_NAME} <${FROM_EMAIL}>`,
+      to: params.customerEmail,
+      subject: "Seus primeiros dias com VIOS — como está sendo?",
+      html,
+    });
+    if (error) {
+      console.error("[EMAIL] D+3 error:", error);
+      return { success: false, error: String(error.message ?? error) };
+    }
+    return { success: true, messageId: data?.id };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[EMAIL] sendD3CheckInEmail error:", err);
+    return { success: false, error: message };
+  }
+}
+
+// ─── D+7: Recompra ───────────────────────────────────────────────────────────
+
+function generateD7Html(params: SendSequenceEmailParams): string {
+  const siteUrl = params.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://vioslabs.com.br";
+  const firstName = params.customerName?.split(" ")[0] ?? "cliente";
+  const productList = params.productNames.length > 0
+    ? params.productNames.map((n) => escapeHtml(n)).join(" + ")
+    : "seu produto VIOS";
+
+  return `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Garanta seu próximo ciclo — VIOS Labs</title>
+</head>
+<body style="margin:0;padding:0;font-family:sans-serif;background-color:${BACKGROUND};color:${TEXT};">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:${BACKGROUND};padding:40px 20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background-color:${BACKGROUND};border-radius:4px;border:1px solid ${BORDER};overflow:hidden;">
+        <!-- Header -->
+        <tr>
+          <td style="padding:32px 40px;text-align:center;border-bottom:1px solid ${BORDER};">
+            <h1 style="margin:0;font-size:22px;font-weight:300;letter-spacing:0.1em;text-transform:uppercase;color:${TEXT};">VIOS LABS</h1>
+            <div style="width:28px;height:1px;background:${GOLD};margin:10px auto;"></div>
+            <p style="margin:0;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:${TEXT};opacity:0.7;">Dia 7 — Continuidade</p>
+          </td>
+        </tr>
+        <!-- Body -->
+        <tr>
+          <td style="padding:36px 40px;">
+            <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:${TEXT};">Olá, ${escapeHtml(firstName)}.</p>
+            <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:${TEXT};">
+              Já são 7 dias com <strong>${productList}</strong>. Nessa fase, os benefícios começam a se consolidar — e a consistência é o que diferencia resultados superficiais de transformações reais.
+            </p>
+            <!-- Bloco destaque -->
+            <div style="background:rgba(27,43,34,0.04);border:0.5px solid ${BORDER};border-radius:4px;padding:20px 24px;margin:0 0 28px 0;">
+              <p style="margin:0 0 8px 0;font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:${TEXT};opacity:0.7;">Por que manter o ciclo sem pausas</p>
+              <p style="margin:0;font-size:14px;line-height:1.7;color:${TEXT};">
+                A maioria dos micronutrientes atua de forma cumulativa. Interromper o uso redefine o ponto de partida. Para garantir um estoque antes de acabar o atual, o melhor momento é agora.
+              </p>
+            </div>
+            <!-- CTA principal -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+              <tr><td align="center">
+                <a href="${escapeHtml(siteUrl)}" style="display:inline-block;padding:14px 32px;background-color:${TEXT};color:${BACKGROUND};text-decoration:none;font-size:12px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;border-radius:4px;">
+                  Garantir meu próximo ciclo
+                </a>
+              </td></tr>
+            </table>
+            <!-- Separador -->
+            <div style="border-top:1px solid ${BORDER};margin:28px 0;"></div>
+            <p style="margin:0;font-size:13px;line-height:1.6;color:${TEXT};opacity:0.75;">
+              Prefere explorar toda a linha VIOS?
+              <a href="${escapeHtml(siteUrl)}" style="color:${TEXT};text-decoration:underline;">Acesse nossa loja</a>
+              e descubra os protocolos completos.
+            </p>
+          </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+          <td style="padding:24px 40px;text-align:center;border-top:1px solid ${BORDER};">
+            <p style="margin:0 0 8px 0;font-size:11px;color:${TEXT};opacity:0.7;">VIOS LABS · A Ciência da Longevidade</p>
+            <p style="margin:0;font-size:11px;color:${TEXT};opacity:0.6;">
+              <a href="${escapeHtml(siteUrl)}/privacidade" style="color:${TEXT};text-decoration:underline;">Privacidade</a>
+              &nbsp;·&nbsp;
+              <a href="${escapeHtml(siteUrl)}" style="color:${TEXT};text-decoration:underline;">${escapeHtml(siteUrl)}</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`.trim();
+}
+
+/**
+ * E-mail D+7: nudge de recompra — "Garanta seu próximo ciclo".
+ */
+export async function sendD7ReorderEmail(
+  params: SendSequenceEmailParams,
+): Promise<{ success: boolean; error?: string; messageId?: string }> {
+  const key = process.env.RESEND_API_KEY?.trim();
+  if (!key) {
+    console.warn("[EMAIL] RESEND_API_KEY não configurada. D+7 não enviado.");
+    return { success: false, error: "RESEND_API_KEY não configurada." };
+  }
+  try {
+    const html = generateD7Html(params);
+    const resend = getResendClient();
+    const { data, error } = await resend.emails.send({
+      from: `${FROM_NAME} <${FROM_EMAIL}>`,
+      to: params.customerEmail,
+      subject: "Seu próximo ciclo VIOS — mantenha os resultados",
+      html,
+    });
+    if (error) {
+      console.error("[EMAIL] D+7 error:", error);
+      return { success: false, error: String(error.message ?? error) };
+    }
+    return { success: true, messageId: data?.id };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[EMAIL] sendD7ReorderEmail error:", err);
+    return { success: false, error: message };
+  }
 }
 
 // ============================================================================

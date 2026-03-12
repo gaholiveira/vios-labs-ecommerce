@@ -72,10 +72,12 @@ export default function WaitlistModal({
         onClose();
         setIsSuccess(false);
       }, 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error adding to waitlist:", err);
       setError(
-        err.message || "Erro ao processar sua solicitação. Tente novamente.",
+        err instanceof Error
+          ? err.message
+          : "Erro ao processar sua solicitação. Tente novamente.",
       );
     } finally {
       setIsSubmitting(false);

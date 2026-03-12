@@ -1,34 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { PRODUCTS } from '@/constants/products';
+import { getSupabaseAdmin } from '@/utils/supabase/admin';
 
 /**
- * API Route para atualizar imagens de produtos em pedidos antigos
- * 
- * Esta rota atualiza order_items que não têm product_image,
- * buscando a imagem do produto na constante PRODUCTS.
- * 
- * IMPORTANTE: Esta rota deve ser protegida em produção!
- * Adicione autenticação ou use apenas em desenvolvimento.
+ * API Route para atualizar imagens de produtos em pedidos antigos.
+ * Atualiza order_items sem product_image buscando na constante PRODUCTS.
+ * Protegida por ADMIN_SECRET_TOKEN (header x-admin-token).
  */
-
-function getSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error(
-      'Missing Supabase configuration. Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.'
-    );
-  }
-
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-}
 
 // Criar mapa de product_id -> image para busca rápida
 const productImageMap = new Map(
@@ -37,12 +15,17 @@ const productImageMap = new Map(
 
 export async function POST(req: NextRequest) {
   try {
-    // ⚠️ SEGURANÇA: Verificar token de admin em produção
-    // Em produção, descomente e configure:
-    // const adminToken = req.headers.get('x-admin-token');
-    // if (adminToken !== process.env.ADMIN_SECRET_TOKEN) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
+    const adminToken = req.headers.get("x-admin-token");
+    const expectedToken = process.env.ADMIN_SECRET_TOKEN;
+
+    if (!expectedToken) {
+      console.warn("[ADMIN] ADMIN_SECRET_TOKEN não configurado — rota bloqueada");
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!adminToken || adminToken !== expectedToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     
     const supabaseAdmin = getSupabaseAdmin();
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
@@ -124,10 +107,10 @@ export async function POST(req: NextRequest) {
       errors: errors.length > 0 ? errors : undefined,
     });
 
-  } catch (error: any) {
-    console.error('❌ Error updating order images:', error);
+  } catch (err: unknown) {
+    console.error('❌ Error updating order images:', err);
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { error: err instanceof Error ? err.message : 'Internal server error' },
       { status: 500 }
     );
   }
@@ -154,9 +137,9 @@ export async function GET() {
       count: data?.length || 0,
       items: data || [],
     });
-  } catch (error: any) {
+  } catch (err: unknown) {
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { error: err instanceof Error ? err.message : 'Internal server error' },
       { status: 500 }
     );
   }

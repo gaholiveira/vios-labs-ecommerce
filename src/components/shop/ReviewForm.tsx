@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { submitReview } from "@/actions/review-action";
 
@@ -47,16 +47,141 @@ function StarInput({
   );
 }
 
+function ImageInput({
+  preview,
+  error,
+  onFileChange,
+  onClear,
+}: {
+  preview: string | null;
+  error: string | null;
+  onFileChange: (file: File) => void;
+  onClear: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) onFileChange(file);
+    },
+    [onFileChange],
+  );
+
+  return (
+    <div>
+      <p className="block text-xs uppercase tracking-wider text-brand-softblack/70 font-light mb-3">
+        Foto do Produto / resultado{" "}
+        <span className="normal-case tracking-normal text-brand-softblack/40">
+          (opcional)
+        </span>
+      </p>
+
+      <div className="flex flex-wrap items-start gap-3">
+        {preview ? (
+          <div className="relative shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={preview}
+              alt="Preview da imagem selecionada"
+              className="w-20 h-20 object-cover rounded-sm border border-gray-200"
+            />
+            <button
+              type="button"
+              onClick={onClear}
+              aria-label="Remover imagem"
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-white border border-gray-300 rounded-full flex items-center justify-center text-brand-softblack/70 hover:text-red-500 hover:border-red-300 transition-colors text-xs font-medium"
+            >
+              ×
+            </button>
+          </div>
+        ) : null}
+
+        <label className="cursor-pointer">
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="sr-only"
+            onChange={handleChange}
+          />
+          <span
+            className={`inline-flex items-center gap-2 px-4 py-3 border rounded-sm text-xs font-light transition-colors ${
+              preview
+                ? "border-gray-200 text-brand-softblack/50 hover:border-brand-gold hover:text-brand-softblack"
+                : "border-dashed border-gray-300 text-brand-softblack/60 hover:border-brand-gold hover:text-brand-softblack"
+            }`}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.5}
+              className="w-4 h-4"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 3.75h13.5A1.5 1.5 0 0118 5.25v9A1.5 1.5 0 0116.5 15.75H3A1.5 1.5 0 011.5 14.25v-9A1.5 1.5 0 013 3.75z"
+              />
+            </svg>
+            {preview ? "Alterar foto" : "Adicionar foto"}
+          </span>
+        </label>
+      </div>
+
+      {error ? (
+        <p className="text-[11px] text-red-500 mt-2">{error}</p>
+      ) : (
+        <p className="text-[10px] text-brand-softblack/40 mt-2">
+          Máx. 3 MB · JPG, PNG ou WEBP
+        </p>
+      )}
+    </div>
+  );
+}
+
+const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp"];
+const MAX_SIZE = 3 * 1024 * 1024;
+
 export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
   const [rating, setRating] = useState(0);
   const [text, setText] = useState("");
   const [authorName, setAuthorName] = useState("");
   const [authorEmail, setAuthorEmail] = useState("");
+
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
+
+  const handleFileChange = useCallback((file: File) => {
+    setImageError(null);
+    if (!ALLOWED_MIME.includes(file.type)) {
+      setImageError("Formato inválido. Use JPG, PNG ou WEBP.");
+      return;
+    }
+    if (file.size > MAX_SIZE) {
+      setImageError("Imagem muito grande. Máximo 3 MB.");
+      return;
+    }
+    setPendingFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  }, []);
+
+  const clearImage = useCallback(() => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setPendingFile(null);
+    setImagePreview(null);
+    setImageError(null);
+  }, [imagePreview]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -64,11 +189,47 @@ export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
       setMessage(null);
 
       if (rating < 1) {
-        setMessage({ type: "error", text: "Selecione uma avaliação (1 a 5 estrelas)." });
+        setMessage({
+          type: "error",
+          text: "Selecione uma avaliação (1 a 5 estrelas).",
+        });
         return;
       }
 
       setIsSubmitting(true);
+
+      let uploadedImageUrl: string | null = null;
+
+      if (pendingFile) {
+        const formData = new FormData();
+        formData.append("image", pendingFile);
+        formData.append("product_id", productId);
+
+        try {
+          const res = await fetch("/api/reviews/upload", {
+            method: "POST",
+            body: formData,
+          });
+          if (!res.ok) {
+            const data = (await res.json()) as { error?: string };
+            setIsSubmitting(false);
+            setMessage({
+              type: "error",
+              text: data.error ?? "Erro ao enviar a imagem. Tente novamente.",
+            });
+            return;
+          }
+          const data = (await res.json()) as { url?: string };
+          uploadedImageUrl = data.url ?? null;
+        } catch {
+          setIsSubmitting(false);
+          setMessage({
+            type: "error",
+            text: "Erro ao enviar a imagem. Verifique sua conexão.",
+          });
+          return;
+        }
+      }
 
       const result = await submitReview({
         product_id: productId,
@@ -76,6 +237,7 @@ export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
         text,
         author_name: authorName,
         author_email: authorEmail,
+        image_url: uploadedImageUrl,
       });
 
       setIsSubmitting(false);
@@ -86,12 +248,22 @@ export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
         setText("");
         setAuthorName("");
         setAuthorEmail("");
+        clearImage();
         onSuccess?.();
       } else {
         setMessage({ type: "error", text: result.error });
       }
     },
-    [productId, rating, text, authorName, authorEmail, onSuccess]
+    [
+      productId,
+      rating,
+      text,
+      authorName,
+      authorEmail,
+      pendingFile,
+      clearImage,
+      onSuccess,
+    ],
   );
 
   return (
@@ -105,7 +277,7 @@ export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
         Envie sua avaliação
       </h3>
 
-      <div className="space-y-4">
+      <div className="space-y-5">
         <div>
           <label
             htmlFor="review-rating"
@@ -137,6 +309,13 @@ export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
             {text.length}/1000 caracteres
           </p>
         </div>
+
+        <ImageInput
+          preview={imagePreview}
+          error={imageError}
+          onFileChange={handleFileChange}
+          onClear={clearImage}
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -179,9 +358,7 @@ export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
         {message && (
           <p
             className={`text-sm font-light ${
-              message.type === "success"
-                ? "text-brand-green"
-                : "text-red-600"
+              message.type === "success" ? "text-brand-green" : "text-red-600"
             }`}
           >
             {message.text}
@@ -190,10 +367,14 @@ export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
 
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !!imageError}
           className="w-full border border-brand-green bg-brand-green text-brand-offwhite px-6 py-3 uppercase tracking-[0.2em] text-xs font-medium hover:bg-brand-softblack hover:border-brand-softblack transition-colors duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {isSubmitting ? "Enviando..." : "Enviar avaliação"}
+          {isSubmitting
+            ? pendingFile && !message
+              ? "Enviando imagem..."
+              : "Enviando..."
+            : "Enviar avaliação"}
         </button>
       </div>
 

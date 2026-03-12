@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { rateLimit, getClientIp } from '@/utils/rate-limit';
 
 // ============================================================================
 // CONFIGURAÇÃO DE RUNTIME PARA API ROUTE
@@ -15,6 +16,19 @@ export const maxDuration = 30;
 // Para adicionar suporte a phone, execute o script vip_list_add_phone.sql no Supabase SQL Editor.
 // Após adicionar a coluna, você pode descomentar as linhas que incluem phone nos dados.
 export async function POST(request: NextRequest) {
+  const rl = rateLimit(getClientIp(request), { limit: 5, windowMs: 60_000 });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: 'Muitas tentativas. Aguarde um momento e tente novamente.', success: false },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
+        },
+      },
+    );
+  }
+
   try {
     let body;
     try {
@@ -252,13 +266,13 @@ export async function POST(request: NextRequest) {
       message: 'Você foi adicionado à lista VIP com sucesso!',
       data: result.data,
     });
-  } catch (error: any) {
-    console.error('[VIP LIST API] Exceção não tratada:', error);
+  } catch (err: unknown) {
+    console.error('[VIP LIST API] Exceção não tratada:', err);
     return NextResponse.json(
-      { 
+      {
         error: 'Erro inesperado. Tente novamente.',
         success: false,
-        details: error?.message || 'Erro desconhecido',
+        details: err instanceof Error ? err.message : 'Erro desconhecido',
       },
       { status: 500 }
     );

@@ -56,8 +56,8 @@ export default function ResendConfirmationEmail({
         setError(errorMsg);
         onError?.(errorMsg);
       }
-    } catch (err: any) {
-      const errorMsg = err?.message || "Erro ao reenviar email";
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : "Erro ao reenviar email";
       setError(errorMsg);
       onError?.(errorMsg);
     } finally {

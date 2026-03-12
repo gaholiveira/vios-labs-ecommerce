@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin } from "@/utils/supabase/admin";
 import { z } from "zod";
 import { PRODUCTS } from "@/constants/products";
 
@@ -35,6 +35,11 @@ const submitReviewSchema = z.object({
     .min(1, "E-mail é obrigatório")
     .email("E-mail inválido")
     .transform((s) => s.trim().toLowerCase()),
+  image_url: z
+    .string()
+    .url("URL de imagem inválida")
+    .nullable()
+    .optional(),
 });
 
 export type SubmitReviewInput = z.infer<typeof submitReviewSchema>;
@@ -42,19 +47,6 @@ export type SubmitReviewInput = z.infer<typeof submitReviewSchema>;
 export type SubmitReviewResult =
   | { success: true; message: string }
   | { success: false; error: string };
-
-// ============================================================================
-// SUPABASE
-// ============================================================================
-
-function getSupabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("Missing Supabase configuration.");
-  return createClient(url, key, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
 
 // ============================================================================
 // SERVER ACTION
@@ -80,7 +72,7 @@ export async function submitReview(
       return { success: false, error: msg };
     }
 
-    const { product_id, rating, text, author_name, author_email } = parsed.data;
+    const { product_id, rating, text, author_name, author_email, image_url } = parsed.data;
 
     const supabase = getSupabaseAdmin();
 
@@ -107,6 +99,7 @@ export async function submitReview(
       text,
       author_name,
       author_email,
+      image_url: image_url ?? null,
       status: "pending",
     });
 

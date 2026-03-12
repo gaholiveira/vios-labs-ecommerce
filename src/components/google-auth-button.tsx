@@ -111,8 +111,8 @@ function GoogleAuthButton({
       // Limpar flag antes de redirecionar (sucesso)
       sessionStorage.removeItem('google_auth_processing');
       onSuccess?.();
-    } catch (err: any) {
-      onError?.(err.message || "Erro inesperado ao conectar com Google");
+    } catch (err: unknown) {
+      onError?.(err instanceof Error ? err.message : "Erro inesperado ao conectar com Google");
       setLoading(false);
       sessionStorage.removeItem('google_auth_processing'); // Limpar flag
     }

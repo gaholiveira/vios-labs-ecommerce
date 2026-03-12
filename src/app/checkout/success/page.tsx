@@ -7,6 +7,7 @@ import { Check, Mail, ArrowRight, Package, Loader2 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { createClient } from "@/utils/supabase/client";
 import { trackPurchase } from "@/lib/analytics";
+import { fbTrackPurchase } from "@/lib/meta-pixel";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
@@ -84,6 +85,19 @@ function SuccessContent() {
                 price: i.price,
                 quantity: i.quantity,
               })),
+            });
+            // Meta Pixel Purchase — e-mail do pedido ou fallback do localStorage
+            const customerEmail: string | null =
+              (data.customerEmail as string | null) ??
+              (() => { try { return localStorage.getItem("vios_checkout_email"); } catch { return null; } })();
+            void fbTrackPurchase({
+              transactionId: data.orderId,
+              value: data.totalAmount,
+              contentIds: (data.items as Array<{ id: string }>).map((i) => i.id),
+              numItems: (data.items as Array<{ quantity: number }>).reduce((acc, i) => acc + i.quantity, 0),
+              email: customerEmail,
+            }).then(() => {
+              try { localStorage.removeItem("vios_checkout_email"); } catch { /* ignore */ }
             });
           }
         } else if (attemptsRef.current < maxAttempts) {

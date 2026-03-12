@@ -31,9 +31,15 @@ export const LAST_UNITS_THRESHOLD = 5;
 /** Exibe "Apenas X unidades" quando available_quantity <= este valor (e > LAST_UNITS_THRESHOLD). */
 export const FEW_UNITS_THRESHOLD = 15;
 
-/** Cupom de teste (produção): 100% de desconto no subtotal. Uso apenas para testes. */
+/**
+ * Cupom de teste: desativado em produção.
+ * Para reativar temporariamente, defina ENABLE_TEST_COUPON=true nas env vars.
+ */
 export const COUPON_CODE_TESTE90 = "TESTE90";
-export const COUPON_TESTE90_DISCOUNT_PERCENT = 1;
+export const COUPON_TESTE90_DISCOUNT_PERCENT =
+  process.env.ENABLE_TEST_COUPON === "true" ? 1 : 0;
+export const COUPON_TESTE90_ENABLED =
+  process.env.ENABLE_TEST_COUPON === "true";
 
 /** Cupom primeira compra: frete por nossa conta (sem % no subtotal). Uso único por cliente. Posicionamento premium. */
 export const COUPON_CODE_SOUVIOS = "SOUVIOS";

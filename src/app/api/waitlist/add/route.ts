@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/utils/supabase/admin';
 
 // ============================================================================
 // API: ADICIONAR À WAITLIST
@@ -7,24 +7,6 @@ import { createClient } from '@supabase/supabase-js';
 // Rota: POST /api/waitlist/add
 // Adiciona email à fila de espera quando produto estiver esgotado
 // ============================================================================
-
-function getSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error(
-      'Missing Supabase configuration. Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.'
-    );
-  }
-
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-}
 
 interface AddToWaitlistRequest {
   product_id: string;

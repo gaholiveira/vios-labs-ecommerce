@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Email de confirmação enviado. Verifique sua caixa de entrada e spam.',
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Erro ao reenviar confirmação:', err);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },

@@ -6,7 +6,8 @@
  * Token: DB (bling_tokens) com refresh automático; fallback BLING_ACCESS_TOKEN no .env
  */
 
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { type SupabaseClient } from "@supabase/supabase-js";
+import { getSupabaseAdminOrNull } from "@/utils/supabase/admin";
 
 const BLING_API_BASE = "https://api.bling.com.br/Api/v3";
 const BLING_TOKEN_URL = "https://www.bling.com.br/Api/v3/oauth/token";
@@ -47,12 +48,7 @@ async function fetchWithRateLimitRetry(
 const TOKEN_EXPIRY_MARGIN_SEC = 5 * 60; // 5 min
 
 function getSupabaseAdmin(): SupabaseClient | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return null;
-  return createClient(url, key, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  return getSupabaseAdminOrNull();
 }
 
 interface BlingTokensRow {
@@ -151,7 +147,7 @@ export async function refreshBlingToken(): Promise<string | null> {
     if (error) {
       console.error("[BLING] refreshBlingToken: falha ao salvar tokens no DB", error);
     } else {
-      console.log("[BLING] refreshBlingToken: token renovado e salvo no DB");
+      console.warn("[BLING] refreshBlingToken: token renovado e salvo no DB");
     }
   }
 
@@ -774,7 +770,7 @@ export async function createSaleInBling(
   };
 
   try {
-    console.log("[BLING] createSaleInBling", {
+    console.warn("[BLING] createSaleInBling", {
       orderId: input.orderId,
       itemsCount: input.items.length,
       productIds: input.items.map((i) => i.productId),
@@ -834,11 +830,11 @@ export async function createSaleInBling(
 
     const rawData = data.data;
     const saleId = Array.isArray(rawData) ? rawData[0]?.id : rawData?.id;
-    const numero = Array.isArray(rawData) ? rawData[0]?.numero : (rawData as { numero?: string })?.numero;
+    const blingSaleNumero = Array.isArray(rawData) ? rawData[0]?.numero : (rawData as { numero?: string })?.numero;
     console.warn("[BLING] createSaleInBling success", {
       orderId: input.orderId,
       blingSaleId: saleId,
-      numero: numero ?? `VIOS-${input.pagarmeOrderId.slice(-8)}`,
+      numero: blingSaleNumero ?? numero,
       busqueNoBling: `Busque por "VIOS-" ou ID ${saleId} em Vendas > Pedidos`,
     });
 

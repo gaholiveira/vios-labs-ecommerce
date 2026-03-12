@@ -1,18 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin } from "@/utils/supabase/admin";
 
 /**
  * API Route para verificar se um pedido foi criado usando order_id (Pagar.me), session_id ou payment_intent.
  * Usa service role para que o lookup funcione para guest: a página de sucesso não tem sessão com o email do pedido.
  */
-function getSupabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("Missing Supabase config");
-  return createClient(url, key, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
 
 export async function GET(req: NextRequest) {
   try {
@@ -31,11 +23,11 @@ export async function GET(req: NextRequest) {
 
     const supabase = getSupabaseAdmin();
 
-    // Buscar pedido por stripe_session_id (Pagar.me order id, Stripe session id ou MP preference_id)
+    // Buscar pedido por payment_order_id (Pagar.me order id, Stripe session id ou MP preference_id)
     const { data: order, error } = await supabase
       .from("orders")
-      .select("id, status, created_at, total_amount")
-      .eq("stripe_session_id", sessionId)
+      .select("id, status, created_at, total_amount, customer_email")
+      .eq("payment_order_id", sessionId)
       .maybeSingle();
 
     if (error) {
@@ -59,6 +51,7 @@ export async function GET(req: NextRequest) {
         status: order.status,
         createdAt: order.created_at,
         totalAmount: order.total_amount,
+        customerEmail: order.customer_email ?? null,
         items:
           items?.map((i) => ({
             id: i.product_id,

@@ -33,6 +33,23 @@ export interface Product {
 
 export const PRODUCTS: Product[] = [
   {
+    id: 'prod_2',
+    name: 'Vios Sleep',
+    tagline: 'Melatonina para Sono Reparador',
+    price: 179.00,
+    image: '/images/products/sleepnew.jpeg',
+    additionalImages: [
+      '/images/products/sleeptabela.jpg',
+    ],
+    description: 'Suporte nutricional avançado para um sono profundo e restaurador. Melatonina em solução líquida de alta absorção desenvolvida para auxiliar na regulação do ciclo circadiano e favorecer o início do sono, contribuindo para uma rotina noturna equilibrada.',
+    shortDescription: 'Melatonina em gotas para auxiliar no sono profundo e no descanso noturno.',
+    category: 'Suplemento',
+    badge: 'bestseller',
+    anvisaRecord: '25351.088701/2025-70',
+    unitsSold: 40,
+    ctaPrimary: 'Quero dormir melhor',
+  },
+  {
     id: 'prod_1',
     name: 'Vios Glow',
     tagline: 'Hair, Skin & Nails',
@@ -50,43 +67,6 @@ export const PRODUCTS: Product[] = [
     ctaPrimary: 'Quero cuidar da beleza',
   },
   {
-    id: 'prod_2',
-    name: 'Vios Sleep',
-    tagline: 'Melatonina para Sono Reparador',
-    price: 179.00,
-    image: '/images/products/sleepnew.jpeg',
-    additionalImages: [
-      '/images/products/sleeptabela.jpg',
-    ],
-      
-    description: 'Suporte nutricional avançado para um sono profundo e restaurador. Melatonina em solução líquida de alta absorção desenvolvida para auxiliar na regulação do ciclo circadiano e favorecer o início do sono, contribuindo para uma rotina noturna equilibrada.',
-    shortDescription: 'Melatonina em gotas para auxiliar no sono profundo e no descanso noturno.',
-    category: 'Suplemento',
-    badge: 'bestseller',
-    anvisaRecord: '25351.088701/2025-70',
-    unitsSold: 40,
-    ctaPrimary: 'Quero dormir melhor',
-  },
-  {
-    id: 'prod_3',
-    name: 'Vios Mag3',
-    tagline: 'Tripla Infusão de Magnésio',
-    price: 167.00,
-    image: '/images/products/mag3new.jpeg',
-    additionalImages: [
-      '/images/products/mag3tabela.jpg',
-      '/images/products/mag3caps.jpeg',
-      '/images/products/mag3down.jpeg',
-
-    ],
-    description: 'Magnésio avançado para suporte metabólico e equilíbrio neuromuscular. Uma formulação cuidadosamente desenvolvida para auxiliar no funcionamento muscular, no suporte ao sistema nervoso e no equilíbrio do organismo em rotinas de alta demanda.',
-    shortDescription: 'Tripla infusão de magnésio para auxiliar na energia, função muscular e equilíbrio.',
-    category: 'Suplemento',
-    anvisaRecord: '25351.066423/2025-08',
-    unitsSold: 28,
-    ctaPrimary: 'Quero equilíbrio mineral',
-  },
-  {
     id: 'prod_4',
     name: 'Vios Pulse',
     tagline: 'Foco e Energia para Performance',
@@ -102,6 +82,24 @@ export const PRODUCTS: Product[] = [
     category: 'Suplemento',
     unitsSold: 24,
     ctaPrimary: 'Quero energia e foco',
+  },
+  {
+    id: 'prod_3',
+    name: 'Vios Mag3',
+    tagline: 'Tripla Infusão de Magnésio',
+    price: 167.00,
+    image: '/images/products/mag3new.jpeg',
+    additionalImages: [
+      '/images/products/mag3tabela.jpg',
+      '/images/products/mag3caps.jpeg',
+      '/images/products/mag3down.jpeg',
+    ],
+    description: 'Magnésio avançado para suporte metabólico e equilíbrio neuromuscular. Uma formulação cuidadosamente desenvolvida para auxiliar no funcionamento muscular, no suporte ao sistema nervoso e no equilíbrio do organismo em rotinas de alta demanda.',
+    shortDescription: 'Tripla infusão de magnésio para auxiliar na energia, função muscular e equilíbrio.',
+    category: 'Suplemento',
+    anvisaRecord: '25351.066423/2025-08',
+    unitsSold: 28,
+    ctaPrimary: 'Quero equilíbrio mineral',
   },
   {
     id: 'prod_5',

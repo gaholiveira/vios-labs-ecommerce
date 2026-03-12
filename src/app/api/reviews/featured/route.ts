@@ -1,20 +1,27 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-function getSupabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("Missing Supabase configuration.");
-  return createClient(url, key, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
+import { NextRequest, NextResponse } from "next/server";
+import { rateLimit, getClientIp } from "@/utils/rate-limit";
+import { getSupabaseAdmin } from "@/utils/supabase/admin";
 
 /**
  * GET /api/reviews/featured
  * Retorna as últimas reviews aprovadas de todos os produtos (para seção "Veja o que estão falando")
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const rl = rateLimit(getClientIp(req), { limit: 30, windowMs: 60_000 });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
+          "X-RateLimit-Limit": "30",
+          "X-RateLimit-Remaining": "0",
+        },
+      },
+    );
+  }
+
   try {
     const supabase = getSupabaseAdmin();
 

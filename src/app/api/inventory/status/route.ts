@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit, getClientIp } from '@/utils/rate-limit';
+import { getSupabaseAdmin } from '@/utils/supabase/admin';
 
 // ============================================================================
 // API: CONSULTAR STATUS DO ESTOQUE
@@ -8,30 +9,27 @@ import { createClient } from '@supabase/supabase-js';
 // Retorna o status do estoque de todos os produtos ou de um produto específico
 // ============================================================================
 
-function getSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error(
-      'Missing Supabase configuration. Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.'
-    );
-  }
-
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-}
-
 /**
  * GET /api/inventory/status
  * Query params:
  * - product_id (opcional): ID do produto específico
  */
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
+  const rl = rateLimit(getClientIp(req), { limit: 60, windowMs: 60_000 });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
+          'X-RateLimit-Limit': '60',
+          'X-RateLimit-Remaining': '0',
+        },
+      },
+    );
+  }
+
   try {
     const supabaseAdmin = getSupabaseAdmin();
     const { searchParams } = new URL(req.url);
@@ -75,10 +73,10 @@ export async function GET(req: Request) {
     // Retornar todos os produtos
     return NextResponse.json(data);
 
-  } catch (error: any) {
-    console.error('Error in inventory status API:', error);
+  } catch (err: unknown) {
+    console.error('Error in inventory status API:', err);
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { error: err instanceof Error ? err.message : 'Internal server error' },
       { status: 500 }
     );
   }

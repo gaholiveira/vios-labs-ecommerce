@@ -1,20 +1,27 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-function getSupabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("Missing Supabase configuration.");
-  return createClient(url, key, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
+import { NextRequest, NextResponse } from "next/server";
+import { rateLimit, getClientIp } from "@/utils/rate-limit";
+import { getSupabaseAdmin } from "@/utils/supabase/admin";
 
 /**
  * GET /api/reviews?product_id=prod_1
  * Retorna apenas reviews aprovadas, ordenadas por data (mais recentes primeiro)
  */
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
+  const rl = rateLimit(getClientIp(req), { limit: 60, windowMs: 60_000 });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
+          "X-RateLimit-Limit": "60",
+          "X-RateLimit-Remaining": "0",
+        },
+      },
+    );
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const productId = searchParams.get("product_id");
@@ -30,7 +37,7 @@ export async function GET(req: Request) {
 
     const { data, error } = await supabase
       .from("reviews")
-      .select("id, product_id, rating, text, author_name, created_at")
+      .select("id, product_id, rating, text, author_name, image_url, created_at")
       .eq("product_id", productId)
       .eq("status", "approved")
       .order("created_at", { ascending: false });

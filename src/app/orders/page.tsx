@@ -24,7 +24,7 @@ interface Order {
   customer_email: string;
   status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
   total_amount: number;
-  stripe_session_id: string | null;
+  payment_order_id: string | null;
   created_at: string;
   order_items: OrderItem[];
 }
@@ -64,8 +64,8 @@ export default function OrdersPage() {
         }
       }
       // Silenciosamente processar associação (sem logs de debug em produção)
-    } catch (error: any) {
-      console.error('Erro ao associar pedidos:', error?.message || error);
+    } catch (err: unknown) {
+      console.error('Erro ao associar pedidos:', err instanceof Error ? err.message : err);
     } finally {
       setAssociating(false);
     }
