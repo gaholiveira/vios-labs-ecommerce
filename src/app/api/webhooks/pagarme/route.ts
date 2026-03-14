@@ -391,6 +391,17 @@ export async function POST(req: NextRequest) {
       console.error("[PAGARME WEBHOOK] Erro ao agendar sequence:", seqErr);
     }
 
+    // Marcar abandono de checkout como convertido
+    try {
+      await supabase
+        .from("checkout_abandons")
+        .update({ status: "converted", converted_at: new Date().toISOString() })
+        .eq("email", customerEmail)
+        .eq("status", "pending");
+    } catch (abandonErr) {
+      console.error("[PAGARME WEBHOOK] Erro ao marcar abandono como convertido:", abandonErr);
+    }
+
     // Log estruturado antes de tentar Bling (para diagnóstico)
     const blingReady =
       isBlingConfigured() && addr?.zip_code && addr?.city && addr?.state;

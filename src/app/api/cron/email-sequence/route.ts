@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/utils/supabase/admin";
-import { sendD3CheckInEmail, sendD7ReorderEmail } from "@/lib/email";
+import { sendD3CheckInEmail, sendD7ReorderEmail, sendAbandonEmail } from "@/lib/email";
 
 /**
- * Cron: processar fila de e-mails da sequence pós-compra.
+ * Cron: processar fila de e-mails da sequence pós-compra + abandono de checkout.
  *
  * Busca até 50 registros com status "pending" e send_at <= agora,
  * envia via Resend e atualiza o status.
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
   const supabase = getSupabaseAdmin();
 
-  // Buscar e-mails pendentes cuja hora de envio já chegou
+  // ── Sequence pós-compra (D+3 / D+7) ──
   const { data: pending, error: fetchError } = await supabase
     .from("email_sequences")
     .select("id, order_id, customer_email, customer_name, sequence_type, product_names, product_ids")
@@ -40,14 +40,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: fetchError.message }, { status: 500 });
   }
 
-  if (!pending || pending.length === 0) {
-    return NextResponse.json({ processed: 0, message: "Nenhum e-mail pendente." });
-  }
-
   let sent = 0;
   let failed = 0;
 
-  for (const row of pending) {
+  for (const row of pending ?? []) {
     const params = {
       customerEmail: row.customer_email as string,
       customerName: (row.customer_name as string | null) ?? null,
@@ -63,7 +59,6 @@ export async function GET(req: NextRequest) {
     } else if (row.sequence_type === "d7_reorder") {
       result = await sendD7ReorderEmail(params);
     } else {
-      // Tipo desconhecido — marcar como falha para não reprocessar indefinidamente
       await supabase
         .from("email_sequences")
         .update({ status: "failed", error_message: `Tipo desconhecido: ${String(row.sequence_type)}`, sent_at: new Date().toISOString() })
@@ -88,8 +83,74 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  console.warn(`[CRON email-sequence] Processados: ${sent} enviados, ${failed} falhas.`);
-  return NextResponse.json({ processed: pending.length, sent, failed });
+  // ── Abandono de checkout ──
+  const abandon = await processAbandonEmails(supabase);
+
+  console.warn(
+    `[CRON email-sequence] Sequence: ${sent} enviados, ${failed} falhas. Abandono: ${abandon.sent} enviados, ${abandon.failed} falhas.`,
+  );
+
+  return NextResponse.json({
+    processed: (pending?.length ?? 0) + abandon.sent + abandon.failed,
+    sent: sent + abandon.sent,
+    failed: failed + abandon.failed,
+  });
+}
+
+// ── Abandono de checkout ─────────────────────────────────────────────────────
+
+async function processAbandonEmails(supabase: ReturnType<typeof getSupabaseAdmin>) {
+  const now = new Date().toISOString();
+
+  const { data: abandons, error: fetchErr } = await supabase
+    .from("checkout_abandons")
+    .select("id, email, cart_items")
+    .eq("status", "pending")
+    .lte("send_at", now)
+    .limit(50);
+
+  if (fetchErr) {
+    console.error("[CRON abandon] Erro ao buscar abandons:", fetchErr);
+    return { sent: 0, failed: 0 };
+  }
+
+  if (!abandons || abandons.length === 0) return { sent: 0, failed: 0 };
+
+  let sent = 0;
+  let failed = 0;
+
+  for (const row of abandons) {
+    type CartItem = { name: string; quantity: number; price: number };
+    const cartItems = Array.isArray(row.cart_items)
+      ? (row.cart_items as CartItem[])
+      : null;
+
+    const result = await sendAbandonEmail({
+      customerEmail: row.email as string,
+      cartItems,
+    });
+
+    if (result.success) {
+      await supabase
+        .from("checkout_abandons")
+        .update({ status: "sent", sent_at: new Date().toISOString() })
+        .eq("id", row.id);
+      sent++;
+    } else {
+      await supabase
+        .from("checkout_abandons")
+        .update({
+          status: "failed",
+          error_message: result.error ?? "Erro desconhecido",
+          sent_at: new Date().toISOString(),
+        })
+        .eq("id", row.id);
+      failed++;
+      console.error(`[CRON abandon] Falha para ${String(row.email)}:`, result.error);
+    }
+  }
+
+  return { sent, failed };
 }
 
 export async function POST(req: NextRequest) {

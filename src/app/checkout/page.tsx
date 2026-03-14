@@ -277,6 +277,53 @@ export default function CheckoutPage() {
     ],
   );
 
+  // ── Captura de abandono de checkout ──────────────────────────────────────
+  const abandonEmailRef = useRef<string>("");
+  const abandonPhoneRef = useRef<string>("");
+
+  const handleAbandonEmailBlur = useCallback(
+    (email: string) => {
+      const trimmed = email.trim().toLowerCase();
+      if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return;
+      if (trimmed === abandonEmailRef.current) return;
+      abandonEmailRef.current = trimmed;
+      const cartSnapshot = cart.map((item) => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      }));
+      void fetch("/api/checkout/abandon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: trimmed,
+          phone: abandonPhoneRef.current || null,
+          cart_items: cartSnapshot,
+        }),
+      }).catch(() => {/* silent — não bloqueia o checkout */});
+    },
+    [cart],
+  );
+
+  const handleAbandonPhoneBlur = useCallback(
+    (phone: string) => {
+      const digits = phone.replace(/\D/g, "");
+      if (digits.length < 10) return;
+      if (digits === abandonPhoneRef.current) return;
+      abandonPhoneRef.current = digits;
+      if (!abandonEmailRef.current) return;
+      void fetch("/api/checkout/abandon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: abandonEmailRef.current,
+          phone: digits,
+        }),
+      }).catch(() => {/* silent */});
+    },
+    [],
+  );
+
   const handleFormSubmit = useCallback(
     async (data: CheckoutFormData) => {
       if (!paymentMethod) {
@@ -579,6 +626,8 @@ export default function CheckoutPage() {
                   onContinueFromFreight={handleContinueFromFreight}
                   freightSection={freightSectionMemo}
                   paymentSection={paymentSectionMemo}
+                  onEmailBlur={handleAbandonEmailBlur}
+                  onPhoneBlur={handleAbandonPhoneBlur}
                 />
               </div>
             )}

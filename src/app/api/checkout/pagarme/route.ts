@@ -20,6 +20,7 @@ import {
   COUPON_SOUVIOS_DISCOUNT_PERCENT,
 } from "@/lib/checkout-config";
 import type { ReserveInventoryResponse } from "@/types/database";
+import { sendOrderConfirmationEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -614,12 +615,38 @@ export async function POST(req: Request) {
             )
           );
         }
-        console.warn("[CHECKOUT] PIX order created", {
-          orderId: pagarmeOrder.id,
-          email: email.slice(0, 3) + "***",
-          hasQr: !!(pixData.qr_code || pixData.qr_code_url || pixData.pix_copy_paste),
-        });
-        return NextResponse.json({
+      console.warn("[CHECKOUT] PIX order created", {
+        orderId: pagarmeOrder.id,
+        email: email.slice(0, 3) + "***",
+        hasQr: !!(pixData.qr_code || pixData.qr_code_url || pixData.pix_copy_paste),
+      });
+
+      // E-mail imediato com código PIX — cliente pode pagar pelo site ou pelo e-mail
+      if (pixData.pix_copy_paste) {
+        try {
+          await sendOrderConfirmationEmail({
+            customerEmail: email,
+            customerName: checkoutData.fullName?.trim() || null,
+            orderId: pagarmeOrder.id,
+            orderDate: new Date().toISOString(),
+            totalAmount: totalReais,
+            status: "Processando",
+            items: items.map((item) => ({
+              product_name: item.name,
+              quantity: item.quantity,
+              price: Number(item.price),
+            })),
+            pixCopyPaste: pixData.pix_copy_paste,
+            pixInstructions:
+              "Copie o código abaixo e pague pelo app do seu banco. O pagamento expira em 30 minutos.",
+          });
+          console.warn("[CHECKOUT] E-mail PIX enviado para:", email.slice(0, 3) + "***");
+        } catch (emailErr) {
+          console.error("[CHECKOUT] Erro ao enviar e-mail PIX:", emailErr);
+        }
+      }
+
+      return NextResponse.json({
           orderId: pagarmeOrder.id,
           paymentMethod: "pix",
           pix: {

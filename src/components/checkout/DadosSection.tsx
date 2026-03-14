@@ -32,6 +32,9 @@ interface DadosSectionProps {
   inputBase: string;
   inputOk: string;
   inputErr: string;
+  // Callbacks de captura de abandono (opcionais)
+  onEmailBlur?: (email: string) => void;
+  onPhoneBlur?: (phone: string) => void;
 }
 
 export default function DadosSection({
@@ -55,6 +58,8 @@ export default function DadosSection({
   inputBase: base,
   inputOk: ok,
   inputErr: err,
+  onEmailBlur,
+  onPhoneBlur,
 }: DadosSectionProps) {
   return (
     <>
@@ -86,6 +91,7 @@ export default function DadosSection({
                   onBlur={() => {
                     touchField("email");
                     validateField("email", email);
+                    onEmailBlur?.(email);
                   }}
                   placeholder="seu@email.com"
                   className={`${base} ${errors.email ? err : ok}`}
@@ -130,6 +136,7 @@ export default function DadosSection({
               onBlur={() => {
                 touchField("phone");
                 validateField("phone", phone);
+                onPhoneBlur?.(phone);
               }}
               placeholder="(00) 00000-0000"
               maxLength={15}

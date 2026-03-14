@@ -7,6 +7,9 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+const BASE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://vioslabs.com.br";
+
 export function generateStaticParams() {
   return PRODUCTS.map((p) => ({ id: p.id }));
 }
@@ -22,10 +25,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  // Construir URL absoluta da imagem do produto
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://vioslabs.com.br";
-  const productImageUrl = `${baseUrl}${product.image}`;
-
+  const productImageUrl = `${BASE_URL}${product.image}`;
   const title = product.tagline
     ? `${product.name} | ${product.tagline}`
     : `VIOS | ${product.name}`;
@@ -39,8 +39,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       type: "website",
       locale: "pt_BR",
-      // IMPORTANTE: Usar a imagem real do produto como primeira opção
-      // O Next.js vai usar esta imagem ao invés do opengraph-image.tsx quando especificada explicitamente
       images: [
         {
           url: productImageUrl,
@@ -50,24 +48,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
           type: "image/jpeg",
         },
       ],
-      // URL absoluta da página
-      url: `${baseUrl}/produto/${id}`,
+      url: `${BASE_URL}/produto/${id}`,
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      // Usar a imagem real do produto
-      images: [
-        {
-          url: productImageUrl,
-          alt: product.name,
-        },
-      ],
+      images: [{ url: productImageUrl, alt: product.name }],
     },
-    // Adicionar metadata alternativo para garantir que a imagem seja encontrada
     alternates: {
-      canonical: `${baseUrl}/produto/${id}`,
+      canonical: `${BASE_URL}/produto/${id}`,
     },
   };
 }
@@ -78,5 +68,77 @@ export default async function ProductPage({ params }: PageProps) {
 
   if (!product) notFound();
 
-  return <ProductPageContent product={product} />;
+  const productUrl = `${BASE_URL}/produto/${product.id}`;
+  const productImageUrl = `${BASE_URL}${product.image}`;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Product",
+        "@id": `${productUrl}#product`,
+        name: product.name,
+        description: product.description,
+        image: productImageUrl,
+        sku: product.id,
+        brand: {
+          "@type": "Brand",
+          name: "VIOS Labs",
+        },
+        offers: {
+          "@type": "Offer",
+          url: productUrl,
+          priceCurrency: "BRL",
+          price: product.price.toFixed(2),
+          availability: "https://schema.org/InStock",
+          itemCondition: "https://schema.org/NewCondition",
+          seller: {
+            "@type": "Organization",
+            name: "VIOS Labs",
+            url: BASE_URL,
+          },
+        },
+        ...(product.anvisaRecord && {
+          additionalProperty: {
+            "@type": "PropertyValue",
+            name: "Registro ANVISA",
+            value: product.anvisaRecord,
+          },
+        }),
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: BASE_URL,
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Produtos",
+            item: `${BASE_URL}/#produtos`,
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: product.name,
+            item: productUrl,
+          },
+        ],
+      },
+    ],
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <ProductPageContent product={product} />
+    </>
+  );
 }

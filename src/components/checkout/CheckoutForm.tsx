@@ -52,6 +52,9 @@ interface CheckoutFormProps {
   freightSection?: React.ReactNode;
   paymentSection?: React.ReactNode;
   onContinueFromFreight?: () => void;
+  /** Callbacks de captura de abandono (onBlur) */
+  onEmailBlur?: (email: string) => void;
+  onPhoneBlur?: (phone: string) => void;
 }
 
 function formatBRL(value: number): string {
@@ -82,6 +85,8 @@ export default function CheckoutForm({
   freightSection,
   paymentSection,
   onContinueFromFreight,
+  onEmailBlur,
+  onPhoneBlur,
 }: CheckoutFormProps) {
   const isStepMode = stepProp != null;
 
@@ -239,6 +244,8 @@ export default function CheckoutForm({
             inputBase={INPUT_BASE}
             inputOk={INPUT_OK}
             inputErr={INPUT_ERR}
+            onEmailBlur={onEmailBlur}
+            onPhoneBlur={onPhoneBlur}
           />
         )}
 

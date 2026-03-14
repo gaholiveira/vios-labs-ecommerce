@@ -7,6 +7,9 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+const BASE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://vioslabs.com.br";
+
 export function generateStaticParams() {
   return KITS.map((k) => ({ id: k.id }));
 }
@@ -24,11 +27,9 @@ export async function generateMetadata({
     };
   }
 
-  // Construir URL absoluta da imagem do kit
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://vioslabs.com.br";
   const kitImageUrl = kit.image
-    ? `${baseUrl}${kit.image}`
-    : `${baseUrl}/images/kits/default.png`;
+    ? `${BASE_URL}${kit.image}`
+    : `${BASE_URL}/images/kits/default.png`;
 
   const title = `VIOS | ${kit.name}`;
   const description =
@@ -53,21 +54,16 @@ export async function generateMetadata({
           type: "image/png",
         },
       ],
-      url: `${baseUrl}/kit/${id}`,
+      url: `${BASE_URL}/kit/${id}`,
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [
-        {
-          url: kitImageUrl,
-          alt: kit.name,
-        },
-      ],
+      images: [{ url: kitImageUrl, alt: kit.name }],
     },
     alternates: {
-      canonical: `${baseUrl}/kit/${id}`,
+      canonical: `${BASE_URL}/kit/${id}`,
     },
   };
 }
@@ -76,9 +72,84 @@ export default async function KitPage({ params }: PageProps) {
   const { id } = await params;
   const kit = KITS.find((k) => k.id === id);
 
-  if (!kit) {
-    notFound();
-  }
+  if (!kit) notFound();
 
-  return <KitPageContent kit={kit} />;
+  const kitUrl = `${BASE_URL}/kit/${kit.id}`;
+  const kitImageUrl = kit.image
+    ? `${BASE_URL}${kit.image}`
+    : `${BASE_URL}/images/kits/default.png`;
+
+  const description =
+    kit.longDescription || kit.description || `Kit ${kit.name} — VIOS Labs`;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Product",
+        "@id": `${kitUrl}#product`,
+        name: kit.name,
+        description,
+        image: kitImageUrl,
+        sku: kit.id,
+        brand: {
+          "@type": "Brand",
+          name: "VIOS Labs",
+        },
+        offers: {
+          "@type": "Offer",
+          url: kitUrl,
+          priceCurrency: "BRL",
+          price: kit.price.toFixed(2),
+          availability: "https://schema.org/InStock",
+          itemCondition: "https://schema.org/NewCondition",
+          seller: {
+            "@type": "Organization",
+            name: "VIOS Labs",
+            url: BASE_URL,
+          },
+          ...(kit.oldPrice && {
+            priceValidUntil: new Date(
+              Date.now() + 30 * 24 * 60 * 60 * 1000,
+            )
+              .toISOString()
+              .split("T")[0],
+          }),
+        },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: BASE_URL,
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Kits",
+            item: `${BASE_URL}/kits`,
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: kit.name,
+            item: kitUrl,
+          },
+        ],
+      },
+    ],
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <KitPageContent kit={kit} />
+    </>
+  );
 }
