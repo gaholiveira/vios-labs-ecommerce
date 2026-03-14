@@ -49,7 +49,16 @@ function SuccessContent() {
       return;
     }
 
-    const maxAttempts = 15; // 15 tentativas = 30 segundos (2s cada)
+    // Backoff exponencial: rápido no início, paciente no final.
+    // Cobre até ~5 minutos — janela suficiente para webhooks atrasados do Pagar.me.
+    // Tentativas 1–5: 2s | 6–10: 5s | 11–20: 10s → total ~5 min
+    const maxAttempts = 20;
+    const getDelay = (attempt: number): number => {
+      if (attempt <= 5) return 2000;
+      if (attempt <= 10) return 5000;
+      return 10000;
+    };
+
     attemptsRef.current = 0;
     let isCancelled = false;
 
@@ -101,12 +110,11 @@ function SuccessContent() {
             });
           }
         } else if (attemptsRef.current < maxAttempts) {
-          // Tentar novamente após 2 segundos
           pollingRef.current = setTimeout(() => {
             checkOrder();
-          }, 2000);
+          }, getDelay(attemptsRef.current));
         } else {
-          // Timeout após maxAttempts
+          // Timeout após ~5 min — webhook não chegou
           setOrderStatus("not_found");
           pollingRef.current = null;
         }
@@ -115,10 +123,9 @@ function SuccessContent() {
 
         console.error("Erro ao verificar pedido:", error);
         if (attemptsRef.current < maxAttempts) {
-          // Tentar novamente após 2 segundos
           pollingRef.current = setTimeout(() => {
             checkOrder();
-          }, 2000);
+          }, getDelay(attemptsRef.current));
         } else {
           setOrderStatus("error");
           pollingRef.current = null;

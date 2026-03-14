@@ -50,7 +50,13 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    return NextResponse.json(data ?? []);
+    return NextResponse.json(data ?? [], {
+      headers: {
+        // Cache de 2 min na CDN; serve dado stale por até 10 min enquanto revalida em background.
+        // Reviews mudam apenas quando uma nova avaliação é aprovada manualmente.
+        "Cache-Control": "public, s-maxage=120, stale-while-revalidate=600",
+      },
+    });
   } catch (e) {
     console.error("[REVIEWS API] Error:", e);
     return NextResponse.json(

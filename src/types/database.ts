@@ -11,6 +11,7 @@ export interface Order {
   id: string;
   user_id: string | null; // NULL para guest checkout
   customer_email: string;
+  customer_name?: string | null;
   status: "pending" | "paid" | "shipped" | "delivered" | "cancelled";
   total_amount: number;
   payment_order_id?: string; // ID do pedido Pagar.me (ou referência de outro gateway)
@@ -18,7 +19,6 @@ export interface Order {
   updated_at: string;
   // Fiscal e entrega (preenchidos no checkout e no webhook Pagar.me)
   customer_cpf?: string | null;
-  customer_name?: string | null;
   customer_phone?: string | null;
   shipping_cep?: string | null;
   shipping_street?: string | null;
@@ -27,6 +27,11 @@ export interface Order {
   shipping_neighborhood?: string | null;
   shipping_city?: string | null;
   shipping_state?: string | null;
+  // Rastreio (preenchidos pelo webhook do Bling quando o pedido é despachado)
+  tracking_code?: string | null;
+  tracking_url?: string | null;
+  tracking_carrier?: string | null;
+  shipped_at?: string | null;
 }
 
 export interface OrderItem {

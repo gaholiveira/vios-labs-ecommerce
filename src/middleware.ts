@@ -2,9 +2,9 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  // IMPORTANTE: Pular middleware para webhooks (Pagar.me)
+  // IMPORTANTE: Pular middleware para webhooks (Pagar.me e Bling)
   // Webhooks precisam processar requisições raw sem interferência
-  if (request.nextUrl.pathname.startsWith("/api/webhooks/pagarme")) {
+  if (request.nextUrl.pathname.startsWith("/api/webhooks/")) {
     return NextResponse.next();
   }
 
@@ -81,9 +81,9 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - api/webhooks/pagarme (webhooks do Pagar.me - processados diretamente)
+     * - api/webhooks/* (webhooks do Pagar.me, Bling - processados diretamente)
      * - public folder
      */
-    "/((?!_next/static|_next/image|favicon.ico|api/webhooks/pagarme|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/webhooks/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

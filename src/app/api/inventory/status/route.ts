@@ -67,11 +67,21 @@ export async function GET(req: NextRequest) {
         );
       }
 
-      return NextResponse.json(product);
+      return NextResponse.json(product, {
+        headers: {
+          // Cache de 30s na CDN; serve dado stale por até 60s enquanto revalida.
+          // Estoque pode mudar com compras, por isso o TTL é curto.
+          "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
+        },
+      });
     }
 
     // Retornar todos os produtos
-    return NextResponse.json(data);
+    return NextResponse.json(data, {
+      headers: {
+        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
+      },
+    });
 
   } catch (err: unknown) {
     console.error('Error in inventory status API:', err);

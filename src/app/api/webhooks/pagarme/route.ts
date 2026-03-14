@@ -276,6 +276,12 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (orderError || !createdOrder) {
+      // Constraint única violada (23505) = webhook duplicado chegou em paralelo;
+      // o primeiro já criou o pedido → retornar 200 para o Pagar.me parar de reenviar.
+      if (orderError?.code === "23505") {
+        console.warn("[PAGARME WEBHOOK] Pedido duplicado ignorado (idempotência):", orderId);
+        return NextResponse.json({ received: true });
+      }
       console.error("[PAGARME WEBHOOK] Error creating order:", orderError);
       return NextResponse.json(
         { error: "Failed to create order", details: orderError?.message },

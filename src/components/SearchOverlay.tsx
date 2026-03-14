@@ -194,7 +194,7 @@ export default function SearchOverlay() {
                           alt={product.name}
                           fill
                           className="object-cover"
-                          sizes="80px"
+                          sizes="(max-width: 768px) 64px, 80px"
                         />
                       </div>
                       <div className="flex-1 min-w-0">

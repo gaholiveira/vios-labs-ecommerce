@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PRODUCTS } from "@/constants/products";
 import ProductPageContent from "@/components/ProductPageContent";
+import { getSupabaseAdminOrNull } from "@/utils/supabase/admin";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -62,6 +63,30 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
+async function fetchReviewSummary(
+  productId: string,
+): Promise<{ ratingValue: number; reviewCount: number } | null> {
+  const supabase = getSupabaseAdminOrNull();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("rating")
+    .eq("product_id", productId)
+    .eq("status", "approved");
+
+  if (error || !data || data.length === 0) return null;
+
+  const reviewCount = data.length;
+  const ratingValue =
+    Math.round(
+      (data.reduce((sum, r) => sum + (r.rating as number), 0) / reviewCount) *
+        10,
+    ) / 10;
+
+  return { ratingValue, reviewCount };
+}
+
 export default async function ProductPage({ params }: PageProps) {
   const { id } = await params;
   const product = PRODUCTS.find((p) => p.id === id);
@@ -70,6 +95,8 @@ export default async function ProductPage({ params }: PageProps) {
 
   const productUrl = `${BASE_URL}/produto/${product.id}`;
   const productImageUrl = `${BASE_URL}${product.image}`;
+
+  const reviewSummary = await fetchReviewSummary(product.id);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -98,6 +125,15 @@ export default async function ProductPage({ params }: PageProps) {
             url: BASE_URL,
           },
         },
+        ...(reviewSummary && {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: reviewSummary.ratingValue,
+            reviewCount: reviewSummary.reviewCount,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }),
         ...(product.anvisaRecord && {
           additionalProperty: {
             "@type": "PropertyValue",

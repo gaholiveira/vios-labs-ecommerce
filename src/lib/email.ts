@@ -470,6 +470,139 @@ export async function sendD7ReorderEmail(
 }
 
 // ============================================================================
+// RASTREIO DE ENVIO
+// ============================================================================
+
+export interface SendTrackingEmailParams {
+  customerEmail: string;
+  customerName: string | null;
+  orderId: string;
+  trackingCode: string;
+  trackingUrl?: string | null;
+  trackingCarrier?: string | null;
+  siteUrl?: string;
+}
+
+function generateTrackingHtml(params: SendTrackingEmailParams): string {
+  const siteUrl =
+    params.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://vioslabs.com.br";
+  const shortId = params.orderId.slice(0, 8).toUpperCase();
+  const carrier = params.trackingCarrier ?? "transportadora";
+  const trackingUrl =
+    params.trackingUrl ??
+    (params.trackingCode.startsWith("BR") || params.trackingCode.startsWith("AA") || params.trackingCode.startsWith("RA")
+      ? `https://rastreamento.correios.com.br/app/index.php?objeto=${encodeURIComponent(params.trackingCode)}`
+      : null);
+
+  return `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seu pedido foi enviado — VIOS Labs</title>
+</head>
+<body style="margin:0;padding:0;font-family:sans-serif;background-color:${BACKGROUND};color:${TEXT};">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:${BACKGROUND};padding:40px 20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background-color:${BACKGROUND};border-radius:4px;border:1px solid ${BORDER};overflow:hidden;">
+        <!-- Header -->
+        <tr>
+          <td style="padding:32px 40px;text-align:center;border-bottom:1px solid ${BORDER};">
+            <h1 style="margin:0;font-size:22px;font-weight:300;letter-spacing:0.1em;text-transform:uppercase;color:${TEXT};">VIOS LABS</h1>
+            <div style="width:28px;height:1px;background:${GOLD};margin:10px auto;"></div>
+            <p style="margin:0;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:${TEXT};opacity:0.7;">Pedido enviado</p>
+          </td>
+        </tr>
+        <!-- Body -->
+        <tr>
+          <td style="padding:36px 40px;">
+            <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:${TEXT};">
+              Olá, ${escapeHtml(params.customerName?.split(" ")[0] ?? "cliente")}.
+            </p>
+            <p style="margin:0 0 28px 0;font-size:15px;line-height:1.6;color:${TEXT};">
+              Seu pedido <strong>#${shortId}</strong> foi despachado e está a caminho. Você pode acompanhar a entrega com o código abaixo.
+            </p>
+            <!-- Bloco de rastreio -->
+            <div style="background:rgba(27,43,34,0.04);border:0.5px solid ${BORDER};border-radius:4px;padding:24px;margin:0 0 28px 0;">
+              <p style="margin:0 0 8px 0;font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:${TEXT};opacity:0.7;">Código de rastreio</p>
+              <p style="margin:0 0 12px 0;font-size:20px;font-family:monospace;letter-spacing:0.08em;color:${TEXT};">${escapeHtml(params.trackingCode)}</p>
+              <p style="margin:0;font-size:13px;color:${TEXT};opacity:0.75;">Transportadora: ${escapeHtml(carrier)}</p>
+            </div>
+            ${
+              trackingUrl
+                ? `<!-- CTA rastreio -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+              <tr><td align="center">
+                <a href="${escapeHtml(trackingUrl)}" style="display:inline-block;padding:14px 32px;background-color:${TEXT};color:${BACKGROUND};text-decoration:none;font-size:12px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;border-radius:4px;">
+                  Rastrear meu pedido
+                </a>
+              </td></tr>
+            </table>`
+                : ""
+            }
+            <!-- Separador -->
+            <div style="border-top:1px solid ${BORDER};margin:28px 0;"></div>
+            <p style="margin:0;font-size:13px;line-height:1.6;color:${TEXT};opacity:0.75;">
+              Dúvidas sobre a entrega? Fale com nossa equipe pelo
+              <a href="https://wa.me/5511952136713" style="color:${TEXT};text-decoration:underline;">WhatsApp</a>
+              ou pelo e-mail <a href="mailto:atendimento@vioslabs.com.br" style="color:${TEXT};text-decoration:underline;">atendimento@vioslabs.com.br</a>.
+            </p>
+          </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+          <td style="padding:24px 40px;text-align:center;border-top:1px solid ${BORDER};">
+            <p style="margin:0 0 8px 0;font-size:11px;color:${TEXT};opacity:0.7;">VIOS LABS · A Ciência da Longevidade</p>
+            <p style="margin:0;font-size:11px;color:${TEXT};opacity:0.6;">
+              <a href="${escapeHtml(siteUrl)}/privacidade" style="color:${TEXT};text-decoration:underline;">Privacidade</a>
+              &nbsp;·&nbsp;
+              <a href="${escapeHtml(siteUrl)}" style="color:${TEXT};text-decoration:underline;">${escapeHtml(siteUrl)}</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`.trim();
+}
+
+/**
+ * E-mail de confirmação de envio com código de rastreio.
+ * Disparado pelo webhook do Bling quando o pedido é marcado como enviado.
+ */
+export async function sendTrackingEmail(
+  params: SendTrackingEmailParams,
+): Promise<{ success: boolean; error?: string; messageId?: string }> {
+  const key = process.env.RESEND_API_KEY?.trim();
+  if (!key) {
+    console.warn("[EMAIL] RESEND_API_KEY não configurada. Rastreio não enviado.");
+    return { success: false, error: "RESEND_API_KEY não configurada." };
+  }
+  try {
+    const html = generateTrackingHtml(params);
+    const resend = getResendClient();
+    const shortId = params.orderId.slice(0, 8).toUpperCase();
+    const { data, error } = await resend.emails.send({
+      from: `${FROM_NAME} <${FROM_EMAIL}>`,
+      to: params.customerEmail,
+      subject: `Pedido #${shortId} enviado — ${params.trackingCode} | VIOS Labs`,
+      html,
+    });
+    if (error) {
+      console.error("[EMAIL] Tracking error:", error);
+      return { success: false, error: String(error.message ?? error) };
+    }
+    return { success: true, messageId: data?.id };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[EMAIL] sendTrackingEmail error:", err);
+    return { success: false, error: message };
+  }
+}
+
+// ============================================================================
 // ABANDONO DE CHECKOUT
 // ============================================================================
 

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { formatPrice } from '@/utils/format';
-import { Check, Package, Truck, XCircle } from 'lucide-react';
+import { Check, ExternalLink, Package, Truck, XCircle } from 'lucide-react';
 import Skeleton from '@/components/ui/Skeleton';
 
 interface OrderItem {
@@ -22,10 +22,14 @@ interface Order {
   id: string;
   user_id: string | null;
   customer_email: string;
+  customer_name?: string | null;
   status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
   total_amount: number;
   payment_order_id: string | null;
   created_at: string;
+  tracking_code?: string | null;
+  tracking_url?: string | null;
+  tracking_carrier?: string | null;
   order_items: OrderItem[];
 }
 
@@ -281,6 +285,49 @@ export default function OrdersPage() {
                       )}
                     </div>
                   </div>
+
+                  {/* Rastreio */}
+                  {(order.status === 'shipped' || order.status === 'delivered') && order.tracking_code && (
+                    <div className="px-6 md:px-8 pb-6 md:pb-8 -mt-2">
+                      <div className="bg-blue-50/60 border border-blue-100 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                        <Truck className="w-4 h-4 text-blue-600 shrink-0 mt-0.5 sm:mt-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs uppercase tracking-widest text-blue-600 font-medium mb-1">
+                            Código de rastreio
+                            {order.tracking_carrier && (
+                              <span className="normal-case font-normal tracking-normal ml-1.5">
+                                · {order.tracking_carrier}
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-sm font-mono text-brand-softblack tracking-widest">
+                            {order.tracking_code}
+                          </p>
+                        </div>
+                        {order.tracking_url ? (
+                          <a
+                            href={order.tracking_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs uppercase tracking-widest font-medium text-blue-700 hover:text-blue-900 transition-colors shrink-0"
+                          >
+                            Rastrear
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        ) : (
+                          <a
+                            href={`https://rastreamento.correios.com.br/app/index.php?objeto=${encodeURIComponent(order.tracking_code)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs uppercase tracking-widest font-medium text-blue-700 hover:text-blue-900 transition-colors shrink-0"
+                          >
+                            Rastrear
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

@@ -33,7 +33,7 @@ export default function StatusStories() {
                     src={item.image}
                     alt={item.title}
                     fill
-                    sizes="80px"
+                    sizes="(max-width: 640px) 64px, 80px"
                     className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                   />
                 </div>
