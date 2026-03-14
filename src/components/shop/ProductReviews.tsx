@@ -108,7 +108,7 @@ function ReviewImageModal({
             </svg>
           </button>
 
-          <div className="relative w-full aspect-4/3 rounded-sm overflow-hidden bg-gray-100">
+          <div className="relative w-full aspect-[4/3] rounded-sm overflow-hidden bg-gray-100">
             <Image
               src={url}
               alt={`Foto da avaliação de ${author}`}
@@ -149,7 +149,7 @@ function ReviewCard({
           <button
             type="button"
             onClick={() => setModalOpen(true)}
-            className="relative w-full aspect-4/3 shrink-0 group focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
+            className="relative w-full aspect-[4/3] shrink-0 group focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
             aria-label={`Ver foto de ${review.author}`}
           >
             <Image
