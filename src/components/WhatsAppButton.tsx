@@ -3,7 +3,10 @@
 import { useStickyBar } from "@/context/StickyBarContext";
 
 const WHATSAPP_NUMBER = "5511952136713";
-const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`;
+const WHATSAPP_MESSAGE = encodeURIComponent(
+  "Olá! Tenho interesse nos produtos VIOS Labs e gostaria de saber mais."
+);
+const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`;
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -28,7 +31,7 @@ export default function WhatsAppButton() {
       href={WHATSAPP_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className={`group fixed right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full border border-brand-gold/40 bg-brand-green text-brand-offwhite shadow-lg transition-all duration-300 hover:scale-105 hover:border-brand-gold hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 focus:ring-offset-2 focus:ring-offset-brand-offwhite md:right-8 md:h-[3.25rem] md:w-[3.25rem] ${
+      className={`group fixed right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full border border-brand-gold/40 bg-brand-green text-brand-offwhite shadow-lg transition-all duration-300 hover:scale-105 hover:border-brand-gold hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-brand-gold/50 focus:ring-offset-2 focus:ring-offset-brand-offwhite md:right-8 md:h-13 md:w-13 ${
         stickyBarVisible ? "bottom-24 md:bottom-28" : "bottom-6 md:bottom-8"
       }`}
       aria-label="Falar com atendimento no WhatsApp"

@@ -1134,6 +1134,21 @@ function ProductPageContent({ product }: ProductPageContentProps) {
             </motion.button>
           </div>
 
+          {/* Garantia — reduz fricção imediatamente após os CTAs */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.11 }}
+            className="mt-4 flex items-center justify-center gap-2 text-brand-softblack/60"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0 text-brand-green" aria-hidden>
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+            <span className="text-[10px] uppercase tracking-[0.18em] font-medium">
+              7 dias para devolver — sem perguntas
+            </span>
+          </motion.div>
+
           {/* Selos de confiança — ANVISA, Pagamento Seguro (logo após os botões para reforçar decisão) */}
           <motion.div
             initial={{ opacity: 0 }}
