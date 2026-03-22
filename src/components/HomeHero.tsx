@@ -61,7 +61,7 @@ export default function HomeHero() {
       >
         <div className="absolute inset-0 transform-gpu will-change-transform md:transition-transform md:duration-700 md:ease-out md:group-hover:scale-105">
           <Image
-            src="/images/hero-foto.jpg"
+            src="https://gwnegdilmazoobpexlld.supabase.co/storage/v1/object/public/site-assets/hero-foto.jpg"
             alt="Vios 2026 Hero"
             fill
             priority

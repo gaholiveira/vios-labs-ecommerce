@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 
-/** Imagem do hero — substitua por /images/essencia-hero.jpg quando tiver a imagem */
-const ESSENCIA_HERO_IMAGE = "/images/hero-essencia.jpeg";
+const ESSENCIA_HERO_IMAGE =
+  "https://gwnegdilmazoobpexlld.supabase.co/storage/v1/object/public/site-assets/hero-essencia.jpeg";
 
 export const metadata: Metadata = {
   title: "A Essência | VIOS LABS",

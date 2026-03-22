@@ -68,7 +68,7 @@ function KitsPreviewCard() {
           href="/kits"
           className="w-full border rounded-sm px-6 py-3 min-h-[44px] uppercase tracking-wider text-xs font-light transition-all duration-500 ease-out mt-2 flex items-center justify-center border-brand-green bg-brand-green text-brand-offwhite hover:bg-brand-softblack hover:border-brand-softblack"
         >
-          Explorar Kits VIOS Labs
+          Explorar Kits VIOS
         </Link>
       </div>
     </div>

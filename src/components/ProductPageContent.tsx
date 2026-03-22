@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo, memo } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useCart } from "@/context/CartContext";
@@ -1183,6 +1184,29 @@ function ProductPageContent({ product }: ProductPageContentProps) {
       {/* Key Ingredients Section */}
       <div className="w-full max-w-7xl mx-auto px-6">
         <KeyIngredients ingredients={productContent.keyIngredients} />
+      </div>
+
+      {/* Faixa do Laboratório */}
+      <div className="w-full my-8 md:my-12 overflow-hidden">
+        <div className="relative w-full h-[220px] md:h-[320px]">
+          <Image
+            src="https://gwnegdilmazoobpexlld.supabase.co/storage/v1/object/public/site-assets/laboratorio/laboratoriogeral.jpg"
+            alt="Laboratório VIOS Labs — formulação científica de alto padrão"
+            fill
+            sizes="100vw"
+            className="object-cover object-center"
+            quality={85}
+          />
+          <div className="absolute inset-0 bg-brand-softblack/50" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
+            <span className="text-brand-gold uppercase tracking-[0.4em] text-[10px] font-semibold mb-3 block">
+              Ciência & Qualidade
+            </span>
+            <p className="text-white/90 text-lg md:text-2xl font-light tracking-tight max-w-xl leading-snug">
+              Desenvolvido em laboratório de alto padrão,<br className="hidden md:block" /> com validação científica em cada fórmula.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Comparativo VIOS vs produto comum de farmácia */}

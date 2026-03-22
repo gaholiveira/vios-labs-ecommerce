@@ -42,7 +42,12 @@ export default function HomeBelowFold() {
     <>
       <ProductTestimonialsSection />
       <EssenceSection />
-      <AboutSection />
+      <AboutSection
+        image={{
+          src: "https://gwnegdilmazoobpexlld.supabase.co/storage/v1/object/public/site-assets/laboratorio/laboratorio4.jpg",
+          alt: "Laboratório VIOS Labs — desenvolvimento científico",
+        }}
+      />
     </>
   );
 }

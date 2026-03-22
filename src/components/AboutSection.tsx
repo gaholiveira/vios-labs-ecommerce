@@ -104,18 +104,18 @@ export default function AboutSection({ image }: AboutSectionProps) {
           </motion.div>
         </motion.div>
 
-        {/* Imagem com parallax – apenas md+ (mobile sem parallax para performance) */}
+        {/* Imagem com parallax no desktop; estática no mobile */}
         {image && (
-          <div className="hidden md:block flex-1 max-w-md md:mx-0 mt-12 md:mt-0 overflow-hidden rounded-sm">
+          <div className="block flex-1 max-w-md mx-auto md:mx-0 mt-10 md:mt-0 overflow-hidden rounded-sm w-full">
             <motion.div
-              className="relative aspect-[4/5] w-full md:transition-transform md:duration-700 md:ease-out md:group-hover:scale-105"
+              className="relative aspect-4/3 md:aspect-[4/5] w-full md:transition-transform md:duration-700 md:ease-out md:group-hover:scale-105"
               style={{ y: imageY }}
             >
               <Image
                 src={image.src}
                 alt={image.alt}
                 fill
-                sizes="(max-width: 768px) 0px, 448px"
+                sizes="(max-width: 768px) calc(100vw - 48px), 448px"
                 className="object-cover"
                 priority={false}
               />

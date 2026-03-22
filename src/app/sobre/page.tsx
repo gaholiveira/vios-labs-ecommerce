@@ -9,7 +9,7 @@ export default function SobrePage() {
         {/* Imagem de fundo */}
         <div className="absolute inset-0 transform-gpu will-change-transform md:transition-transform md:duration-700 md:ease-out md:group-hover:scale-105">
           <Image
-            src="/images/fundadores.png"
+            src="https://gwnegdilmazoobpexlld.supabase.co/storage/v1/object/public/site-assets/fundadores.png"
             alt="Vios Labs História"
             fill
             priority
@@ -85,6 +85,50 @@ export default function SobrePage() {
             Criamos porque acreditamos que o cuidado com o corpo merece a mesma
             sofisticação que você dedica às outras áreas da sua vida. Bem-vindos
             à nossa visão.
+          </p>
+        </div>
+      </section>
+
+      {/* Galeria do Laboratório */}
+      <section className="bg-brand-offwhite py-16 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10">
+            <span className="text-brand-green uppercase tracking-[0.4em] text-[10px] font-semibold mb-4 block">
+              Do Laboratório
+            </span>
+            <h2 className="text-brand-softblack text-2xl md:text-3xl font-light uppercase tracking-tighter leading-tight">
+              Onde a ciência toma forma
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <div className="group relative overflow-hidden rounded-sm aspect-4/3">
+              <Image
+                src="https://gwnegdilmazoobpexlld.supabase.co/storage/v1/object/public/site-assets/laboratorio/laboratorio3.jpg"
+                alt="Laboratório VIOS Labs — controle de qualidade"
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                quality={85}
+              />
+              <div className="absolute inset-0 bg-brand-softblack/10 group-hover:bg-brand-softblack/5 transition-colors duration-500" />
+            </div>
+
+            <div className="group relative overflow-hidden rounded-sm aspect-4/3">
+              <Image
+                src="https://gwnegdilmazoobpexlld.supabase.co/storage/v1/object/public/site-assets/laboratorio/laboratorio1.jpg"
+                alt="Laboratório VIOS Labs — desenvolvimento de formulações"
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                quality={85}
+              />
+              <div className="absolute inset-0 bg-brand-softblack/10 group-hover:bg-brand-softblack/5 transition-colors duration-500" />
+            </div>
+          </div>
+
+          <p className="text-center text-brand-softblack/50 text-xs font-light tracking-widest uppercase mt-6">
+            Formulações desenvolvidas com rigor técnico e validação científica
           </p>
         </div>
       </section>
@@ -208,7 +252,7 @@ export default function SobrePage() {
           <div className="text-center">
             <div className="w-48 h-48 mx-auto mb-8 bg-brand-softblack/5 rounded-full overflow-hidden relative">
               <FounderImage
-                src="/images/isadora.png"
+                src="https://gwnegdilmazoobpexlld.supabase.co/storage/v1/object/public/site-assets/isadora.png"
                 alt="Isadora Ferreira - Co-Fundadora & CEO"
                 initials="IF"
                 objectPosition="center top"
@@ -253,7 +297,7 @@ export default function SobrePage() {
           <div className="text-center">
             <div className="w-48 h-48 mx-auto mb-8 bg-brand-softblack/5 rounded-full overflow-hidden relative">
               <FounderImage
-                src="/images/gabrieloli.png"
+                src="https://gwnegdilmazoobpexlld.supabase.co/storage/v1/object/public/site-assets/gabrieloli.png"
                 alt="Miguel Costa - Co-Fundador & Diretor Criativo"
                 initials="GO"
               />
