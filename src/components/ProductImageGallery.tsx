@@ -45,6 +45,7 @@ export default function ProductImageGallery({ images, alt }: ProductImageGallery
               sizes="(max-width: 768px) 100vw, 50vw"
               className="object-cover"
               priority={activeIndex === 0}
+              fetchPriority={activeIndex === 0 ? "high" : "auto"}
               quality={80}
             />
           </motion.div>

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useMemo } from "react";
 import Image from "next/image";
+import { useLenis } from "lenis/react";
 import { useMobileViewportHeight } from "@/hooks/useMobileViewportHeight";
 import { useAuthUrlHandler } from "@/hooks/useAuthUrlHandler";
 import { useCart } from "@/context/CartContext";
@@ -11,6 +12,7 @@ export default function HomeHero() {
   const viewportHeight = useMobileViewportHeight();
   const { showToast } = useCart();
   const [isScrolling, setIsScrolling] = useState(false);
+  const lenis = useLenis();
 
   useAuthUrlHandler({
     onEmailConfirmed: () =>
@@ -19,28 +21,22 @@ export default function HomeHero() {
 
   const handleExploreClick = useCallback(() => {
     const productsSection = document.getElementById("produtos");
-    if (productsSection) {
-      setIsScrolling(true);
-      productsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (!productsSection) return;
 
-      let scrollInterval: ReturnType<typeof setInterval>;
-      const safetyTimeout = setTimeout(() => {
-        setIsScrolling(false);
-        clearInterval(scrollInterval);
-      }, 2000);
+    setIsScrolling(true);
 
-      scrollInterval = setInterval(() => {
-        requestAnimationFrame(() => {
-          const rect = productsSection.getBoundingClientRect();
-          if (rect.top <= 150 && rect.bottom >= -50) {
-            setIsScrolling(false);
-            clearInterval(scrollInterval);
-            clearTimeout(safetyTimeout);
-          }
-        });
-      }, 100);
+    if (lenis) {
+      lenis.scrollTo(productsSection, {
+        offset: 0,
+        duration: 1.2,
+        onComplete: () => setIsScrolling(false),
+      });
+    } else {
+      const top = productsSection.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({ top, behavior: "smooth" });
+      setTimeout(() => setIsScrolling(false), 1500);
     }
-  }, []);
+  }, [lenis]);
 
   const heroStyle = useMemo(
     () => ({
@@ -65,7 +61,8 @@ export default function HomeHero() {
             alt="Vios 2026 Hero"
             fill
             priority
-            quality={75}
+            fetchPriority="high"
+            quality={60}
             sizes="(max-width: 768px) 100vw, 1920px"
             className="object-cover object-center"
             placeholder="blur"

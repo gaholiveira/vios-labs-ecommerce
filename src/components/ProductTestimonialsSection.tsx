@@ -16,7 +16,7 @@ interface FeaturedReview {
 
 function StarRating({ rating }: { rating: number }) {
   return (
-    <div className="flex gap-0.5" aria-label={`${rating} de 5 estrelas`}>
+    <div className="flex gap-0.5" role="img" aria-label={`${rating} de 5 estrelas`}>
       {[1, 2, 3, 4, 5].map((star) => (
         <svg
           key={star}
