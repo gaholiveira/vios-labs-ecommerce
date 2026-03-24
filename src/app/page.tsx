@@ -20,7 +20,6 @@ export default function Home() {
       <link
         rel="preload"
         as="image"
-        // @ts-expect-error — atributos válidos em HTML5 ainda sem tipagem completa no React
         imageSrcSet={HERO_SRCSET}
         imageSizes="100vw"
         fetchPriority="high"

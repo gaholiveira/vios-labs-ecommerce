@@ -102,6 +102,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" className={inter.variable}>
+      <head>
+        {/* Preconnect ao Supabase CDN — reduz latência das imagens externas */}
+        <link rel="preconnect" href="https://gwnegdilmazoobpexlld.supabase.co" />
+        <link rel="dns-prefetch" href="https://gwnegdilmazoobpexlld.supabase.co" />
+      </head>
       <body className={`${inter.className} antialiased bg-white`}>
         <SkipLink />
         <SmoothScrolling>

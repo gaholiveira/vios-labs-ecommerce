@@ -179,7 +179,6 @@ export default async function ProductPage({ params }: PageProps) {
       <link
         rel="preload"
         as="image"
-        // @ts-expect-error — atributos válidos em HTML5 ainda sem tipagem completa no React
         imageSrcSet={productImgSrcSet}
         imageSizes="(max-width: 768px) 100vw, 50vw"
         fetchPriority="high"
