@@ -6,8 +6,25 @@ import StatusStories from "@/components/StatusStories";
 import TextReveal from "@/components/ui/text-reveal";
 import CheckoutBenefitsBar from "@/components/CheckoutBenefitsBar";
 
+const HERO_URL = encodeURIComponent(
+  "https://gwnegdilmazoobpexlld.supabase.co/storage/v1/object/public/site-assets/hero-foto.jpg"
+);
+const HERO_SRCSET = [640, 828, 1080, 1200, 1920]
+  .map((w) => `/_next/image?url=${HERO_URL}&w=${w}&q=75 ${w}w`)
+  .join(", ");
+
 export default function Home() {
   return (
+    <>
+      {/* Preload explícito do hero — o browser começa a buscar antes do JS do Client Component */}
+      <link
+        rel="preload"
+        as="image"
+        // @ts-expect-error — atributos válidos em HTML5 ainda sem tipagem completa no React
+        imageSrcSet={HERO_SRCSET}
+        imageSizes="100vw"
+        fetchPriority="high"
+      />
     <main id="main-content" className="relative">
       <HomeHero />
 
@@ -33,5 +50,6 @@ export default function Home() {
 
       <HomeBelowFold />
     </main>
+    </>
   );
 }

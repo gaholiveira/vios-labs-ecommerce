@@ -65,7 +65,7 @@ export default function HomeHero() {
             alt="Vios 2026 Hero"
             fill
             priority
-            quality={90}
+            quality={75}
             sizes="(max-width: 768px) 100vw, 1920px"
             className="object-cover object-center"
             placeholder="blur"

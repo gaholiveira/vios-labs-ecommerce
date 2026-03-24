@@ -45,7 +45,7 @@ export default function ProductImageGallery({ images, alt }: ProductImageGallery
               sizes="(max-width: 768px) 100vw, 50vw"
               className="object-cover"
               priority={activeIndex === 0}
-              quality={90}
+              quality={80}
             />
           </motion.div>
         </AnimatePresence>

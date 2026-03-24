@@ -13,14 +13,14 @@ export default function SobrePage() {
             alt="Vios Labs História"
             fill
             priority
-            quality={85}
+            quality={75}
             sizes="100vw"
             className="object-cover md:object-contain object-center"
           />
         </div>
 
         {/* Overlay para escurecer a imagem e destacar o texto */}
-        <div className="absolute inset-0 bg-black/30 z-[1] md:transition-opacity md:duration-500 md:ease-out md:group-hover:bg-black/25" />
+        <div className="absolute inset-0 bg-black/30 z-1 md:transition-opacity md:duration-500 md:ease-out md:group-hover:bg-black/25" />
 
         <div className="relative z-10 text-center px-4">
           <div className="max-w-4xl mx-auto md:transition-transform md:duration-500 md:ease-out md:group-hover:-translate-y-2">

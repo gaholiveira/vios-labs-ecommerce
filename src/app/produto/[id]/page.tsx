@@ -168,8 +168,22 @@ export default async function ProductPage({ params }: PageProps) {
     ],
   };
 
+  const productImgEncoded = encodeURIComponent(`${BASE_URL}${product.image}`);
+  const productImgSrcSet = [320, 640, 828]
+    .map((w) => `/_next/image?url=${productImgEncoded}&w=${w}&q=80 ${w}w`)
+    .join(", ");
+
   return (
     <>
+      {/* Preload da imagem do produto — LCP na galeria */}
+      <link
+        rel="preload"
+        as="image"
+        // @ts-expect-error — atributos válidos em HTML5 ainda sem tipagem completa no React
+        imageSrcSet={productImgSrcSet}
+        imageSizes="(max-width: 768px) 100vw, 50vw"
+        fetchPriority="high"
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
