@@ -36,7 +36,8 @@ export const PRODUCTS: Product[] = [
     id: 'prod_2',
     name: 'Vios Sleep',
     tagline: 'Melatonina para Sono Reparador',
-    price: 179.00,
+    price: 159.90,
+    oldPrice: 179.00,
     image: 'https://gwnegdilmazoobpexlld.supabase.co/storage/v1/object/public/site-assets/products/sleepnew.jpeg',
     additionalImages: [
       'https://gwnegdilmazoobpexlld.supabase.co/storage/v1/object/public/site-assets/products/sleeptabela.jpg',
@@ -53,7 +54,8 @@ export const PRODUCTS: Product[] = [
     id: 'prod_1',
     name: 'Vios Glow',
     tagline: 'Hair, Skin & Nails',
-    price: 219.00,
+    price: 199.90,
+    oldPrice: 219.00,
     image: 'https://gwnegdilmazoobpexlld.supabase.co/storage/v1/object/public/site-assets/products/glownew.jpeg',
     additionalImages: [
       'https://gwnegdilmazoobpexlld.supabase.co/storage/v1/object/public/site-assets/products/tabelaglow.jpg',
@@ -70,7 +72,8 @@ export const PRODUCTS: Product[] = [
     id: 'prod_4',
     name: 'Vios Pulse',
     tagline: 'Foco e Energia para Performance',
-    price: 197.00,
+    price: 179.90,
+    oldPrice: 197.00,
     image: 'https://gwnegdilmazoobpexlld.supabase.co/storage/v1/object/public/site-assets/products/pulsenew.jpeg',
     additionalImages: [
       'https://gwnegdilmazoobpexlld.supabase.co/storage/v1/object/public/site-assets/products/pulsetabela.jpg',
@@ -87,7 +90,8 @@ export const PRODUCTS: Product[] = [
     id: 'prod_3',
     name: 'Vios Mag3',
     tagline: 'Tripla Infusão de Magnésio',
-    price: 167.00,
+    price: 147.90,
+    oldPrice: 167.00,
     image: 'https://gwnegdilmazoobpexlld.supabase.co/storage/v1/object/public/site-assets/products/mag3new.jpeg',
     additionalImages: [
       'https://gwnegdilmazoobpexlld.supabase.co/storage/v1/object/public/site-assets/products/mag3tabela.jpg',
@@ -105,7 +109,8 @@ export const PRODUCTS: Product[] = [
     id: 'prod_5',
     name: 'Vios Move',
     tagline: 'Mobilidade e Articulações',
-    price: 189.00,
+    price: 169.90,
+    oldPrice: 189.00,
     image: 'https://gwnegdilmazoobpexlld.supabase.co/storage/v1/object/public/site-assets/products/movenew.jpeg',
     additionalImages: [
       'https://gwnegdilmazoobpexlld.supabase.co/storage/v1/object/public/site-assets/products/movetabela.jpg',

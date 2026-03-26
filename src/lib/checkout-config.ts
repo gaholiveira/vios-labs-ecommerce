@@ -3,7 +3,7 @@
  * Frete, desconto PIX e limites (usado na página de checkout e na API).
  */
 
-export const FREE_SHIPPING_THRESHOLD = 289.9;
+export const FREE_SHIPPING_THRESHOLD = 249.9;
 export const PIX_DISCOUNT_PERCENT = 0.05; // 5% de vantagem no PIX (posicionamento premium)
 
 /**

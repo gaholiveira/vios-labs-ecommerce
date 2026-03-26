@@ -165,7 +165,7 @@ export default function ContatoPage() {
                 <p>
                   O frete é calculado em tempo real no checkout com base no seu CEP,
                   através do Melhor Envio. Oferecemos duas opções: <strong>Entrega Padrão</strong> (mais econômica)
-                  e <strong>Entrega Expressa</strong> (mais rápida). Compras a partir de R$ 289,90 têm{" "}
+                  e <strong>Entrega Expressa</strong> (mais rápida). Compras a partir de R$ 249,90 têm{" "}
                   <strong>frete grátis</strong>. O prazo varia conforme sua localização e a opção escolhida,
                   geralmente entre 3 e 14 dias úteis para todo o Brasil.
                 </p>

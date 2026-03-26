@@ -1,7 +1,6 @@
 "use client";
 
-import { motion, useInView } from "framer-motion";
-import { useRef, useMemo, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 
 interface TextRevealProps {
   text: string;
@@ -19,103 +18,65 @@ export default function TextReveal({
   duration = 0.5,
 }: TextRevealProps) {
   const ref = useRef<HTMLSpanElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "0px", amount: 0.1 });
-  const [shouldAnimate, setShouldAnimate] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
-  // Verificar se o elemento já está visível no mount (para hero section no topo)
-  // Usa requestAnimationFrame para evitar reflow forçado — lê layout após o paint
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
 
+    // Se já está visível no mount (hero acima da dobra), anima imediatamente
     const rafId = requestAnimationFrame(() => {
       const rect = el.getBoundingClientRect();
-      const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
-      if (isVisible) {
-        timerRef.current = setTimeout(() => setShouldAnimate(true), 100);
+      if (rect.top < window.innerHeight && rect.bottom > 0) {
+        const t = setTimeout(() => setIsVisible(true), 100);
+        return () => clearTimeout(t);
       }
+
+      // Abaixo da dobra: usar IntersectionObserver nativo (sem biblioteca)
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.disconnect();
+          }
+        },
+        { threshold: 0.1 },
+      );
+      observer.observe(el);
+      return () => observer.disconnect();
     });
 
-    return () => {
-      cancelAnimationFrame(rafId);
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-    };
+    return () => cancelAnimationFrame(rafId);
   }, []);
 
-  // Atualizar quando isInView mudar
-  useEffect(() => {
-    if (isInView) {
-      setShouldAnimate(true);
-    }
-  }, [isInView]);
-
-  // Quebrar texto em palavras
   const words = useMemo(() => text.split(" "), [text]);
 
-  // Container variants com stagger
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.05,
-        delayChildren: delay,
-      },
-    },
-  };
-
-  // Word variants com blur effect (o segredo do luxo)
-  const wordVariants = {
-    hidden: {
-      opacity: 0,
-      y: 20,
-      filter: "blur(10px)",
-    },
-    visible: {
-      opacity: 1,
-      y: 0,
-      filter: "blur(0px)",
-      transition: {
-        duration: duration,
-        ease: "easeOut" as const,
-      },
-    },
-  };
-
-  // Criar elemento dinâmico
-  const ElementComponent = Element as any;
+  const ElementComponent = Element as React.ElementType;
 
   return (
     <>
       {/* Texto completo para leitores de tela e SEO */}
       <span className="sr-only">{text}</span>
 
-      {/* Elemento com classe aplicada */}
       <ElementComponent className={className}>
-        {/* Motion span com ref para useInView - este é o container animado */}
-        <motion.span
-          ref={ref}
-          aria-hidden="true"
-          variants={containerVariants}
-          initial="hidden"
-          animate={shouldAnimate || isInView ? "visible" : "hidden"}
-          className="inline-block"
-        >
+        <span ref={ref} aria-hidden="true" className="inline-block">
           {words.map((word, index) => (
-            <motion.span
+            <span
               key={`${word}-${index}`}
-              variants={wordVariants}
               className="inline-block"
-              style={{ marginRight: index < words.length - 1 ? "0.25em" : "0" }}
+              style={{
+                marginRight: index < words.length - 1 ? "0.25em" : "0",
+                opacity: isVisible ? 1 : 0,
+                transform: isVisible ? "translateY(0)" : "translateY(20px)",
+                filter: isVisible ? "blur(0px)" : "blur(10px)",
+                transition: `opacity ${duration}s ease-out, transform ${duration}s ease-out, filter ${duration}s ease-out`,
+                transitionDelay: `${delay + index * 0.05}s`,
+              }}
             >
               {word}
-            </motion.span>
+            </span>
           ))}
-        </motion.span>
+        </span>
       </ElementComponent>
     </>
   );

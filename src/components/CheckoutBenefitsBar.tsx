@@ -2,7 +2,7 @@ import { Truck, CreditCard, Percent } from "lucide-react";
 
 /**
  * Faixa de benefícios de checkout
- * - Frete grátis a partir de R$ 289,90
+ * - Frete grátis a partir de R$ 249,90
  * - 5% de vantagem no PIX + benefício de boas-vindas com SOUVIOS
  * - Cartão em até 3x sem juros
  *
@@ -20,7 +20,7 @@ const CheckoutBenefitsBar = () => {
         </span>
         <p className="text-[10px] md:text-[11px] uppercase tracking-[0.18em] text-brand-softblack/80 font-light">
           Frete grátis para todo o Brasil a partir de{" "}
-          <span className="font-medium text-brand-green">R$ 289,90</span>
+          <span className="font-medium text-brand-green">R$ 249,90</span>
         </p>
       </div>
       <div className="flex items-center gap-2">

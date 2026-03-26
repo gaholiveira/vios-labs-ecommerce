@@ -24,9 +24,9 @@ function Footer({ className = "" }: FooterProps) {
         className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12"
       >
         <div>
-          <h4 className="text-[10px] uppercase tracking-[0.3em] mb-6 font-bold">
+          <p className="text-[10px] uppercase tracking-[0.3em] mb-6 font-bold">
             Menu
-          </h4>
+          </p>
           <ul className="space-y-4 text-xs font-light tracking-widest opacity-80">
             <li>
               <Link href="/" className="hover:opacity-100 transition">
@@ -46,9 +46,9 @@ function Footer({ className = "" }: FooterProps) {
           </ul>
         </div>
         <div>
-          <h4 className="text-[10px] uppercase tracking-[0.3em] mb-6 font-bold">
+          <p className="text-[10px] uppercase tracking-[0.3em] mb-6 font-bold">
             Ajuda
-          </h4>
+          </p>
           <ul className="space-y-4 text-xs font-light tracking-widest opacity-80">
             <li>
               <Link href="/trocas" className="hover:opacity-100 transition">
@@ -68,9 +68,9 @@ function Footer({ className = "" }: FooterProps) {
           </ul>
         </div>
         <div>
-          <h4 className="text-[10px] uppercase tracking-[0.3em] mb-6 font-bold">
+          <p className="text-[10px] uppercase tracking-[0.3em] mb-6 font-bold">
             Newsletter
-          </h4>
+          </p>
           <p className="text-xs font-light tracking-widest mb-4 opacity-80">
             Subscreve para receber novidades.
           </p>
